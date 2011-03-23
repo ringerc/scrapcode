@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+    <description>A web app for accepting file uploads and for managing/tracking those uploads.</description>
+    <display-name>File Uploader</display-name>
+    <context-param>
+        <param-name>javax.faces.PROJECT_STAGE</param-name>
+        <param-value>Development</param-value>
+    </context-param>
+    <servlet>
+        <description>JAX-RS REST requests via /rest/ handled by Jersey</description>
+        <servlet-name>Jersey Servlet</servlet-name>
+        <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Jersey Servlet</servlet-name>
+        <url-pattern>/rest/*</url-pattern>
+    </servlet-mapping>
+    <session-config>
+        <session-timeout>120</session-timeout>
+    </session-config>
+    <welcome-file-list>
+        <welcome-file>faces/rich/upload.xhtml</welcome-file>
+    </welcome-file-list>
+    <security-constraint>
+        <display-name>ConfigurationByAdmin</display-name>
+        <web-resource-collection>
+            <web-resource-name>rest-configuration</web-resource-name>
+            <description>REST-based configuration access</description>
+            <url-pattern>/rest/config/*</url-pattern>
+        </web-resource-collection>
+        <web-resource-collection>
+            <web-resource-name>rest-configtest</web-resource-name>
+            <description>REST-based configuration testing</description>
+            <url-pattern>/rest/configtest/*</url-pattern>
+        </web-resource-collection>
+        <web-resource-collection>
+            <web-resource-name>jsf-admin</web-resource-name>
+            <description>jsf admin pages</description>
+            <url-pattern>/faces/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <description>Only the administrator may access configuration resources</description>
+            <role-name>POSTUPLOAD_ADMIN</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-role>
+        <description>Permits user to configure the application</description>
+        <role-name>POSTUPLOAD_ADMIN</role-name>
+    </security-role>
+    <resource-ref>
+        <res-ref-name>mail/smtp</res-ref-name>
+        <res-type>javax.sql.DataSource</res-type>
+        <res-auth>Container</res-auth>
+        <res-sharing-scope>Shareable</res-sharing-scope>
+    </resource-ref>
+</web-app>
