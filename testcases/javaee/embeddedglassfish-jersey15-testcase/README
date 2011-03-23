@@ -1,0 +1,213 @@
+This project fails to run on Embedded Glassfish, complaining that it cannot find
+ant. If beans.xml is removed to disable CDI, the failure vanishes.
+
+Jersey 1.5 can (optionally) use Ant to produce WADL metadata for web services.
+However, this has been DISABLED in web.xml by setting the init param
+com.sun.jersey.config.feature.DisableWADL=true on the jersey servlet. In any
+case, it's only supposed to happen if ant is found on the classpath at runtime.
+
+If ant is added as a dependency, this failure still occurs.
+
+Log follows. I'm building on Windows at the moment, but it fails on Linux too.
+
+
+
+
+cd C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase; "JAVA_HOME=C:\\Program Files\\Java\\jdk1.6.0_24" "\"C:\\Program Files\\NetBeans 7.0 Beta 2\\java\\maven\\bin\\mvn.bat\"" -Dmaven.repo.local=C:\\Users\\Craig\\Developer\\3rdparty\\maven2repo clean install
+Scanning for projects...
+                                                                        
+------------------------------------------------------------------------
+Building embeddeddemo Web App 1.0-SNAPSHOT
+------------------------------------------------------------------------
+
+[clean:clean]
+
+[dependency:copy]
+
+[resources:resources]
+Using 'UTF-8' encoding to copy filtered resources.
+Copying 0 resource
+
+[compiler:compile]
+Nothing to compile - all classes are up to date
+
+[resources:testResources]
+Using 'UTF-8' encoding to copy filtered resources.
+skip non existing resourceDirectory C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\src\test\resources
+
+[compiler:testCompile]
+Nothing to compile - all classes are up to date
+
+[surefire:test]
+No tests to run.
+Surefire report directory: C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\target\surefire-reports
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+There are no tests to run.
+
+Results :
+
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+
+
+[war:war]
+Packaging webapp
+Assembling webapp [embeddeddemo] in [C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\target\postupload-glassfish3embedded]
+Processing war project
+Copying webapp resources [C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\src\main\webapp]
+Webapp assembled in [66 msecs]
+Building war: C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\target\postupload-glassfish3embedded.war
+
+[install:install]
+Installing C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\target\postupload-glassfish3embedded.war to C:\Users\Craig\Developer\3rdparty\maven2repo\com\mycompany\embeddeddemo\1.0-SNAPSHOT\embeddeddemo-1.0-SNAPSHOT.war
+Installing C:\Users\Craig\Developer\scrapcode\testcases\javaee\embeddedglassfish-jersey15-testcase\pom.xml to C:\Users\Craig\Developer\3rdparty\maven2repo\com\mycompany\embeddeddemo\1.0-SNAPSHOT\embeddeddemo-1.0-SNAPSHOT.pom
+
+[embedded-glassfish:run]
+Created New Bootstrap ClassLoader. ServerId = maven, ClassPaths = 
+ClassPath Element : file:/C:/Users/Craig/Developer/3rdparty/maven2repo/org/glassfish/extras/glassfish-embedded-all/3.1/glassfish-embedded-all-3.1.jar
+ClassPath Element : file:/C:/Users/Craig/Developer/3rdparty/maven2repo/org/glassfish/maven-embedded-glassfish-plugin/3.1/maven-embedded-glassfish-plugin-3.1.jar
+ClassPath Element : file:/C:/Users/Craig/Developer/3rdparty/maven2repo/org/codehaus/plexus/plexus-utils/1.0.4/plexus-utils-1.0.4.jar
+ClassPath Element : file:/C:/Users/Craig/Developer/3rdparty/maven2repo/junit/junit/3.8.1/junit-3.8.1.jar
+ClassPath Element : file:/C:/Users/Craig/Developer/3rdparty/maven2repo/org/glassfish/simple-glassfish-api/3.1/simple-glassfish-api-3.1.jar
+23/03/2011 6:40:24 PM com.sun.enterprise.v3.server.CommonClassLoaderServiceImpl findDerbyClient
+INFO: Cannot find javadb client jar file, derby jdbc driver will not be available by default.
+23/03/2011 6:40:24 PM org.hibernate.validator.util.Version <clinit>
+INFO: Hibernate Validator null
+23/03/2011 6:40:24 PM org.hibernate.validator.engine.resolver.DefaultTraversableResolver detectJPA
+INFO: Instantiated an instance of org.hibernate.validator.engine.resolver.JPATraversableResolver.
+23/03/2011 6:40:24 PM PluginUtil getGlassFish
+INFO: Created GlassFish ServerId = maven, BootstrapProperties = {GlassFish_Platform=Static}, GlassFishRuntime = com.sun.enterprise.glassfish.bootstrap.StaticGlassFishRuntime@1d590d, GlassFishProperties = {embedded-glassfish-config.server.network-config.network-listeners.network-listener.http-listener.enabled=true, embedded-glassfish-config.server.network-config.network-listeners.network-listener.http-listener.port=8080}, GlassFish = com.sun.enterprise.glassfish.bootstrap.StaticGlassFishRuntime$1@c18e99, GlassFish Status = INIT, TimeTaken = 3,271 ms
+23/03/2011 6:40:24 PM com.sun.enterprise.v3.services.impl.GrizzlyService createNetworkProxy
+INFO: Network listener https-listener on port 0 disabled per domain.xml
+23/03/2011 6:40:24 PM com.sun.enterprise.v3.server.AppServerStartup run
+INFO: GlassFish Server Open Source Edition 3.1 (java_re-private) startup time : Embedded (2,921ms), startup services(397ms), total(3,318ms)
+23/03/2011 6:40:24 PM com.sun.enterprise.v3.services.impl.GrizzlyProxy$2$1 onReady
+INFO: Grizzly Framework 1.9.31 started in: 102ms - bound to [0.0.0.0:8080]
+23/03/2011 6:40:25 PM org.glassfish.admin.mbeanserver.JMXStartupService$JMXConnectorsStarterThread run
+INFO: JMXStartupService: JMXConnector system is disabled, skipping.
+23/03/2011 6:40:25 PM PluginUtil startGlassFish
+INFO: Started GlassFish ServerId = maven, GlassFish = com.sun.enterprise.glassfish.bootstrap.StaticGlassFishRuntime$1@c18e99, TimeTaken = 775 ms
+23/03/2011 6:40:25 PM com.sun.enterprise.security.SecurityLifecycle <init>
+INFO: SEC1002: Security Manager is OFF.
+23/03/2011 6:40:25 PM com.sun.enterprise.security.SecurityLifecycle onInitialization
+INFO: SEC1010: Entering Security Startup Service
+23/03/2011 6:40:25 PM com.sun.enterprise.security.PolicyLoader loadPolicy
+INFO: SEC1143: Loading policy provider com.sun.enterprise.security.jacc.provider.SimplePolicyProvider.
+23/03/2011 6:40:25 PM com.sun.enterprise.security.auth.realm.Realm doInstantiate
+INFO: SEC1115: Realm [admin-realm] of classtype [com.sun.enterprise.security.auth.realm.file.FileRealm] successfully created.
+23/03/2011 6:40:25 PM com.sun.enterprise.security.auth.realm.Realm doInstantiate
+INFO: SEC1115: Realm [file] of classtype [com.sun.enterprise.security.auth.realm.file.FileRealm] successfully created.
+23/03/2011 6:40:25 PM com.sun.enterprise.security.auth.realm.Realm doInstantiate
+INFO: SEC1115: Realm [certificate] of classtype [com.sun.enterprise.security.auth.realm.certificate.CertificateRealm] successfully created.
+23/03/2011 6:40:25 PM com.sun.enterprise.security.SecurityLifecycle onInitialization
+INFO: SEC1011: Security Service(s) Started Successfully
+23/03/2011 6:40:26 PM com.sun.enterprise.web.WebContainer createHttpListener
+INFO: WEB0169: Created HTTP listener [http-listener] on host/port [0.0.0.0:8080]
+23/03/2011 6:40:26 PM com.sun.enterprise.web.WebContainer createHosts
+INFO: WEB0171: Created virtual server [server]
+23/03/2011 6:40:26 PM com.sun.enterprise.web.WebContainer loadSystemDefaultWebModules
+INFO: WEB0172: Virtual server [server] loaded default web module []
+classLoader = WebappClassLoader (delegate=true; repositories=WEB-INF/classes/)
+SharedSecrets.getJavaNetAccess()=java.net.URLClassLoader$7@ff7c63
+23/03/2011 6:40:27 PM org.jboss.weld.bootstrap.WeldBootstrap <clinit>
+INFO: WELD-000900 SNAPSHOT
+23/03/2011 6:40:27 PM org.glassfish.api.ActionReport failure
+SEVERE: Exception while loading the app
+classLoader = WebappClassLoader (delegate=true; repositories=WEB-INF/classes/)
+SharedSecrets.getJavaNetAccess()=java.net.URLClassLoader$7@ff7c63
+23/03/2011 6:40:28 PM org.glassfish.deployment.admin.DeployCommand execute
+SEVERE: Exception while loading the app : org/apache/tools/ant/Task
+java.lang.ClassNotFoundException: org.apache.tools.ant.Task
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:202)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:190)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:307)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:248)
+	at java.lang.ClassLoader.defineClass1(Native Method)
+	at java.lang.ClassLoader.defineClassCond(ClassLoader.java:632)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:616)
+	at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:141)
+	at java.net.URLClassLoader.defineClass(URLClassLoader.java:283)
+	at java.net.URLClassLoader.access$000(URLClassLoader.java:58)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:197)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:190)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:307)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:248)
+	at com.sun.enterprise.v3.server.APIClassLoaderServiceImpl$APIClassLoader.loadClass(APIClassLoaderServiceImpl.java:188)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:296)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:248)
+	at org.glassfish.web.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1465)
+	at org.glassfish.web.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1368)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.handleEntry(BeanDeploymentArchiveImpl.java:485)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.collectJarInfo(BeanDeploymentArchiveImpl.java:473)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.populate(BeanDeploymentArchiveImpl.java:420)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.<init>(BeanDeploymentArchiveImpl.java:148)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.populate(BeanDeploymentArchiveImpl.java:391)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.<init>(BeanDeploymentArchiveImpl.java:148)
+	at org.glassfish.weld.BeanDeploymentArchiveImpl.<init>(BeanDeploymentArchiveImpl.java:128)
+	at org.glassfish.weld.DeploymentImpl.<init>(DeploymentImpl.java:120)
+	at org.glassfish.weld.WeldDeployer.load(WeldDeployer.java:334)
+	at org.glassfish.weld.WeldDeployer.load(WeldDeployer.java:99)
+	at org.glassfish.internal.data.ModuleInfo.load(ModuleInfo.java:186)
+	at org.glassfish.internal.data.ApplicationInfo.load(ApplicationInfo.java:249)
+	at com.sun.enterprise.v3.server.ApplicationLifecycle.deploy(ApplicationLifecycle.java:460)
+	at com.sun.enterprise.v3.server.ApplicationLifecycle.deploy(ApplicationLifecycle.java:240)
+	at org.glassfish.deployment.admin.DeployCommand.execute(DeployCommand.java:370)
+	at com.sun.enterprise.v3.admin.CommandRunnerImpl$1.execute(CommandRunnerImpl.java:360)
+	at com.sun.enterprise.v3.admin.CommandRunnerImpl.doCommand(CommandRunnerImpl.java:370)
+	at com.sun.enterprise.v3.admin.CommandRunnerImpl.doCommand(CommandRunnerImpl.java:1067)
+	at com.sun.enterprise.v3.admin.CommandRunnerImpl.access$1200(CommandRunnerImpl.java:96)
+	at com.sun.enterprise.v3.admin.CommandRunnerImpl$ExecutionContext.execute(CommandRunnerImpl.java:1247)
+	at com.sun.enterprise.v3.admin.CommandRunnerImpl$ExecutionContext.execute(CommandRunnerImpl.java:1235)
+	at com.sun.enterprise.admin.cli.embeddable.CommandExecutorImpl.executeCommand(CommandExecutorImpl.java:118)
+	at com.sun.enterprise.admin.cli.embeddable.DeployerImpl.deploy(DeployerImpl.java:97)
+	at com.sun.enterprise.admin.cli.embeddable.DeployerImpl.deploy(DeployerImpl.java:88)
+	at org.glassfish.maven.PluginUtil.doDeploy(PluginUtil.java:106)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.glassfish.maven.AbstractDeployMojo.doDeploy(AbstractDeployMojo.java:171)
+	at org.glassfish.maven.RunMojo.execute(RunMojo.java:62)
+	at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:107)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:209)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:84)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:59)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.singleThreadedBuild(LifecycleStarter.java:183)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:161)
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:319)
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:156)
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:534)
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:196)
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:141)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:290)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:230)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:409)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:352)
+PlainTextActionReporterFAILUREDescription: deploy AdminCommandError occurred during deployment: Exception while loading the app : org/apache/tools/ant/Task. Please see server.log for more details.
+    [name=myapp
+23/03/2011 6:40:28 PM PluginUtil doDeploy
+INFO: Deployed null
+Hit ENTER to redeploy, X to exit
+x
+23/03/2011 6:40:50 PM PluginUtil doUndeploy
+INFO: Deployer = com.sun.enterprise.admin.cli.embeddable.DeployerImpl@21f752
+PlainTextActionReporterFAILUREApplication myapp is not deployed on this target [server]23/03/2011 6:40:50 PM PluginUtil doUndeploy
+INFO: Undeployed myapp
+------------------------------------------------------------------------
+BUILD SUCCESS
+------------------------------------------------------------------------
+Total time: 32.360s
+Finished at: Wed Mar 23 18:40:50 GMT+08:00 2011
+Final Memory: 13M/42M
+------------------------------------------------------------------------
+
