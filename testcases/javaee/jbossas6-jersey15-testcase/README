@@ -1,0 +1,215 @@
+Fails to deploy to JBoss AS 6 with:
+
+18:35:07,569 ERROR [AbstractKernelController] Error installing to PreReal: name=vfs:///C:/jboss-6.0.0.Final/server/default/deploy/jbossjerseydemo.war state=PostClassLoader mode=Manual requiredState=PreReal: org.jboss.deployers.spi.DeploymentException: Only one JAX-RS Application Class allowed. com.sun.jersey.api.core.WebAppResourceConfig com.sun.jersey.api.core.ResourceConfig com.sun.jersey.api.core.ClasspathResourceConfig com.sun.jersey.api.core.DefaultResourceConfig com.sun.jersey.api.core.ApplicationAdapter com.sun.jersey.api.core.ScanningResourceConfig com.sun.jersey.api.core.PackagesResourceConfig com.sun.jersey.api.core.ClassNamesResourceConfig com.sun.jersey.server.impl.application.DeferredResourceConfig
+	at org.jboss.resteasy.integration.deployers.ResteasyScannerDeployer.scan(ResteasyScannerDeployer.java:175) [:6.0.0.Final]
+	at org.jboss.resteasy.integration.deployers.ResteasyScannerDeployer.internalDeploy(ResteasyScannerDeployer.java:64) [:6.0.0.Final]
+	at org.jboss.deployers.spi.deployer.helpers.AbstractRealDeployer.deploy(AbstractRealDeployer.java:55) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployerWrapper.deploy(DeployerWrapper.java:179) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.doDeploy(DeployersImpl.java:1832) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.doInstallParentFirst(DeployersImpl.java:1550) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.install(DeployersImpl.java:1491) [:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractControllerContext.install(AbstractControllerContext.java:379) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.install(AbstractController.java:2044) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.incrementState(AbstractController.java:1083) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.executeOrIncrementStateDirectly(AbstractController.java:1322) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.resolveContexts(AbstractController.java:1246) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.resolveContexts(AbstractController.java:1139) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.change(AbstractController.java:939) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.change(AbstractController.java:654) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.change(DeployersImpl.java:1983) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.process(DeployersImpl.java:1076) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.main.MainDeployerImpl.process(MainDeployerImpl.java:679) [:2.2.0.GA]
+	at org.jboss.system.server.profileservice.deployers.MainDeployerPlugin.process(MainDeployerPlugin.java:106) [:6.0.0.Final]
+	at org.jboss.profileservice.dependency.ProfileControllerContext$DelegateDeployer.process(ProfileControllerContext.java:143) [:0.2.2]
+	at org.jboss.profileservice.dependency.ProfileDeployAction.deploy(ProfileDeployAction.java:151) [:0.2.2]
+	at org.jboss.profileservice.dependency.ProfileDeployAction.installActionInternal(ProfileDeployAction.java:94) [:0.2.2]
+	at org.jboss.kernel.plugins.dependency.InstallsAwareAction.installAction(InstallsAwareAction.java:54) [jboss-kernel.jar:2.2.0.GA]
+	at org.jboss.kernel.plugins.dependency.InstallsAwareAction.installAction(InstallsAwareAction.java:42) [jboss-kernel.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.action.SimpleControllerContextAction.simpleInstallAction(SimpleControllerContextAction.java:62) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.action.AccessControllerContextAction.install(AccessControllerContextAction.java:71) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractControllerContextActions.install(AbstractControllerContextActions.java:51) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractControllerContext.install(AbstractControllerContext.java:379) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.install(AbstractController.java:2044) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.incrementState(AbstractController.java:1083) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.executeOrIncrementStateDirectly(AbstractController.java:1322) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.resolveContexts(AbstractController.java:1246) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.resolveContexts(AbstractController.java:1139) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.change(AbstractController.java:939) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.change(AbstractController.java:654) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.profileservice.dependency.ProfileActivationWrapper$BasicProfileActivation.start(ProfileActivationWrapper.java:190) [:0.2.2]
+	at org.jboss.profileservice.dependency.ProfileActivationWrapper.start(ProfileActivationWrapper.java:87) [:0.2.2]
+	at org.jboss.profileservice.dependency.ProfileActivationService.activateProfile(ProfileActivationService.java:215) [:0.2.2]
+	at org.jboss.profileservice.dependency.ProfileActivationService.activate(ProfileActivationService.java:159) [:0.2.2]
+	at org.jboss.profileservice.bootstrap.AbstractProfileServiceBootstrap.activate(AbstractProfileServiceBootstrap.java:112) [:0.2.2]
+	at org.jboss.profileservice.resolver.BasicResolverFactory$ProfileResolverFacade.deploy(BasicResolverFactory.java:87) [:0.2.2]
+	at org.jboss.profileservice.bootstrap.AbstractProfileServiceBootstrap.start(AbstractProfileServiceBootstrap.java:91) [:0.2.2]
+	at org.jboss.system.server.profileservice.bootstrap.BasicProfileServiceBootstrap.start(BasicProfileServiceBootstrap.java:132) [:6.0.0.Final]
+	at org.jboss.system.server.profileservice.bootstrap.BasicProfileServiceBootstrap.start(BasicProfileServiceBootstrap.java:56) [:6.0.0.Final]
+	at org.jboss.bootstrap.impl.base.server.AbstractServer.startBootstraps(AbstractServer.java:827) [jboss-bootstrap-impl-base.jar:2.1.0-alpha-5]
+	at org.jboss.bootstrap.impl.base.server.AbstractServer$StartServerTask.run(AbstractServer.java:417) [jboss-bootstrap-impl-base.jar:2.1.0-alpha-5]
+	at java.lang.Thread.run(Thread.java:662) [:1.6.0_24]
+
+18:35:10,680 WARNING [FileConfigurationParser] AIO wasn't located on this platform, it will fall back to using pure Java NIO. If your platform is Linux, install LibAIO to enable the AIO journal
+18:35:11,000 INFO  [JMXConnector] starting JMXConnector on host 127.0.0.1:1090
+18:35:11,186 INFO  [MailService] Mail Service bound to java:/Mail
+18:35:12,550 INFO  [HornetQServerImpl] live server is starting..
+18:35:12,661 INFO  [JournalStorageManager] Using NIO Journal
+18:35:12,713 WARNING [HornetQServerImpl] Security risk! It has been detected that the cluster admin user and password have not been changed from the installation default. Please see the HornetQ user guide, cluster chapter, for instructions on how to do this.
+18:35:13,984 INFO  [NettyAcceptor] Started Netty Acceptor version 3.2.1.Final-r2319 127.0.0.1:5445 for CORE protocol
+18:35:13,989 INFO  [NettyAcceptor] Started Netty Acceptor version 3.2.1.Final-r2319 127.0.0.1:5455 for CORE protocol
+18:35:13,992 INFO  [HornetQServerImpl] HornetQ Server version 2.1.2.Final (Colmeia, 120) started
+18:35:14,121 INFO  [WebService] Using RMI server codebase: http://127.0.0.1:8083/
+18:35:14,401 INFO  [jbossatx] ARJUNA-32010 JBossTS Recovery Service (tag: JBOSSTS_4_14_0_Final) - JBoss Inc.
+18:35:14,410 INFO  [arjuna] ARJUNA-12324 Start RecoveryActivators
+18:35:14,437 INFO  [arjuna] ARJUNA-12296 ExpiredEntryMonitor running at Wed, 23 Mar 2011 18:35:14
+18:35:14,534 INFO  [arjuna] ARJUNA-12310 Recovery manager listening on endpoint 127.0.0.1:4712
+18:35:14,534 INFO  [arjuna] ARJUNA-12344 RecoveryManagerImple is ready on port 4712
+18:35:14,535 INFO  [jbossatx] ARJUNA-32013 Starting transaction recovery manager
+18:35:14,572 INFO  [arjuna] ARJUNA-12163 Starting service com.arjuna.ats.arjuna.recovery.ActionStatusService on port 4713
+18:35:14,572 INFO  [arjuna] ARJUNA-12337 TransactionStatusManagerItem host: 127.0.0.1 port: 4713
+18:35:14,592 INFO  [arjuna] ARJUNA-12170 TransactionStatusManager started on port 4713 and host 127.0.0.1 with service com.arjuna.ats.arjuna.recovery.ActionStatusService
+18:35:14,638 INFO  [jbossatx] ARJUNA-32017 JBossTS Transaction Service (JTA version - tag: JBOSSTS_4_14_0_Final) - JBoss Inc.
+18:35:14,747 INFO  [arjuna] ARJUNA-12202 registering bean jboss.jta:type=ObjectStore.
+18:35:15,062 INFO  [AprLifecycleListener] The Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: C:\Program Files\Java\jdk1.6.0_24\bin;.;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Program Files\PHP\;C:\Program Files\PC Connectivity Solution\;C:\Program Files\Common Files\Microsoft Shared\Windows Live;C:\Program Files\NVIDIA Corporation\PhysX\Common;C:\Perl\site\bin;C:\Perl\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Program Files\TortoiseSVN\bin;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\QuickTime\QTSystem\;C:\Program Files\Microsoft Windows Performance Toolkit\;C:\Program Files\Calibre2\;C:\PROGRA~1\PHP;C:\PROGRA~1\gnuwin32\bin;C:\PROGRA~1\PuTTY;
+18:35:15,311 INFO  [TomcatDeployment] deploy, ctxPath=/invoker
+18:35:15,923 INFO  [ModClusterService] Initializing mod_cluster 1.1.0.Final
+18:35:16,004 INFO  [RARDeployment] Required license terms exist, view vfs:/C:/jboss-6.0.0.Final/server/default/deploy/jboss-local-jdbc.rar/META-INF/ra.xml
+18:35:16,044 INFO  [RARDeployment] Required license terms exist, view vfs:/C:/jboss-6.0.0.Final/server/default/deploy/jboss-xa-jdbc.rar/META-INF/ra.xml
+18:35:16,056 INFO  [RARDeployment] Required license terms exist, view vfs:/C:/jboss-6.0.0.Final/server/default/deploy/jms-ra.rar/META-INF/ra.xml
+18:35:16,080 INFO  [HornetQResourceAdapter] HornetQ resource adaptor started
+18:35:16,090 INFO  [RARDeployment] Required license terms exist, view vfs:/C:/jboss-6.0.0.Final/server/default/deploy/mail-ra.rar/META-INF/ra.xml
+18:35:16,108 INFO  [RARDeployment] Required license terms exist, view vfs:/C:/jboss-6.0.0.Final/server/default/deploy/quartz-ra.rar/META-INF/ra.xml
+18:35:16,256 INFO  [SimpleThreadPool] Job execution threads will use class loader of thread: Thread-2
+18:35:16,324 INFO  [SchedulerSignalerImpl] Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+
+18:35:16,324 INFO  [QuartzScheduler] Quartz Scheduler v.1.8.3 created.
+18:35:16,328 INFO  [RAMJobStore] RAMJobStore initialized.
+18:35:16,333 INFO  [QuartzScheduler] Scheduler meta-data: Quartz Scheduler (v1.8.3) 'JBossQuartzScheduler' with instanceId 'NON_CLUSTERED'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 10 threads.
+  Using job-store 'org.quartz.simpl.RAMJobStore' - which does not support persistence. and is not clustered.
+
+18:35:16,333 INFO  [StdSchedulerFactory] Quartz scheduler 'JBossQuartzScheduler' initialized from an externally opened InputStream.
+18:35:16,381 INFO  [StdSchedulerFactory] Quartz scheduler version: 1.8.3
+18:35:16,381 INFO  [QuartzScheduler] Scheduler JBossQuartzScheduler_$_NON_CLUSTERED started.
+18:35:17,223 INFO  [ConnectionFactoryBindingService] Bound ConnectionManager 'jboss.jca:service=DataSourceBinding,name=DefaultDS' to JNDI name 'java:DefaultDS'
+18:35:17,605 INFO  [ConnectionFactoryBindingService] Bound ConnectionManager 'jboss.jca:service=ConnectionFactoryBinding,name=JmsXA' to JNDI name 'java:JmsXA'
+18:35:17,875 INFO  [xnio] XNIO Version 2.1.0.CR2
+18:35:17,891 INFO  [nio] XNIO NIO Implementation Version 2.1.0.CR2
+18:35:18,223 INFO  [remoting] JBoss Remoting version 3.1.0.Beta2
+18:35:18,482 INFO  [TomcatDeployment] deploy, ctxPath=/
+18:35:18,589 INFO  [service] Removing bootstrap log handlers
+18:35:18,739 ERROR [ProfileServiceBootstrap] Failed to load profile:: org.jboss.deployers.client.spi.IncompleteDeploymentException: Summary of incomplete deployments (SEE PREVIOUS ERRORS FOR DETAILS):
+
+DEPLOYMENTS IN ERROR:
+  Deployment "vfs:///C:/jboss-6.0.0.Final/server/default/deploy/jbossjerseydemo.war" is in error due to the following reason(s): org.jboss.deployers.spi.DeploymentException: Only one JAX-RS Application Class allowed. com.sun.jersey.api.core.WebAppResourceConfig com.sun.jersey.api.core.ResourceConfig com.sun.jersey.api.core.ClasspathResourceConfig com.sun.jersey.api.core.DefaultResourceConfig com.sun.jersey.api.core.ApplicationAdapter com.sun.jersey.api.core.ScanningResourceConfig com.sun.jersey.api.core.PackagesResourceConfig com.sun.jersey.api.core.ClassNamesResourceConfig com.sun.jersey.server.impl.application.DeferredResourceConfig
+
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.checkComplete(DeployersImpl.java:1228) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.main.MainDeployerImpl.checkComplete(MainDeployerImpl.java:905) [:2.2.0.GA]
+	at org.jboss.system.server.profileservice.deployers.MainDeployerPlugin.checkComplete(MainDeployerPlugin.java:87) [:6.0.0.Final]
+	at org.jboss.profileservice.deployment.ProfileDeployerPluginRegistry.checkAllComplete(ProfileDeployerPluginRegistry.java:107) [:0.2.2]
+	at org.jboss.system.server.profileservice.bootstrap.BasicProfileServiceBootstrap.start(BasicProfileServiceBootstrap.java:135) [:6.0.0.Final]
+	at org.jboss.system.server.profileservice.bootstrap.BasicProfileServiceBootstrap.start(BasicProfileServiceBootstrap.java:56) [:6.0.0.Final]
+	at org.jboss.bootstrap.impl.base.server.AbstractServer.startBootstraps(AbstractServer.java:827) [jboss-bootstrap-impl-base.jar:2.1.0-alpha-5]
+	at org.jboss.bootstrap.impl.base.server.AbstractServer$StartServerTask.run(AbstractServer.java:417) [jboss-bootstrap-impl-base.jar:2.1.0-alpha-5]
+	at java.lang.Thread.run(Thread.java:662) [:1.6.0_24]
+
+18:35:18,838 INFO  [org.apache.coyote.http11.Http11Protocol] Starting Coyote HTTP/1.1 on http-127.0.0.1-8080
+18:35:18,842 INFO  [org.apache.coyote.ajp.AjpProtocol] Starting Coyote AJP/1.3 on ajp-127.0.0.1-8009
+18:35:18,843 INFO  [org.jboss.bootstrap.impl.base.server.AbstractServer] JBossAS [6.0.0.Final "Neo"] Started in 34s:468ms
+18:35:24,679 INFO  [org.jboss.profileservice.management.upload.remoting.DeployHandler] invoke, payload: {DeploymentTargetID=names=[jbossjerseydemo.war], clientAddress=/127.0.0.1}, parameter: start
+18:35:24,680 WARN  [org.jboss.profileservice.management.upload.remoting.DeployHandler] Failed to complete command: [start] for deployment: names=[jbossjerseydemo.war]: org.jboss.profileservice.spi.NoSuchDeploymentException: jbossjerseydemo.war
+	at org.jboss.profileservice.plugins.deploy.AbstractDeployHandler.resolveProfileForDeployment(AbstractDeployHandler.java:291) [:0.2.2]
+	at org.jboss.profileservice.plugins.deploy.AbstractDeployHandler.resolveProfiles(AbstractDeployHandler.java:248) [:0.2.2]
+	at org.jboss.profileservice.plugins.deploy.AbstractDeployHandler.startDeployments(AbstractDeployHandler.java:157) [:0.2.2]
+	at org.jboss.profileservice.management.upload.remoting.DeployHandlerDelegate.startDeployments(DeployHandlerDelegate.java:74) [:6.0.0.Final]
+	at org.jboss.profileservice.management.upload.remoting.DeployHandler.invoke(DeployHandler.java:156) [:6.0.0.Final]
+	at org.jboss.remoting.ServerInvoker.invoke(ServerInvoker.java:898) [:6.0.0.Final]
+	at org.jboss.remoting.transport.socket.ServerThread.completeInvocation(ServerThread.java:791) [:6.0.0.Final]
+	at org.jboss.remoting.transport.socket.ServerThread.processInvocation(ServerThread.java:744) [:6.0.0.Final]
+	at org.jboss.remoting.transport.socket.ServerThread.dorun(ServerThread.java:548) [:6.0.0.Final]
+	at org.jboss.remoting.transport.socket.ServerThread.run(ServerThread.java:234) [:6.0.0.Final]
+
+18:35:32,735 ERROR [org.jboss.kernel.plugins.dependency.AbstractKernelController] Error installing to PreReal: name=vfs:///C:/jboss-6.0.0.Final/server/default/deploy/jbossjerseydemo.war state=PostClassLoader mode=Manual requiredState=PreReal: org.jboss.deployers.spi.DeploymentException: Only one JAX-RS Application Class allowed. com.sun.jersey.api.core.PackagesResourceConfig com.sun.jersey.api.core.ClasspathResourceConfig com.sun.jersey.api.core.ScanningResourceConfig com.sun.jersey.api.core.ClassNamesResourceConfig com.sun.jersey.server.impl.application.DeferredResourceConfig com.sun.jersey.api.core.DefaultResourceConfig com.sun.jersey.api.core.WebAppResourceConfig com.sun.jersey.api.core.ResourceConfig com.sun.jersey.api.core.ApplicationAdapter
+	at org.jboss.resteasy.integration.deployers.ResteasyScannerDeployer.scan(ResteasyScannerDeployer.java:175) [:6.0.0.Final]
+	at org.jboss.resteasy.integration.deployers.ResteasyScannerDeployer.internalDeploy(ResteasyScannerDeployer.java:64) [:6.0.0.Final]
+	at org.jboss.deployers.spi.deployer.helpers.AbstractRealDeployer.deploy(AbstractRealDeployer.java:55) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployerWrapper.deploy(DeployerWrapper.java:179) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.doDeploy(DeployersImpl.java:1832) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.doInstallParentFirst(DeployersImpl.java:1550) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.install(DeployersImpl.java:1491) [:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractControllerContext.install(AbstractControllerContext.java:379) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.install(AbstractController.java:2044) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.incrementState(AbstractController.java:1083) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.executeOrIncrementStateDirectly(AbstractController.java:1322) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.resolveContexts(AbstractController.java:1246) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.resolveContexts(AbstractController.java:1139) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.change(AbstractController.java:939) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.dependency.plugins.AbstractController.change(AbstractController.java:654) [jboss-dependency.jar:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.change(DeployersImpl.java:1983) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.process(DeployersImpl.java:1076) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.main.MainDeployerImpl.process(MainDeployerImpl.java:679) [:2.2.0.GA]
+	at org.jboss.system.server.profileservice.deployers.MainDeployerPlugin.process(MainDeployerPlugin.java:106) [:6.0.0.Final]
+	at org.jboss.profileservice.dependency.ProfileControllerContext$DelegateDeployer.process(ProfileControllerContext.java:143) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner$HDScanAction.deploy(HDScanner.java:240) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner$HDScanAction.complete(HDScanner.java:192) [:0.2.2]
+	at org.jboss.profileservice.management.TwoPCActionWrapper.doComplete(TwoPCActionWrapper.java:57) [:0.2.2]
+	at org.jboss.profileservice.management.actions.AbstractTwoPhaseModificationAction.complete(AbstractTwoPhaseModificationAction.java:74) [:0.2.2]
+	at org.jboss.profileservice.management.actions.AbstractTwoPhaseModificationAction.prepare(AbstractTwoPhaseModificationAction.java:95) [:0.2.2]
+	at org.jboss.profileservice.management.ModificationSession.prepare(ModificationSession.java:87) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.internalPerfom(AbstractActionController.java:234) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.performWrite(AbstractActionController.java:213) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.perform(AbstractActionController.java:150) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.perform(AbstractActionController.java:135) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner.scan(HDScanner.java:146) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner.run(HDScanner.java:90) [:0.2.2]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:441) [:1.6.0_24]
+	at java.util.concurrent.FutureTask$Sync.innerRunAndReset(FutureTask.java:317) [:1.6.0_24]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:150) [:1.6.0_24]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$101(ScheduledThreadPoolExecutor.java:98) [:1.6.0_24]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.runPeriodic(ScheduledThreadPoolExecutor.java:180) [:1.6.0_24]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:204) [:1.6.0_24]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886) [:1.6.0_24]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908) [:1.6.0_24]
+	at java.lang.Thread.run(Thread.java:662) [:1.6.0_24]
+
+18:35:32,763 WARN  [org.jboss.profileservice.deployment.hotdeploy.HDScanner] Scan failed: org.jboss.deployers.client.spi.IncompleteDeploymentException: Summary of incomplete deployments (SEE PREVIOUS ERRORS FOR DETAILS):
+
+*** DEPLOYMENTS IN ERROR: Name -> Error
+
+vfs:///C:/jboss-6.0.0.Final/server/default/deploy/jbossjerseydemo.war -> org.jboss.deployers.spi.DeploymentException: Only one JAX-RS Application Class allowed. com.sun.jersey.api.core.PackagesResourceConfig com.sun.jersey.api.core.ClasspathResourceConfig com.sun.jersey.api.core.ScanningResourceConfig com.sun.jersey.api.core.ClassNamesResourceConfig com.sun.jersey.server.impl.application.DeferredResourceConfig com.sun.jersey.api.core.DefaultResourceConfig com.sun.jersey.api.core.WebAppResourceConfig com.sun.jersey.api.core.ResourceConfig com.sun.jersey.api.core.ApplicationAdapter
+
+
+DEPLOYMENTS IN ERROR:
+  Deployment "vfs:///C:/jboss-6.0.0.Final/server/default/deploy/jbossjerseydemo.war" is in error due to the following reason(s): org.jboss.deployers.spi.DeploymentException: Only one JAX-RS Application Class allowed. com.sun.jersey.api.core.PackagesResourceConfig com.sun.jersey.api.core.ClasspathResourceConfig com.sun.jersey.api.core.ScanningResourceConfig com.sun.jersey.api.core.ClassNamesResourceConfig com.sun.jersey.server.impl.application.DeferredResourceConfig com.sun.jersey.api.core.DefaultResourceConfig com.sun.jersey.api.core.WebAppResourceConfig com.sun.jersey.api.core.ResourceConfig com.sun.jersey.api.core.ApplicationAdapter
+
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.checkComplete(DeployersImpl.java:1370) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.deployers.DeployersImpl.checkComplete(DeployersImpl.java:1316) [:2.2.0.GA]
+	at org.jboss.deployers.plugins.main.MainDeployerImpl.checkComplete(MainDeployerImpl.java:968) [:2.2.0.GA]
+	at org.jboss.system.server.profileservice.deployers.MainDeployerPlugin.checkComplete(MainDeployerPlugin.java:82) [:6.0.0.Final]
+	at org.jboss.profileservice.dependency.ProfileControllerContext$DelegateDeployer.checkComplete(ProfileControllerContext.java:138) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner$HDScanAction.deploy(HDScanner.java:246) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner$HDScanAction.complete(HDScanner.java:192) [:0.2.2]
+	at org.jboss.profileservice.management.TwoPCActionWrapper.doComplete(TwoPCActionWrapper.java:57) [:0.2.2]
+	at org.jboss.profileservice.management.actions.AbstractTwoPhaseModificationAction.complete(AbstractTwoPhaseModificationAction.java:74) [:0.2.2]
+	at org.jboss.profileservice.management.actions.AbstractTwoPhaseModificationAction.prepare(AbstractTwoPhaseModificationAction.java:95) [:0.2.2]
+	at org.jboss.profileservice.management.ModificationSession.prepare(ModificationSession.java:87) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.internalPerfom(AbstractActionController.java:234) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.performWrite(AbstractActionController.java:213) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.perform(AbstractActionController.java:150) [:0.2.2]
+	at org.jboss.profileservice.management.AbstractActionController.perform(AbstractActionController.java:135) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner.scan(HDScanner.java:146) [:0.2.2]
+	at org.jboss.profileservice.deployment.hotdeploy.HDScanner.run(HDScanner.java:90) [:0.2.2]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:441) [:1.6.0_24]
+	at java.util.concurrent.FutureTask$Sync.innerRunAndReset(FutureTask.java:317) [:1.6.0_24]
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:150) [:1.6.0_24]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$101(ScheduledThreadPoolExecutor.java:98) [:1.6.0_24]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.runPeriodic(ScheduledThreadPoolExecutor.java:180) [:1.6.0_24]
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:204) [:1.6.0_24]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:886) [:1.6.0_24]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:908) [:1.6.0_24]
+	at java.lang.Thread.run(Thread.java:662) [:1.6.0_24]
+
