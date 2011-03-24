@@ -1,3 +1,7 @@
+Seam International CR2 fails to deploy to Glassfish 3.1 with java.lang.ClassNotFoundException: org.joda.time.DateTimeZone
+
+Bug report ID is: https://issues.jboss.org/browse/SEAMINTL-27
+
 Deployment exception is:
 
 SEVERE: Class [ org/joda/time/DateTimeZone ] not found. Error while loading [ class org.jboss.seam.international.datetimezone.DefaultDateTimeZoneProducer ]
