@@ -1,3 +1,5 @@
+Bug report reference: https://issues.jboss.org/browse/SEAMFACES-118
+
 Deployment log and failure for this test case, deploying to Glassfish 3.1:
 
 WARNING: RAR8068: Using default datasource : __ds_jdbc_ra for pool : classads-database-pool
