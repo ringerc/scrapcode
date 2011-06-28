@@ -1,0 +1,66 @@
+This is a test case for http://java.net/jira/browse/GLASSFISH-16917
+
+The four minimal web apps:
+
+	leaktest2-cdi-only
+	leaktest2-ManagedBean-only
+	leaktest2-no-leak-no-cdi-no-ManagedBean
+	leaktest2-no-leak-classic-jsp-bean
+
+demonstrate the issue.
+
+leaktest2-no-leak-no-cdi-no-ManagedBean can be deployed and undeployed without
+a classloader leak. It's the minimal base on which the two failing test cases
+and the other successful test case are built.
+
+leaktest2-no-leak-classic-jsp-bean also deploys and undeploys without leaking.
+It accesses a bean via <jsp:useBean/> and <jsp:getBean/> .
+
+leaktest2-cdi-only and leaktest2-ManagedBean-only, unlike the successful tests,
+leak the classloader when undeployed. Repeated deployments will eventually
+cause exhaustion of PermGen space, though it'll take a *long* time with a
+project this tiny. Real world projects with the same issue may exhaust PermGen
+space in one or two re-deployments during a test cycle.
+
+Note that updating weld-osgi-bundle to version 1.1.1 has no effect on these
+tests. The results are the same with the stock Glassfish weld-osgi-bundle and
+with an updated one.
+
+HOW TO USE THESE TEST CASES
+===========================
+
+You'll need a Linux system or a UNIX/BSD system with bash to use the test
+scripts. Otherwise, just follow the steps they perform manually.
+
+I automated my testing to ensure I followed the same steps the same way for
+each test, and because I was doing many tens of iterations of change-build-test
+so I needed to save time. To use the scripts you will have to modify the
+paths at the top of test.sh to fit your environment.
+
+To test, cd into the directory for the testcase you want to try, then run
+../test.sh . Once test.sh finishes you'll see jhat telling you that the http
+server is available on port 7000. At this point, run ../leak-report.sh in
+another terminal to get your leak report.
+
+You can now kill jhat with control-C, causing test.sh to terminate.
+
+WHERE TO GO FROM HERE
+=====================
+
+These test cases provide about the simplest demo I could make of the leaks.
+I haven't the foggiest how to track them down from here, but I can offer a few
+starting points.
+
+First: after running jhat and getting a confirmed leak, you can run additional
+tests and queries before killing jhat. Visit http://localhost:7000/ for a report,
+or http://localhost:7000/oql/ for the Object Query Language page.
+
+The query:
+
+  select heap.findClass('com.mycompany.leaktest2.TestBean').loader
+
+will report the classloader that was leaked. You can then click on the
+classloader to examine its references. Click "exclude weak refs" (at the
+bottom) to get a reachability report. You will note that reachable paths to the
+classloader appear to be through a TimerThread associated with a Timer that
+appears to be associated in some way with JSF code.
