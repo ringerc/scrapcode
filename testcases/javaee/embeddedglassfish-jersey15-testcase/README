@@ -1,5 +1,18 @@
-This project fails to run on Embedded Glassfish, complaining that it cannot find
-ant. If beans.xml is removed to disable CDI, the failure vanishes.
+Prior to tag embedded-glassfish-jersey15-broken and commit
+1f79ab188635ebe7e8d8fe9e9b5fe26ccfc882b8, this project failed to run on
+Embedded Glassfish, complaining that it cannot find ant. If beans.xml is
+removed to disable CDI, the failure vanishes.
+
+It appears that Embedded Glassfish doesn't take a second copy of Jersey being
+provided very well, though Glassfish standalone is quite happy with it.
+Switching the dependency to provided was all it took to fix the problem, as
+Glassfish 3.1 already bundles Jersey 1.5.
+
+It's not clear why this failure only arose when CDI was enabled, though. Nor is
+it clear why it manifested its self as an error accessing Ant. I suspect
+there's still something to find here.
+
+
 
 Jersey 1.5 can (optionally) use Ant to produce WADL metadata for web services.
 However, this has been DISABLED in web.xml by setting the init param

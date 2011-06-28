@@ -7,7 +7,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>embeddeddemo Web App</name>
+    <name>glassfish embedded jersey Web App</name>
 
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
@@ -41,6 +41,8 @@
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-server</artifactId>
             <version>1.5</version>
+            <!-- Glassfish 3.1 bundles Jersey 1.5 -->
+            <scope>provided</scope>
         </dependency>
         
     </dependencies>
@@ -127,7 +129,7 @@
                         <goalPrefix>embedded-glassfish</goalPrefix>
                         <app>target/postupload-glassfish3embedded.war</app>
                         <port>8080</port>
-                        <contextRoot>postupload</contextRoot>
+                        <contextRoot>embeddeddemo</contextRoot>
                     </configuration>
                     <executions>
                         <execution>
