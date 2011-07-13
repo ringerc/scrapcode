@@ -2,7 +2,7 @@
 <!DOCTYPE glassfish-web-app PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 Servlet 3.0//EN" "http://glassfish.org/dtds/glassfish-web-app_3_0-1.dtd">
 <glassfish-web-app error-url="">
   <resource-ref>
-    <res-ref-name>jdbc/apprefname</res-ref-name>
+    <res-ref-name>apprefname</res-ref-name>
     <jndi-name>jdbc/__default</jndi-name>
   </resource-ref>
   <class-loader delegate="true"/>
