@@ -1,0 +1,9 @@
+http://blogs.oracle.com/JagadishPrasath/entry/applying_scope_for_jdbc_resources
+
+http://blogs.oracle.com/enterprisetechtips/entry/datasource_resource_definition_in_java
+
+http://javahowto.blogspot.com/2010/04/datasourcedefinition-examples-in-javaee.html
+
+http://javahowto.blogspot.com/2006/07/when-and-where-not-to-use-javacompenv.html
+
+http://java.net/jira/browse/GLASSFISH-17024
