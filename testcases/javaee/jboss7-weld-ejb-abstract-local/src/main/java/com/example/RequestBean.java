@@ -13,4 +13,5 @@ public class RequestBean {
     public String getSomething() {
         return ejb.doSomething();
     }
+    
 }
