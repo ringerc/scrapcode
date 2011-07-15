@@ -14,4 +14,11 @@ public class RequestBean {
         return ejb.getMsg();
     }
     
+    public String getSomething() {
+        if (ejb.doSomething() == null) {
+            return "Result of doSomething was null as expected";
+        } else {
+            return "WTF? Result of doSomething non-null and not exception";
+        }
+    }
 }

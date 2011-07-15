@@ -1,7 +1,11 @@
 package com.example;
 
-public abstract class AbstractBase {
+public abstract class AbstractBase<T> {
     
-    public abstract String getMsg();
+    public abstract T getMsg();
+    
+    public T doSomething() {
+        return (T)null;
+    }
     
 }
