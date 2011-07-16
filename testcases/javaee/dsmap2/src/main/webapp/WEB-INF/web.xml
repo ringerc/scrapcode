@@ -22,13 +22,15 @@
         <welcome-file>faces/index.xhtml</welcome-file>
     </welcome-file-list>
     <data-source>
-        <name>java:app/env/classads-ds</name>
-        <class-name>org.postgresql.ds.PGSimpleDataSource</class-name>
+        <name>java:app/env/testDS</name>
+        <class-name>org.apache.derby.jdbc.ClientDriver</class-name>
         <server-name>localhost</server-name>
-        <port-number>5432</port-number>
-        <database-name>classads</database-name>
+        <port-number>1527</port-number>
+        <database-name>testDB</database-name>
         <user>APP</user>
         <password>APP</password>
+        <description>Data source test</description>
+        <isolation-level>TRANSACTION_READ_COMMITTED</isolation-level>
         <property>
             <name>connectionAttributes</name>
             <value>;create=true</value>
