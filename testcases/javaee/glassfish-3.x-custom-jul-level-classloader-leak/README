@@ -1,0 +1,73 @@
+This is a test case for [BUG NEVER REPORTED]
+
+It turns out that this issue was already worked around in Glassfish, so it should
+not be causing problems. I initially thought it was because of 
+  http://java.net/jira/browse/GLASSFISH-16917
+but once that's fixed, neither the custom-log nor non-custom-log cases fail.
+
+
+The two minimal web apps:
+
+    leaktest-logging
+    leaktest-nologging
+
+would demonstrate the issue, if there were one.
+
+leaktest-nologging can be deployed and undeployed without a classloader leak.
+It's the minimal base on which the failing test case is built.
+
+leaktest-logging, would, unlike the other test case, leak the classloader when
+undeployed. Repeated deployments would eventually cause exhaustion of PermGen
+space, though it'd take a *long* time with a project this tiny. Real world
+projects with the same issue may exhaust PermGen space in one or two
+re-deployments during a test cycle.
+
+These tests are also not affected by the fix in
+http://java.net/jira/browse/GLASSFISH-16917 though without that fix both test
+cases are likely to show a leak, instead of just the logging one.
+
+HOW TO USE THESE TEST CASES
+===========================
+
+You'll need a Linux system or a UNIX/BSD system with bash to use the test
+scripts. Otherwise, just follow the steps they perform manually.
+
+I automated my testing to ensure I followed the same steps the same way for
+each test, and because I was doing many tens of iterations of change-build-test
+so I needed to save time. To use the scripts you will have to modify the
+paths at the top of test.sh to fit your environment.
+
+To test, cd into the directory for the testcase you want to try, then run
+../test.sh . Once test.sh finishes you'll see jhat telling you that the http
+server is available on port 7000. At this point, run ../leak-report.sh in
+another terminal to get your leak report.
+
+You can now kill jhat with control-C, causing test.sh to terminate.
+
+WHERE TO GO FROM HERE
+=====================
+
+These test cases provide about the simplest demo I could make of the leaks.
+I haven't the foggiest how to track them down from here, but I can offer a few
+starting points.
+
+First: after running jhat and getting a confirmed leak, you can run additional
+tests and queries before killing jhat. Visit http://localhost:7000/ for a report,
+or http://localhost:7000/oql/ for the Object Query Language page.
+
+The query:
+
+  select heap.findClass('com.mycompany.leaktest2.TestBean').loader
+
+will report the classloader that was leaked. You can then click on the
+classloader to examine its references. Click "exclude weak refs" (at the
+bottom) to get a reachability report.
+
+This is a well documented source of leaks. See:
+
+	http://blogs.oracle.com/fkieviet/entry/classloader_leaks_the_dreaded_java
+	http://www.mhaller.de/archives/140-Memory-leaks-et-alii.html
+	http://wiki.apache.org/commons/Logging/UndeployMemoryLeak
+
+... and can be fixed by the container providing an overridden version of
+LogManager that uses weak references to log levels.

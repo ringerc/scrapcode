@@ -2,14 +2,34 @@
 
 set -e -u
 
-MAVEN=$HOME/projects/3rdparty/apache-maven/bin/mvn
-ASADMIN=$HOME/java/glassfish3.2b06/bin/asadmin
+MAVEN=mvn
+ASADMIN=$HOME/java/glassfish3/bin/asadmin
 DOMAIN=domain1
 DOMAIN_URL=http://localhost:8080/
 WAR_ARCHIVE=target/leaktest2.war
 # Context root should not have a leading slash
 CONTEXT_ROOT=com.mycompany_leaktest2_war_1.0-SNAPSHOT
 DEPLOY_NAME=$CONTEXT_ROOT
+
+if ! test -e pom.xml; then
+	echo "You're not running this script from a test case directory."
+	echo "Please read the README for correct usage."
+	exit 1
+fi
+
+if ! test -x "$MAVEN" -o -x "`type -pf "$MAVEN"`"; then
+	echo "Cannot find maven. Check the setting for the MAVEN variable"
+	echo "at the top of test.sh ."
+	echo "Looked for maven as: \"$MAVEN\""
+	exit 1
+fi
+
+if ! test -x "$ASADMIN" -o -x "`type -pf "$ASADMIN"`"; then
+	echo "Cannot find asadmin. Check the setting for the ASADMIN variable"
+	echo "at the top of test.sh"
+	echo "Looked for asadmin as: \"$ASADMIN\""
+	exit 1
+fi
 
 JHAT_ARGS="-J-Xmx2000m -port 7000"
 

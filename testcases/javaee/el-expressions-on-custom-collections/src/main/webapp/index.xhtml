@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core">
+    <h:head>
+        <title>Facelet Title</title>
+    </h:head>
+    <h:body>
+        <h:form id="typeForm">
+            <p><h:selectOneMenu id="typeSelect" value="#{testBean.collectionType}"
+                                onchange="document.forms['typeForm'].submit();">
+                <f:selectItems value="#{testBean.collectionTypes}" var="i"
+                               itemValue="#{i}" itemLabel="#{i}"/>
+            </h:selectOneMenu>
+            <h:commandLink id="submit" type="submit">Re-render</h:commandLink></p>
+            
+            <hr/>
+            <p>Rendering collection of type: <h:outputText value="#{testBean.collectionType}"/></p>
+            <h:dataTable id="collectionTable" value="#{testBean.collection}" var="i">
+                <h:column>
+                    <f:facet name="heading">Values</f:facet>
+                    #{i.string}
+                </h:column>
+            </h:dataTable>
+        </h:form>
+    </h:body>
+</html>
+

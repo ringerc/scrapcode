@@ -1,0 +1,5 @@
+contextClassLoader != null && daemon == true && !(cl.getClass().isInstance(java.net.URLClassLoader.class) || cl.getClass().isInstance(sun.misc.Launcher$AppClassLoader.class) || cl.getClass().isInstance(org.glassfish.internal.api.DelegatingClassLoader.class))
+
+breaks at:
+
+
