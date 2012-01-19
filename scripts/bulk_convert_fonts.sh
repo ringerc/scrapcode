@@ -6,6 +6,8 @@
 # This script is released into the public domain. I grant no warranty
 # and will accept no liability of any kind for any use of this script. 
 #
+# See: http://blog.ringerc.id.au/2011/12/bulk-conversion-of-opentype-otf-to.html
+#
 set -e -u
 
 # Number of parallel conversion threads to run
