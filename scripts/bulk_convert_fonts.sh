@@ -8,6 +8,9 @@
 #
 # See: http://blog.ringerc.id.au/2011/12/bulk-conversion-of-opentype-otf-to.html
 #
+# Pass settings through the environment, eg:
+#   CPUS=2 OUTFORMAT=.pfb ./convert.sh "dirtoconvert"
+# 
 set -e -u
 
 # Number of parallel conversion threads to run
@@ -18,7 +21,7 @@ set -e -u
 # outlines to quadratic as part of conversion to type 1 or to otf,
 # you're going to really hurt for RAM with more than one conversion job.
 #
-declare -i CPUS=1
+declare -i CPUS=${CPUS:-1}
 
 # Max number of font files each fontforge instance may process
 # before it is terminated and another is launched. This is necessary
@@ -27,9 +30,9 @@ declare -i CPUS=1
 # number of parallel conversion runs ($CPUS) if you find your
 # system starts running out of memory while converting fonts.
 #
-declare -i FFNFILES=10
+declare -i FFNFILES=${FFNFILES:-10}
 
-# Output format, one of .pfb .ttf .otf .svg
+# Output format, one of .pfb .ttf .svg (see FontForge docs for Generate() for full list)
 OUTFORMAT=${OUTFORMAT:-.ttf}
 
 if test $# -lt 1; then
