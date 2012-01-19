@@ -15,7 +15,7 @@
  * Don't use this code for anything you care about, there's a decently
  * written library for the sensor here:
  *
- *  https://github.com/nethoncho/Arduino-DHT22">on GitHub: nethoncho/Arduino-DHT22
+ *  https://github.com/nethoncho/Arduino-DHT22
  *
  * ... which I've patched for Arduino 1.0 support and a few other tweaks and
  * pushed to here:
