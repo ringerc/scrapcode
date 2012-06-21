@@ -1,0 +1,85 @@
+This test case demonstrates two issues with EclipseLink on JBoss AS 7,
+at least when EclipseLink is deployed as a JBoss AS 7 module.
+
+ISSUES DEMONSTRATED
+===================
+
+It is usually desirable to produce one test case for one bug. In this case
+it's necessary to apply several workarounds to get to the bug I'm actually
+trying to demonstrate, though, so there's a chain of tests.
+
+
+First, classes appear to have to be explicitly listed in persistence.xml.
+If unlisted class scanning is relied upon, entities aren't found.
+Demonstrated by:
+	NoWorkaroundsTest
+Worked around in:
+	ExplicitClassesTest
+	ExplicitClassesAndTxWorkaroundTest
+	
+
+Second, https://bugs.eclipse.org/bugs/show_bug.cgi?id=365704 (marked fixed)
+doesn't seem to be; the TransactionManager isn't found.
+Demonstrated by:
+	NoWorkaroundsTest
+	ExplicitClassesTest
+Worked around in:
+	ExplicitClassesAndTxWorkaroundTest
+
+
+Third, even with those two issues worked around, the static metamodel classes
+don't get populated at runtime. Their members are null. It's possible that
+dynamic weaving is not taking place.
+
+
+HOW TO RUN THE TESTS
+====================
+
+These three issues appear to render EclipseLink unusable on JBoss AS 7, at least
+when deployed as a module.
+
+INSTALL AS7 MODULE FOR ECLIPSELINK
+----------------------------------
+
+To run this test case, you must first install the module. A module skeleton is
+provided in jboss7modules/ but I've omitted the EclipseLink archive to save space.
+
+The bundled module.xml specifies eclipselink-2.4.0-RC2.jar as the target archive,
+and that's what I tested with. If you want to use a different version or filename,
+specify it by editing module.xml.
+
+To prepare and install the module:
+
+mvn depdendency:resolve
+cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0-RC2/eclipselink-2.4.0-RC2.jar\
+   jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0-RC2.jar
+cp -r jboss7modules/* $JBOSS_HOME/modules/
+
+... then restart AS7 - not sure if that's necessary, but best to be safe.
+
+RUN THE TESTS
+-------------
+
+mvn clean test
+
+UNDERSTANDING THE RESULTS
+-------------------------
+
+Expected failures are:
+
+staticMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
+isTransactional(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
+dynamicMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
+databaseAccessWorks(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
+
+staticMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.ExplicitClassesTest)
+isTransactional(id.au.ringerc.testcase.as7.eclipselink.ExplicitClassesTest)
+databaseAccessWorks(id.au.ringerc.testcase.as7.eclipselink.ExplicitClassesTest)
+
+staticMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.ExplicitClassesAndTxWorkaroundTest)
+
+See the comments in the code, and the explanatory text above, to understand why
+each test fails and how the workarounds change the results.
+
+Note that no tests should be reported as "in error". The above failures are
+expected, but no test *errors* should be encountered.

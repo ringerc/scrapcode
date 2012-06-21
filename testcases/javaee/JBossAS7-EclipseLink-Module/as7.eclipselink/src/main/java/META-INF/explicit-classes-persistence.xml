@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
 	<persistence-unit name="as7.eclipselink">
-			<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
 	        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
-		<exclude-unlisted-classes>false</exclude-unlisted-classes>
+		<!-- Explicitly list entity classes instead of relying on exclude-unlisted-classes -->
+		<class>id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity</class>
+		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 		<properties>
 			<property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
 		</properties>
