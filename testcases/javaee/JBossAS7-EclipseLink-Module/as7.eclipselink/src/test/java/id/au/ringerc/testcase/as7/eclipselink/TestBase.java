@@ -1,19 +1,15 @@
 package id.au.ringerc.testcase.as7.eclipselink;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity;
+import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.CharBuffer;
-
-import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity;
-import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
 
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
@@ -26,12 +22,9 @@ import javax.persistence.metamodel.EntityType;
 
 import org.eclipse.persistence.Version;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.formatter.Formatter;
 import org.jboss.shrinkwrap.api.formatter.Formatters;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * The base class for all the test variants performs exactly the same series

@@ -1,17 +1,14 @@
 package id.au.ringerc.testcase.as7.eclipselink;
 
-import static org.junit.Assert.assertNotNull;
+import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
 
 import java.io.IOException;
-
-import javax.inject.Inject;
-
-import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity;
-import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
+import java.util.logging.Logger;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,6 +32,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public class ExplicitClassesAndTxWorkaroundTest extends TestBase {
+	
+	private static final Logger logger = Logger.getLogger(ExplicitClassesAndTxWorkaroundTest.class.getName());
 
 	@Deployment
 	public static WebArchive makeDeployment() throws IOException {
@@ -59,10 +58,14 @@ public class ExplicitClassesAndTxWorkaroundTest extends TestBase {
 		super.staticMetaModelWorks();
 	}
 
-	// Succeeds, we worked around transaction management issues
+	// Works, bizarrely. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=383199
 	@Test
-	public void isTransactional() {
-		super.isTransactional();
+	public void staticMetamodelWorksAfterDynamicModelAccess() {
+		logger.info("Before dynamic metamodel access, DummyEntity_.id is " + DummyEntity_.id);
+		Assert.assertNull(DummyEntity_.id);
+		super.dynamicMetaModelWorks();
+		Assert.assertNotNull(DummyEntity_.id);
+		logger.info("After dynamic metamodel access, DummyEntity_.id is " + DummyEntity_.id);
 	}
 
 	// Works because we've explicitly listed classes
@@ -71,6 +74,12 @@ public class ExplicitClassesAndTxWorkaroundTest extends TestBase {
 		super.dynamicMetaModelWorks();
 	}
 	
+	// Succeeds, we worked around transaction management issues
+	@Test
+	public void isTransactional() {
+		super.isTransactional();
+	}
+
 	// Succeeds, we've worked around transaction management issues
 	@Test
 	public void databaseAccessWorks() {

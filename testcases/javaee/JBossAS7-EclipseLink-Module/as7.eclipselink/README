@@ -91,8 +91,9 @@ UNDERSTANDING THE RESULTS
 Expected failures are:
 
 staticMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
-isTransactional(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
+staticMetamodelWorksAfterDynamicModelAccess(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
 dynamicMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
+isTransactional(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
 databaseAccessWorks(id.au.ringerc.testcase.as7.eclipselink.NoWorkaroundsTest)
 
 staticMetaModelWorks(id.au.ringerc.testcase.as7.eclipselink.ExplicitClassesTest)

@@ -1,18 +1,14 @@
 package id.au.ringerc.testcase.as7.eclipselink;
 
-import static org.junit.Assert.assertNotNull;
+import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
 
 import java.io.IOException;
 
-import javax.inject.Inject;
-
-import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity;
-import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
+import java.util.logging.Logger;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Ignore;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,6 +24,8 @@ import org.junit.runner.RunWith;
  */
 @RunWith(Arquillian.class)
 public class NoWorkaroundsTest extends TestBase {
+
+	private static final Logger logger = Logger.getLogger(NoWorkaroundsTest.class.getName());
 
 	@Deployment
 	public static WebArchive makeDeployment() throws IOException {
@@ -52,16 +50,26 @@ public class NoWorkaroundsTest extends TestBase {
 		super.staticMetaModelWorks();
 	}
 
-	// Will fail, EclipseLink can't find the transaction manager
+	// Expected to fail; no entities known for metamodel
 	@Test
-	public void isTransactional() {
-		super.isTransactional();
+	public void staticMetamodelWorksAfterDynamicModelAccess() {
+		logger.info("Before dynamic metamodel access, DummyEntity_.id is " + DummyEntity_.id);
+		Assert.assertNull(DummyEntity_.id);
+		super.dynamicMetaModelWorks();
+		Assert.assertNotNull(DummyEntity_.id);
+		logger.info("After dynamic metamodel access, DummyEntity_.id is " + DummyEntity_.id);
 	}
 
 	// Will fail, EclipseLink can't find model classes
 	@Test
 	public void dynamicMetaModelWorks() {
 		super.dynamicMetaModelWorks();
+	}
+
+	// Will fail, EclipseLink can't find the transaction manager
+	@Test
+	public void isTransactional() {
+		super.isTransactional();
 	}
 
 	// Will fail, EclipseLink can't find the transaction manager
