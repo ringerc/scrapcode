@@ -50,17 +50,40 @@ specify it by editing module.xml.
 
 To prepare and install the module:
 
-mvn depdendency:resolve
-cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0-RC2/eclipselink-2.4.0-RC2.jar\
-   jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0-RC2.jar
-cp -r jboss7modules/* $JBOSS_HOME/modules/
+  mvn depdendency:resolve
+  cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0-RC2/eclipselink-2.4.0-RC2.jar\
+     jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0-RC2.jar
+  cp -r jboss7modules/* $JBOSS_HOME/modules/
 
-... then restart AS7 - not sure if that's necessary, but best to be safe.
+INCREASE LOGGING DETAIL
+-----------------------
+
+Now optionally increase log detail for EclipseLink. To do this,
+stop AS7 (important) then in $JBOSS_HOME/standalone/configuration/standalone.xml
+find <subsystem xmlns="urn:jboss:domain:logging:1.1"> and under it add/replace
+the stanzas:
+
+	<logger category="org.eclipse.persistence">
+	    <level name="TRACE"/>
+	</logger>
+	<logger category="org.jboss.as.jpa">
+	    <level name="TRACE"/>
+	</logger>
+
+
 
 RUN THE TESTS
 -------------
 
-mvn clean test
+Start JBoss AS 7. From the command line, that's:
+
+  $JBOSS_HOME/jboss/standalone.sh
+
+Once running, excute:
+
+  mvn clean test
+
+to run the tests
 
 UNDERSTANDING THE RESULTS
 -------------------------

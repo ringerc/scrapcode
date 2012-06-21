@@ -51,8 +51,10 @@ class TestBase {
 		WebArchive jar = ShrinkWrap.create(WebArchive.class)
 				.addAsResource(persistenceXml, "META-INF/persistence.xml")
 				.addAsWebInfResource(new File("src/main/java/META-INF/beans.xml"), "beans.xml")
-				.addClasses(DBProvider.class, DummyEntity.class, DummyEntity_.class, DummyEJB.class, TestBase.class)
-				.addClasses(JBossAS7ServerPlatform.class, JBossAS7ServerPlatform.JBossAS7TransactionController.class);
+				.addClasses(
+						DBProvider.class, DummyEntity.class, DummyEntity_.class, DummyEJB.class, TestBase.class,
+						JBossAS7ServerPlatform.class, JBossAS7ServerPlatform.JBossAS7TransactionController.class,
+						JBossLogger.class);
 		if (verbose) {
 			printPersistenceXml(persistenceXml);
 			System.err.println("\n---");
