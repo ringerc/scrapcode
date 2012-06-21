@@ -1,0 +1,81 @@
+This test demonstrates that, in contrast to the other test case provided using
+@DataSourceDefinition, when the jboss admin console is used to create a
+datasource from a java.sql.Driver the transaction management works CORRECTLY.
+
+To run this test, you need a PostgreSQL database with a user named 'regress'
+(password also 'regress') that has connect permissions to a database named
+'regress'.
+
+You also need a locally running JBoss AS 7.1.1.Final (tested; other versions
+probably have the same issue) listening on the default ports.
+
+This version of the test case uses a container-provided datasource created using
+the jboss admin console. Instructions follow.
+
+JBoss AS 7 *must* never produce an EntityManager in autocommit mode within
+a transactional method. Either deployment should fail, method invocation
+should fail, or the method should have a transactional entity manager.
+
+CREATING THE USER AND DATABASE
+------------------------------
+
+To configure the PostgreSQL environment, you need a psql shell running as
+a superuser or a user with CREATEDB CREATEUSER rights. On most Linux
+systems this will get you one:
+
+  sudo -u postgres psql
+
+and on Windows, run psql and connect as user "postgres" with the password
+you set during install.
+
+Once you have a suitable psql shell, run:
+  
+  create user regress password 'regress';
+  create database regress owner regress;
+
+CREATING THE DATASOURCE
+-----------------------
+
+Run
+
+  jboss-cli.sh --connect
+
+then
+
+  deploy postgresql-9.1-901-1.jdbc4.jar
+
+then
+
+  data-source add --name=test-ds --jndi-name=java:/datasources/test-ds --driver-name=postgresql-9.1-901-1.jdbc4.jar --driver-class=org.postgresql.Driver --connection-url=jdbc:postgresql://localhost/regress --user-name=regress --password=regress --jta=true --transaction-isolation=TRANSACTION_READ_COMMITTED --check-valid-connection-sql="SELECT 1;"
+
+then
+
+  data-source enable --name=test-ds
+
+RUNNING THE TEST
+----------------
+
+Then run the test:
+
+  mvn clean install
+  $YOUR_PREFERRED_BROWSER http://localhost:8080/AS7TxTest-1.0-SNAPSHOT/
+
+What should happen, as per the source code, is the display of a one-liner
+web page that says the database successfully performed an operation that can
+only be done within a transaction.
+
+When this test is run, that's exacly what happens, in contrast to what happens
+when the datasource is defined using @DataSourceDefinition as per the other
+test case.
+
+CLEANUP
+-------
+
+To undeploy the test, run:
+
+  mvn jboss-as:undeploy
+
+To clean up after the test, in a priveleged psql shell as before run:
+
+  DROP DATABASE regress;
+  DROP USER regress;

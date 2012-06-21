@@ -1,0 +1,42 @@
+This test uses a H2 database connection to demonstrate that JBoss AS 7
+violates the EJB3 spec by providing an EntityManager with autocommit on
+(ie: no open transaction) inside a business method annotated with
+  
+    @TransactionAttribute(TransactionAttributeType.REQUIRED)
+
+This test only requires a JBoss AS 7.1.1.Final install. H2 is fetched from
+Maven Central (we can't use the H2 bundled with JBoss AS 7 because it's not
+visible to the classloader).
+
+JBoss AS 7 *must* never produce an EntityManager in autocommit mode within
+a transactional method. Either deployment should fail, method invocation
+should fail, or the method should have a transactional entity manager.
+
+RUNNING THE TEST
+----------------
+
+Run the test:
+
+  mvn clean install
+  $YOUR_PREFERRED_BROWSER http://localhost:8080/AS7TxTest-1.0-SNAPSHOT/
+
+What should happen, as per the source code, is the display of a one-liner
+web page that says the database successfully performed an operation that can
+only be done within a transaction.
+
+What actually happens is that the server *thinks* it's within a transaction,
+but fails to actually create one (ie: autocommit remains on) so the transaction-only
+operation used for testing fails with:
+
+  javax.persistence.PersistenceException: org.hibernate.exception.GenericJDBCException: Savepoint is invalid: "TEST_TX_SP"; SQL statement: ROLLBACK TO SAVEPOINT test_tx_sp; [90063-166]
+
+That's because the previous `SAVEPOINT' statement ran in its own autocommit transaction,
+so the savepoint was created then immediately destroyed at commit time. There's no savepoint
+to roll back to when we issue the ROLLBACK.
+
+CLEANUP
+-------
+
+To undeploy the test, run:
+
+  mvn jboss-as:undeploy

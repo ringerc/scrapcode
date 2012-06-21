@@ -1,0 +1,72 @@
+This test uses a PostgreSQL database connection to demonstrate that JBoss AS 7
+violates the EJB3 spec by providing an EntityManager with autocommit on
+(ie: no open transaction) inside a business method annotated with
+  
+    @TransactionAttribute(TransactionAttributeType.REQUIRED)
+
+To run this test, you need a PostgreSQL database with a user named 'regress'
+(password also 'regress') that has connect permissions to a database named
+'regress'.
+
+You also need a locally running JBoss AS 7.1.1.Final (tested; other versions
+probably have the same issue) listening on the default ports.
+
+Note that we use org.postgresql.ds.PGSimpleDataSource for the
+@DataSourceDefinition in com.example.Database here. We are not permitted to use
+use org.postgresql.xa.PGXADataSource because it's a javax.sql.XADataSource and
+not also a javax.sql.DataSource. Attempting to use it results in:
+
+ java.lang.ClassCastException: org.postgresql.xa.PGXADataSource$$DataSourceProxy33 cannot be cast to javax.sql.DataSource
+
+An XADataSource is not also required to implement DataSource.
+
+JBoss AS 7 *must* never produce an EntityManager in autocommit mode within
+a transactional method. Either deployment should fail, method invocation
+should fail, or the method should have a transactional entity manager.
+
+CREATING THE USER AND DATABASE
+------------------------------
+
+To configure the PostgreSQL environment, you need a psql shell running as
+a superuser or a user with CREATEDB CREATEUSER rights. On most Linux
+systems this will get you one:
+
+  sudo -u postgres psql
+
+and on Windows, run psql and connect as user "postgres" with the password
+you set during install.
+
+Once you have a suitable psql shell, run:
+  
+  create user regress password 'regress';
+  create database regress owner regress;
+
+RUNNING THE TEST
+----------------
+
+Then run the test:
+
+  mvn clean install
+  $YOUR_PREFERRED_BROWSER http://localhost:8080/AS7TxTest-1.0-SNAPSHOT/
+
+What should happen, as per the source code, is the display of a one-liner
+web page that says the database successfully performed an operation that can
+only be done within a transaction.
+
+What actually happens is that the server *thinks* it's within a transaction,
+but fails to actually create one (ie: autocommit remains on) so the transaction-only
+operation used for testing fails with:
+
+  javax.persistence.PersistenceException: org.hibernate.exception.GenericJDBCException: ERROR: DECLARE CURSOR can only be used in transaction blocks
+
+CLEANUP
+-------
+
+To undeploy the test, run:
+
+  mvn jboss-as:undeploy
+
+To clean up after the test, in a priveleged psql shell as before run:
+
+  DROP DATABASE regress;
+  DROP USER regress;

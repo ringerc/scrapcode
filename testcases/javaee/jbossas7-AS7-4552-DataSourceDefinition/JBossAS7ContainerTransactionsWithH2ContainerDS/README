@@ -1,0 +1,24 @@
+This test demonstrates that container managed transactions work correctly with
+the H2 database using a datasource managed directly by JBoss AS 7. The
+ExampleDS is used, but a new datasource created via jboss-cli.sh works too.
+  
+RUNNING THE TEST
+----------------
+
+Then run the test:
+
+  mvn clean install
+  $YOUR_PREFERRED_BROWSER http://localhost:8080/AS7TxTest-1.0-SNAPSHOT/
+
+What should happen, as per the source code, is the display of a one-liner
+web page that says the database successfully performed an operation that can
+only be done within a transaction.
+
+That's exactly what happens.
+
+CLEANUP
+-------
+
+To undeploy the test, run:
+
+  mvn jboss-as:undeploy
