@@ -4,7 +4,7 @@
 -- This file should be generic and not depend on application roles or structures,
 -- as it's being listed here:
 --
---    
+--    https://wiki.postgresql.org/wiki/Audit_trigger_91plus    
 --
 -- This trigger was originally based on
 --   http://wiki.postgresql.org/wiki/Audit_trigger
@@ -23,10 +23,16 @@ COMMENT ON SCHEMA audit IS 'Out-of-table audit/history logging tables and trigge
 --
 --   http://www.postgresql.org/docs/9.1/static/functions-info.html
 --
--- Remember, every row you add takes up more audit table space and slows audit inserts.
+-- Remember, every column you add takes up more audit table space and slows audit
+-- inserts.
 --
--- Every index you add has a big impact too, so avoid adding indexes to the audit table
--- unless you REALLY need them.
+-- Every index you add has a big impact too, so avoid adding indexes to the
+-- audit table unless you REALLY need them. The hstore GIST indexes are
+-- particularly expensive.
+--
+-- It is sometimes worth copying the audit table, or a coarse subset of it that
+-- you're interested in, into a temporary table where you CREATE any useful
+-- indexes and do your analysis.
 --
 CREATE TABLE audit.logged_actions (
     event_id bigserial primary key,
@@ -80,6 +86,7 @@ DECLARE
     log_diffs boolean;
     h_old hstore;
     h_new hstore;
+    excluded_cols text[] = ARRAY[]::text[];
 BEGIN
     IF TG_WHEN <> 'AFTER' THEN
         RAISE EXCEPTION 'audit.if_modified_func() may only run as an AFTER trigger';
@@ -107,17 +114,26 @@ BEGIN
     IF NOT TG_ARGV[0]::boolean IS DISTINCT FROM 'f'::boolean THEN
         audit_row.client_query = NULL;
     END IF;
+
+    IF TG_ARGV[1] IS NOT NULL THEN
+        excluded_cols = TG_ARGV[1]::text[];
+    END IF;
+    
     IF (TG_OP = 'UPDATE' AND TG_LEVEL = 'ROW') THEN
         audit_row.row_data = hstore(OLD.*);
-        audit_row.changed_fields =  hstore(NEW.*) - audit_row.row_data;
+        audit_row.changed_fields =  (hstore(NEW.*) - audit_row.row_data) - excluded_cols;
+        IF audit_row.changed_fields = hstore('') THEN
+            -- All changed fields are ignored. Skip this update.
+            RETURN NULL;
+        END IF;
     ELSIF (TG_OP = 'DELETE' AND TG_LEVEL = 'ROW') THEN
-        audit_row.row_data = hstore(OLD.*);
+        audit_row.row_data = hstore(OLD.*) - excluded_cols;
     ELSIF (TG_OP = 'INSERT' AND TG_LEVEL = 'ROW') THEN
-        audit_row.row_data = hstore(NEW.*);
+        audit_row.row_data = hstore(NEW.*) - excluded_cols;
     ELSIF (TG_LEVEL = 'STATEMENT' AND TG_OP IN ('INSERT','UPDATE','DELETE','TRUNCATE')) THEN
         audit_row.statement_only = 't';
     ELSE
-        RAISE WARNING '[audit_if_modified_func] - Other action occurred: %, at %',TG_OP,clock_timestamp();
+        RAISE EXCEPTION '[audit.if_modified_func] - Trigger func added as trigger for unhandled case: %, %',TG_OP, TG_LEVEL;
         RETURN NULL;
     END IF;
     INSERT INTO audit.logged_actions VALUES (audit_row.*);
@@ -136,8 +152,24 @@ Optional parameters to trigger in CREATE TRIGGER call:
 
 param 0: boolean, whether to log the query text. Default 't'.
 
-There is no parameter to disable logging of values. Instead add this trigger as
-a 'FOR EACH STATEMENT' rather than 'FOR EACH ROW' trigger.
+param 1: text[], columns to ignore in updates. Default [].
+
+         Updates to ignored cols are omitted from changed_fields.
+
+         Updates with only ignored cols changed are not inserted
+         into the audit log.
+
+         Almost all the processing work is still done for updates
+         that ignored. If you need to save the load, you need to use
+         WHEN clause on the trigger instead.
+
+         No warning or error is issued if ignored_cols contains columns
+         that do not exist in the target table. This lets you specify
+         a standard set of ignored columns.
+
+There is no parameter to disable logging of values. Add this trigger as
+a 'FOR EACH STATEMENT' rather than 'FOR EACH ROW' trigger if you do not
+want to log row values.
 
 Note that the user name logged is the login role for the session. The audit trigger
 cannot obtain the active role because it is reset by the SECURITY DEFINER invocation
@@ -146,19 +178,23 @@ $body$;
 
 
 
-CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass, audit_rows boolean, audit_query_text boolean) RETURNS void AS $body$
+CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass, audit_rows boolean, audit_query_text boolean, ignored_cols text[]) RETURNS void AS $body$
 DECLARE
   stm_targets text = 'INSERT OR UPDATE OR DELETE OR TRUNCATE';
   _q_txt text;
+  _ignored_cols_snip text = '';
 BEGIN
     EXECUTE 'DROP TRIGGER IF EXISTS audit_trigger_row ON ' || quote_ident(target_table::text);
     EXECUTE 'DROP TRIGGER IF EXISTS audit_trigger_stm ON ' || quote_ident(target_table::text);
 
     IF audit_rows THEN
+        IF array_length(ignored_cols,1) > 0 THEN
+            _ignored_cols_snip = ', ' || quote_literal(ignored_cols);
+        END IF;
         _q_txt = 'CREATE TRIGGER audit_trigger_row AFTER INSERT OR UPDATE OR DELETE ON ' || 
                  quote_ident(target_table::text) || 
                  ' FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func(' ||
-                 quote_literal(audit_query_text) || ');';
+                 quote_literal(audit_query_text) || _ignored_cols_snip || ');';
         RAISE NOTICE '%',_q_txt;
         EXECUTE _q_txt;
         stm_targets = 'TRUNCATE';
@@ -176,19 +212,28 @@ END;
 $body$
 language 'plpgsql';
 
-COMMENT ON FUNCTION audit.audit_table(regclass, boolean, boolean) IS $body$
+COMMENT ON FUNCTION audit.audit_table(regclass, boolean, boolean, text[]) IS $body$
 Add auditing support to a table.
 
 Arguments:
    target_table:     Table name, schema qualified if not on search_path
    audit_rows:       Record each row change, or only audit at a statement level
    audit_query_text: Record the text of the client query that triggered the audit event?
+   ignored_cols:     Columns to exclude from update diffs, ignore updates that change only ignored cols.
 $body$;
 
+-- Pg doesn't allow variadic calls with 0 params, so provide a wrapper
+CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass, audit_rows boolean, audit_query_text boolean) RETURNS void AS $body$
+SELECT audit.audit_table($1, $2, $3, ARRAY[]::text[]);
+$body$ LANGUAGE SQL;
+
+-- And provide a convenience call wrapper for the simplest case
+-- of row-level logging with no excluded cols and query logging enabled.
+--
 CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass) RETURNS void AS $$
 SELECT audit.audit_table($1, BOOLEAN 't', BOOLEAN 't');
 $$ LANGUAGE 'sql';
 
 COMMENT ON FUNCTION audit.audit_table(regclass) IS $body$
-Add auditing support to the given table. Row-level changes will be logged with diffs between updates and full client query text
+Add auditing support to the given table. Row-level changes will be logged with full client query text. No cols are ignored.
 $body$;
