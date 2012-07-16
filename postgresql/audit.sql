@@ -1,14 +1,19 @@
 -- An audit history is important on most tables. Provide an audit trigger that logs to
 -- a dedicated audit table for the major relations.
 --
--- This trigger is a somewhat modified version of
+-- This file should be generic and not depend on application roles or structures,
+-- as it's being listed here:
+--
+--    
+--
+-- This trigger was originally based on
 --   http://wiki.postgresql.org/wiki/Audit_trigger
+-- but has been completely rewritten.
 
 CREATE EXTENSION IF NOT EXISTS hstore;
 
 CREATE SCHEMA audit;
 REVOKE ALL ON SCHEMA audit FROM public;
-GRANT USAGE ON SCHEMA audit TO bs_admin;
 
 COMMENT ON SCHEMA audit IS 'Out-of-table audit/history logging tables and trigger functions';
 
@@ -27,6 +32,7 @@ CREATE TABLE audit.logged_actions (
     event_id bigserial primary key,
     schema_name text not null,
     table_name text not null,
+    relid oid not null,
     session_user_name text,
     action_tstamp_tx TIMESTAMP WITH TIME ZONE NOT NULL,
     action_tstamp_stm TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -37,19 +43,18 @@ CREATE TABLE audit.logged_actions (
     client_port integer,
     client_query text not null,
     action TEXT NOT NULL CHECK (action IN ('I','D','U', 'T')),
-    before_data hstore,
-    after_data hstore,
-    statement_only boolean not null,
-    row_diffs boolean
+    row_data hstore,
+    changed_fields hstore,
+    statement_only boolean not null
 );
 
 REVOKE ALL ON audit.logged_actions FROM public;
-GRANT SELECT ON audit.logged_actions TO bs_admin;
 
 COMMENT ON TABLE audit.logged_actions IS 'History of auditable actions on audited tables, from audit.if_modified_func()';
 COMMENT ON COLUMN audit.logged_actions.event_id IS 'Unique identifier for each auditable event';
 COMMENT ON COLUMN audit.logged_actions.schema_name IS 'Database schema audited table for this event is in';
 COMMENT ON COLUMN audit.logged_actions.table_name IS 'Non-schema-qualified table name of table event occured in';
+COMMENT ON COLUMN audit.logged_actions.relid IS 'Table OID. Changes with drop/create. Get with ''tablename''::regclass';
 COMMENT ON COLUMN audit.logged_actions.session_user_name IS 'Login / session user whose statement caused the audited event';
 COMMENT ON COLUMN audit.logged_actions.action_tstamp_tx IS 'Transaction start timestamp for tx in which audited event occurred';
 COMMENT ON COLUMN audit.logged_actions.action_tstamp_stm IS 'Statement start timestamp for tx in which audited event occurred';
@@ -60,14 +65,12 @@ COMMENT ON COLUMN audit.logged_actions.client_port IS 'Remote peer IP port addre
 COMMENT ON COLUMN audit.logged_actions.client_query IS 'Top-level query that caused this auditable event. May be more than one statement.';
 COMMENT ON COLUMN audit.logged_actions.application_name IS 'Application name set when this audit event occurred. Can be changed in-session by client.';
 COMMENT ON COLUMN audit.logged_actions.action IS 'Action type; I = insert, D = delete, U = update, T = truncate';
-COMMENT ON COLUMN audit.logged_actions.before_data IS 'Record value before audited event. May be only changed cols. Null for INSERT and for statement level triggers.';
-COMMENT ON COLUMN audit.logged_actions.after_data IS 'Record value from after audited event. May be only changed cols. Null for INSERT and for statement level triggers.';
+COMMENT ON COLUMN audit.logged_actions.row_data IS 'Record value. Null for statement-level trigger. For INSERT this is the new tuple. For DELETE and UPDATE it is the old tuple.';
+COMMENT ON COLUMN audit.logged_actions.changed_fields IS 'New values of fields changed by UPDATE. Null except for row-level UPDATE events.';
 COMMENT ON COLUMN audit.logged_actions.statement_only IS '''t'' if audit event is from an FOR EACH STATEMENT trigger, ''f'' for FOR EACH ROW';
-COMMENT ON COLUMN audit.logged_actions.row_diffs IS '''t'' if before_data and after_data only contain changed columns for row triggers';
 
-CREATE INDEX logged_actions_schema_table_idx ON audit.logged_actions(((schema_name||'.'||table_name)::TEXT));
-CREATE INDEX logged_actions_action_tstamp_tx_idx ON audit.logged_actions(action_tstamp_tx);
-CREATE INDEX logged_actions_action_tstamp_tx_stm ON audit.logged_actions(action_tstamp_stm);
+CREATE INDEX logged_actions_relid_idx ON audit.logged_actions(relid);
+CREATE INDEX logged_actions_action_tstamp_tx_stm_idx ON audit.logged_actions(action_tstamp_stm);
 CREATE INDEX logged_actions_action_idx ON audit.logged_actions(action);
 
 CREATE OR REPLACE FUNCTION audit.if_modified_func() RETURNS TRIGGER AS $body$
@@ -86,6 +89,7 @@ BEGIN
         nextval('audit.logged_actions_event_id_seq'), -- event_id
         TG_TABLE_SCHEMA::text,                        -- schema_name
         TG_TABLE_NAME::text,                          -- table_name
+        TG_RELID,                                     -- relation OID for much quicker searches
         session_user::text,                           -- session_user_name
         current_timestamp,                            -- action_tstamp_tx
         statement_timestamp(),                        -- action_tstamp_stm
@@ -96,28 +100,20 @@ BEGIN
         inet_client_port(),                           -- client_port
         current_query(),                              -- top-level query or queries (if multistatement) from client
         substring(TG_OP,1,1),                         -- action
-        NULL, NULL,                                   -- before_data, after_data
-        'f', NULL                                     -- statement_only, row_diffs
+        NULL, NULL,                                   -- row_data, changed_fields
+        'f'                                           -- statement_only
         );
 
     IF NOT TG_ARGV[0]::boolean IS DISTINCT FROM 'f'::boolean THEN
         audit_row.client_query = NULL;
     END IF;
     IF (TG_OP = 'UPDATE' AND TG_LEVEL = 'ROW') THEN
-        h_old = hstore(OLD.*);
-        h_new = hstore(NEW.*);
-        audit_row.row_diffs = TG_ARGV[1]::boolean IS DISTINCT FROM 'f'::boolean;
-        IF audit_row.row_diffs THEN
-            audit_row.before_data = h_old - h_new;
-            audit_row.after_data = h_new - h_old;
-        ELSE
-            audit_row.before_data = h_old;
-            audit_row.after_data = h_new;
-        END IF;
+        audit_row.row_data = hstore(OLD.*);
+        audit_row.changed_fields =  hstore(NEW.*) - audit_row.row_data;
     ELSIF (TG_OP = 'DELETE' AND TG_LEVEL = 'ROW') THEN
-        audit_row.before_data = hstore(OLD.*);
+        audit_row.row_data = hstore(OLD.*);
     ELSIF (TG_OP = 'INSERT' AND TG_LEVEL = 'ROW') THEN
-        audit_row.after_data = hstore(NEW.*);
+        audit_row.row_data = hstore(NEW.*);
     ELSIF (TG_LEVEL = 'STATEMENT' AND TG_OP IN ('INSERT','UPDATE','DELETE','TRUNCATE')) THEN
         audit_row.statement_only = 't';
     ELSE
@@ -140,8 +136,6 @@ Optional parameters to trigger in CREATE TRIGGER call:
 
 param 0: boolean, whether to log the query text. Default 't'.
 
-param 1: For UPDATE, only log fields that changed, not whole before/after tuples. Default 't'.
-
 There is no parameter to disable logging of values. Instead add this trigger as
 a 'FOR EACH STATEMENT' rather than 'FOR EACH ROW' trigger.
 
@@ -152,7 +146,7 @@ $body$;
 
 
 
-CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass, audit_rows boolean, audit_query_text boolean, diffs_only boolean) RETURNS void AS $body$
+CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass, audit_rows boolean, audit_query_text boolean) RETURNS void AS $body$
 DECLARE
   stm_targets text = 'INSERT OR UPDATE OR DELETE OR TRUNCATE';
   _q_txt text;
@@ -164,7 +158,7 @@ BEGIN
         _q_txt = 'CREATE TRIGGER audit_trigger_row AFTER INSERT OR UPDATE OR DELETE ON ' || 
                  quote_ident(target_table::text) || 
                  ' FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func(' ||
-                 quote_literal(audit_query_text) || ', ' || quote_literal(diffs_only) || ');';
+                 quote_literal(audit_query_text) || ');';
         RAISE NOTICE '%',_q_txt;
         EXECUTE _q_txt;
         stm_targets = 'TRUNCATE';
@@ -182,18 +176,17 @@ END;
 $body$
 language 'plpgsql';
 
-COMMENT ON FUNCTION audit.audit_table(regclass, boolean, boolean, boolean) IS $body$
+COMMENT ON FUNCTION audit.audit_table(regclass, boolean, boolean) IS $body$
 Add auditing support to a table.
 
 Arguments:
    target_table:     Table name, schema qualified if not on search_path
    audit_rows:       Record each row change, or only audit at a statement level
    audit_query_text: Record the text of the client query that triggered the audit event?
-   diffs_only:       Include complete rows for UPDATE events, or just the fields that changed?
 $body$;
 
 CREATE OR REPLACE FUNCTION audit.audit_table(target_table regclass) RETURNS void AS $$
-SELECT audit.audit_table($1, BOOLEAN 't', BOOLEAN 't', BOOLEAN 't');
+SELECT audit.audit_table($1, BOOLEAN 't', BOOLEAN 't');
 $$ LANGUAGE 'sql';
 
 COMMENT ON FUNCTION audit.audit_table(regclass) IS $body$
