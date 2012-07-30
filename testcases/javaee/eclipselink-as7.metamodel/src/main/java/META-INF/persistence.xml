@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+	<persistence-unit name="eclipselink-as7.metamodel">
+		<!-- Provider names:
+			org.eclipse.persistence.jpa.PersistenceProvider
+			org.hibernate.ejb.HibernatePersistence
+		-->
+		<provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
+        <class>au.id.ringerc.testcases.eclipselink_as7.metamodel.DummyEntity</class>
+		<properties>
+			<!--  Has no effect on Hibernate -->
+			<property name="eclipselink.target-server" value="JBoss" />
+		</properties>
+	</persistence-unit>
+</persistence>

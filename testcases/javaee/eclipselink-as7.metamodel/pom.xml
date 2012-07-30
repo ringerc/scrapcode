@@ -1,0 +1,277 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>au.id.ringerc.testcases</groupId>
+  <artifactId>eclipselink-as7.metamodel</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>eclipselink-as7.metamodel</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    
+    <jboss.as.version>7.2.0.Alpha1-SNAPSHOT</jboss.as.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>eclipselink</id>
+      <url>http://www.eclipse.org/downloads/download.php?r=1&amp;nf=1&amp;file=/rt/eclipselink/maven.repo</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  
+  <dependencies>
+    <dependency>
+      <groupId>org.eclipse.persistence</groupId>
+      <artifactId>eclipselink</artifactId>
+      <version>2.4.0</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.persistence</groupId>
+      <artifactId>javax.persistence</artifactId>
+      <version>2.0.3</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging</artifactId>
+        <version>3.1.1.GA</version>
+        <scope>provided</scope>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+    	<groupId>org.jboss</groupId>
+    	<artifactId>jboss-vfs</artifactId>
+    	<version>3.1.0.Final</version>
+    	<scope>provided</scope>
+    	<optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+   </dependencies>
+    
+    
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+          <compilerArguments>
+            <processor>org.eclipse.persistence.internal.jpa.modelgen.CanonicalModelProcessor</processor>
+            <Aeclipselink.persistencexml>src/main/java/META-INF/persistence.xml</Aeclipselink.persistencexml>
+          </compilerArguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  
+  <profiles>
+    <!-- 
+        arquillian-testing encapsulates all the Arquillian config
+        in a self-contained profile
+    -->
+    <profile>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>profile.default</name>
+        </property>
+      </activation>
+      <id>arquillian-testing</id>
+      <dependencyManagement>
+        <dependencies>
+          <!-- Override dependency resolver with test version.
+                         This must go *BEFORE* the Arquillian BOM. -->
+          <dependency>
+            <groupId>org.jboss.shrinkwrap.resolver</groupId>
+            <artifactId>shrinkwrap-resolver-bom</artifactId>
+            <version>2.0.0-alpha-1</version>
+            <scope>import</scope>
+            <type>pom</type>
+          </dependency>
+          <!-- Now pull in our server-based unit testing framework -->
+          <dependency>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>1.0.0.Final</version>
+            <scope>import</scope>
+            <type>pom</type>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <dependencies>
+        <!-- Arquillian test automation -->
+        <dependency>
+          <groupId>org.jboss.arquillian.junit</groupId>
+          <artifactId>arquillian-junit-container</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <!-- And some additional ShrinkWrap descriptors that let us define
+             beans.xml etc at test time -->
+        <dependency>
+          <groupId>org.jboss.shrinkwrap.descriptors</groupId>
+          <artifactId>shrinkwrap-descriptors-impl-javaee</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <!-- ShrinkWrap resolution of JAR libraries into WAR archive -->
+        <dependency>
+          <groupId>org.jboss.shrinkwrap.resolver</groupId>
+          <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+          <scope>test</scope>
+          <exclusions>
+            <exclusion>
+              <groupId>org.sonatype.sisu</groupId>
+              <artifactId>sisu-inject-plexus</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <!-- Arquillian Persistence Extension for database testing -->
+        <dependency>
+          <groupId>org.jboss.arquillian.extension</groupId>
+          <artifactId>arquillian-persistence-impl</artifactId>
+          <version>1.0.0.Alpha4</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    
+    
+    <!-- 
+             Profile that adds the JBoss AS 7 managed Arquillian container adapter
+             to the runtime classpath so Arquillian can test against JBoss AS 7.
+             
+             This profile retains the test beans.xml and persistence.xml .
+             
+             TODO: Should check out Arquillian Drone to remote control the webui
+             for functional testing.
+        -->
+    <profile>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>profile.default</name>
+        </property>
+      </activation>
+      <id>jboss7-arq-remote</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.jboss.as</groupId>
+          <artifactId>jboss-as-arquillian-container-remote</artifactId>
+          <version>${jboss.as.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    
+    <!-- 
+            Provide the Java EE APIs using JBoss's jboss-javaee-6.0 spec artifacts
+         -->
+    <profile>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>profile.default</name>
+        </property>
+      </activation>
+      <id>jboss-javaee-dependencies</id>
+      <dependencyManagement>
+        <dependencies>
+          <!-- Use the JBoss JavaEE artifacts instead of the javax ones; see below -->
+          <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <type>pom</type>
+            <version>3.0.0.Final</version>
+            <scope>import</scope>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <dependencies>
+        <!--
+                   DISABLED because these artifacts are cut-down archives
+                   without any code and tend to cause failures when running
+                   unit tests. We use the JBoss versions that have useful
+                   stubs instead.
+                   
+                <dependency>
+                    <groupId>javax</groupId>
+                    <artifactId>javaee-api</artifactId>
+                    <version>6.0</version>    
+                </dependency>
+                -->
+        <!-- Use the JBoss java EE API packaging instead of
+             javax:javaee-api because the latter is a screwed up jar
+             with stripped-out methods that breaks with "absent code" errors
+             in exciting ways during certain uses. -->
+        <!-- We shouldn't really pull in the whole spec, only the bits we use, so
+             specify the APIs we use or expect to use explicitly -->
+        <dependency>
+          <groupId>org.jboss.spec.javax.ejb</groupId>
+          <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.spec.javax.interceptor</groupId>
+          <artifactId>jboss-interceptors-api_1.1_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.spec.javax.servlet</groupId>
+          <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.spec.javax.el</groupId>
+          <artifactId>jboss-el-api_2.2_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.spec.javax.transaction</groupId>
+          <artifactId>jboss-transaction-api_1.1_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.spec.javax.ws.rs</groupId>
+          <artifactId>jboss-jaxrs-api_1.1_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jboss.spec.javax.xml.bind</groupId>
+          <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>javax.enterprise</groupId>
+          <artifactId>cdi-api</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>javax.inject</groupId>
+          <artifactId>javax.inject</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
+        </dependency>
+      </dependencies>
+    </profile>
+	</profiles>
+</project>

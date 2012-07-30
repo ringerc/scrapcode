@@ -1,0 +1,68 @@
+This test runs on a JBoss AS 7 server. It demonstrates that when using
+EclipseLink on AS7, the static metamodel is not populated until:
+
+- An EntityManager is injected (via CDI's @Inject or via @PersistenceContext) and then accessed; or
+- An EntityManagerFactory is injected then one of these methods is called:
+  * getCriteriaBuilder()
+  * createEntityManager()
+  * getMetamodel()
+
+The EntityManagerFactory methods getPersistenceUnitUtil(), getProperties() and
+isOpen() do NOT trigger population of the static metamodel. Similarly, just injecting
+an EntityManager doesn't seem to either, it needs to be acceessed in some way.
+
+These tests demonstrate this behavour. If all tests pass, the behaviour is as
+described above. If any tests fail, the behaviour varied from the expected
+fault. If you'd prefer the tests asserted the correct behaviour not the
+expected behaviour, set assertExpectedButIncorrect in TestBase to false.
+
+These tests also show that AS7+Hibernate behaves correctly.
+
+
+== RUNNING THE TESTS AGAINST ECLIPSELINK ==
+
+Run the tests by deploying a copy of the EclipseLink module to AS7:
+
+   mvn depdendency:resolve
+   cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0/eclipselink-2.4.0.jar\
+      jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0.jar
+   cp -r jboss7modules/* $JBOSS_HOME/modules/
+
+... then starting the server with bin/standalone.sh and running:
+
+  mvn -Djboss.as.version=YOUR_JBOSS_VERSION clean test
+
+The default target version is the latest AS7 7.2.0-ALPHA1-SNAPSHOT.
+
+
+== RUNNING THE TESTS AGAINST ECLIPSELINK ==
+
+For comparison, run the test against Hibernate.
+
+Edit src/main/java/META-INF/persistence.xml and change the persistence
+provider as per the comments. Then re-run with the same command line.
+
+You'll see that all the tests are "in error" because the static metamodel
+was unexpectedly non-null (ie spec-correct) before each test.
+
+If you set assertExpectedButIncorrect in TestBase to false, all tests will pass,
+as they should.
+
+We can thus see that AS7 + Hibernate behave correctly.
+
+
+
+== What's wrong with the demonstrated behaviour of AS7+EclipseLink ==
+
+The static metamodel should be populated when the EntityManagerFactory is created,
+as per JSR 317 (JPA 2.0):
+
+    When the entity manager factory for a persistence unit is created, it is the
+    responsibility of the persistence provider to initialize the state of the
+    metamodel classes of the persistence unit. Any generated metamodel classes must
+    be accessible on the classpath.
+
+... so the static metamodel should be populated (non-null) whenever we have, or
+have had, an EntityManager or EntityManagerFactory reference.
+
+

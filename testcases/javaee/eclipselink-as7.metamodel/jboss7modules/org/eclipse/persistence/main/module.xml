@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Represents the EclipseLink 2.3.x module-->
+<module xmlns="urn:jboss:module:1.1" name="org.eclipse.persistence">
+ <properties>
+  <property name="jboss.as.jpa.providerModule" value="org.eclipse.persistence" />
+ </properties>
+ <resources>
+  <resource-root path="eclipselink-2.4.0.jar"/>
+ </resources>
+ <dependencies>
+  <module name="asm.asm"/>
+  <module name="javax.api"/>
+  <module name="javax.persistence.api"/>
+  <module name="javax.transaction.api"/>
+  <module name="javax.validation.api"/>
+  <module name="javax.xml.bind.api"/>
+  <module name="org.antlr"/>
+  <module name="org.apache.ant" optional="true"/>
+  <module name="org.apache.commons.collections"/>
+  <module name="org.dom4j"/>
+  <module name="org.javassist"/>
+  <module name="org.jboss.logging"/>
+ </dependencies>
+</module>
