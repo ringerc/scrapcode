@@ -18,6 +18,11 @@ expected behaviour, set assertExpectedButIncorrect in TestBase to false.
 
 These tests also show that AS7+Hibernate behaves correctly.
 
+UPDATE: EclipseLink also behaves correctly when the following property is added
+to persistence.xml:
+  
+    <property name="eclipselink.deploy-on-startup" value="True" />
+
 
 == RUNNING THE TESTS AGAINST ECLIPSELINK ==
 
