@@ -9,6 +9,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,17 +34,19 @@ public class ExplicitClassesTest extends TestBase {
 
 	@Deployment
 	public static WebArchive makeDeployment() throws IOException {
-		return TestBase.makeDeployment("explicit-classes-persistence.xml");
+		return TestBase.makeDeployment("explicit-classes-persistence.xml", "explicit-classes");
 	}
 
 	// Informational only, prints server-side EclipseLink verison to logs.
 	@Test
+	@Ignore
 	public void checkEclipseVersion() {
 		super.checkEclipseVersion();
 	}
 	
 	// Always succeeds, just making sure CDI is happy
 	@Test
+	@Ignore
 	public void ensureInjected() {
 		super.ensureInjected();
 	}
@@ -51,12 +54,14 @@ public class ExplicitClassesTest extends TestBase {
 	// Expects to fail; metamodel not enriched
 	@Test
 	public void staticMetaModelWorks() {
+		logger.info("Static metamodel test");
 		super.staticMetaModelWorks();
 	}
 
 	// Works, bizarrely. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=383199
 	@Test
 	public void staticMetamodelWorksAfterDynamicModelAccess() {
+		logger.info("Dynamic-then-static metamodel test");
 		logger.info("Before dynamic metamodel access, DummyEntity_.id is " + DummyEntity_.id);
 		Assert.assertNull(DummyEntity_.id);
 		super.dynamicMetaModelWorks();
@@ -68,6 +73,7 @@ public class ExplicitClassesTest extends TestBase {
 	// listed explicitly.
 	@Test
 	public void dynamicMetaModelWorks() {
+		logger.info("Dynamic metamodel test");
 		super.dynamicMetaModelWorks();
 	}
 	
@@ -79,6 +85,7 @@ public class ExplicitClassesTest extends TestBase {
 	
 	// Fails, no transaction management.
 	@Test
+	@Ignore
 	public void databaseAccessWorks() {
 		super.databaseAccessWorks();
 	}

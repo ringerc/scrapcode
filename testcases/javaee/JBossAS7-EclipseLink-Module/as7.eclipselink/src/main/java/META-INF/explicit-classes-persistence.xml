@@ -10,6 +10,7 @@
 			<property name="eclipselink.logging.logger" value="id.au.ringerc.testcase.as7.eclipselink.JBossLogger"/>
 			<property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
 			<property name="eclipselink.logging.level" value="FINEST"/>
+			<property name="eclipselink.target-server" value="jboss"/>
 		</properties>
 	</persistence-unit>
 </persistence>

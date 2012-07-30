@@ -11,7 +11,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <eclipselink.version.2.3.stable>2.3.2</eclipselink.version.2.3.stable>
     <eclipselink.version.2.3.milestone>2.3.3-M3</eclipselink.version.2.3.milestone>
-    <eclipselink.version.2.4.milestone>2.4.0-RC2</eclipselink.version.2.4.milestone>
+    <eclipselink.version.2.4.milestone>2.4.0</eclipselink.version.2.4.milestone>
+    <jboss.as.version>7.1.1.Final</jboss.as.version>
   </properties>
   <repositories>
     <repository>
@@ -24,29 +25,38 @@
   </repositories>
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.10</version>
-      <scope>test</scope>
-    </dependency>
-    <!-- Try bundling EclipseLink in the web archive -->
-    <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>eclipselink</artifactId>
       <version>${eclipselink.version.2.4.milestone}</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>javax.persistence</artifactId>
       <version>2.0.3</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
         <groupId>org.jboss.logging</groupId>
         <artifactId>jboss-logging</artifactId>
         <version>3.1.1.GA</version>
         <scope>provided</scope>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+    	<groupId>org.jboss</groupId>
+    	<artifactId>jboss-vfs</artifactId>
+    	<version>3.1.0.Final</version>
+    	<scope>provided</scope>
+    	<optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
@@ -203,7 +213,7 @@
         <dependency>
           <groupId>org.jboss.as</groupId>
           <artifactId>jboss-as-arquillian-container-remote</artifactId>
-          <version>7.1.1.Final</version>
+          <version>${jboss.as.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>

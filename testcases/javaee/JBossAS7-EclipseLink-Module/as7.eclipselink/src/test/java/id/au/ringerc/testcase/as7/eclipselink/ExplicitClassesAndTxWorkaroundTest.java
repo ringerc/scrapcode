@@ -9,6 +9,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -31,23 +32,26 @@ import org.junit.runner.RunWith;
  *
  */
 @RunWith(Arquillian.class)
+@Ignore
 public class ExplicitClassesAndTxWorkaroundTest extends TestBase {
 	
 	private static final Logger logger = Logger.getLogger(ExplicitClassesAndTxWorkaroundTest.class.getName());
 
 	@Deployment
 	public static WebArchive makeDeployment() throws IOException {
-		return TestBase.makeDeployment("explicit-and-txaround-persistence.xml");
+		return TestBase.makeDeployment("explicit-and-txaround-persistence.xml", "explicit-classes-and-tx-workaround");
 	}
 
 	// Informational only, prints server-side EclipseLink verison to logs.
 	@Test
+	@Ignore
 	public void checkEclipseVersion() {
 		super.checkEclipseVersion();
 	}
 
 	// Always succeeds, just making sure CDI is happy
 	@Test
+	@Ignore
 	public void ensureInjected() {
 		super.ensureInjected();
 	}
@@ -82,6 +86,7 @@ public class ExplicitClassesAndTxWorkaroundTest extends TestBase {
 
 	// Succeeds, we've worked around transaction management issues
 	@Test
+	@Ignore
 	public void databaseAccessWorks() {
 		super.databaseAccessWorks();
 	}

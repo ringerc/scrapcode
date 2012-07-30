@@ -9,6 +9,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import java.util.logging.Logger;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,13 +24,14 @@ import org.junit.runner.RunWith;
  * @author Craig Ringer <ringerc@ringerc.id.au>
  */
 @RunWith(Arquillian.class)
+@Ignore
 public class NoWorkaroundsTest extends TestBase {
 
 	private static final Logger logger = Logger.getLogger(NoWorkaroundsTest.class.getName());
 
 	@Deployment
 	public static WebArchive makeDeployment() throws IOException {
-		return TestBase.makeDeployment("persistence.xml");
+		return TestBase.makeDeployment("persistence.xml", "no-workarounds");
 	}
 
 	// Informational only, prints server-side EclipseLink verison to logs.

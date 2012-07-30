@@ -11,14 +11,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.metamodel.Attribute;
-import javax.persistence.metamodel.EntityType;
 
 import org.eclipse.persistence.Version;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -39,9 +32,9 @@ class TestBase {
 	
 	private static final boolean verbose = false;
 
-	protected static WebArchive makeDeployment(String persistenceXmlName) throws IOException {
+	protected static WebArchive makeDeployment(String persistenceXmlName, String archiveIdentifier) throws IOException {
 		File persistenceXml = new File( "src/main/java/META-INF/", persistenceXmlName);
-		WebArchive jar = ShrinkWrap.create(WebArchive.class)
+		WebArchive jar = ShrinkWrap.create(WebArchive.class, archiveIdentifier + ".war")
 				.addAsResource(persistenceXml, "META-INF/persistence.xml")
 				.addAsWebInfResource(new File("src/main/java/META-INF/beans.xml"), "beans.xml")
 				.addClasses(
@@ -119,46 +112,6 @@ class TestBase {
 		int bytesRead = 0;
 		while ( (bytesRead = r.read(buf)) > 0 ) {
 			w.write(buf, 0, bytesRead);
-		}
-		
-	}
-	
-	@Stateless
-	public static class DummyEJB {
-
-		@Inject
-		private EntityManager em;
-		
-		@TransactionAttribute(TransactionAttributeType.REQUIRED)
-		public void failsIfNotTransactional() {
-			Query q;
-			q = em.createNativeQuery("SAVEPOINT txtest");
-			q.executeUpdate();
-			q = em.createNativeQuery("ROLLBACK TO SAVEPOINT txtest");
-			q.executeUpdate();
-		}
-		
-		public void dynamicMetaModelWorks() {
-			EntityType<DummyEntity> x = em.getMetamodel().entity(DummyEntity.class);
-			Attribute<? super DummyEntity, ?> y = x.getAttribute("dummy");
-			if (!String.class.equals(y.getJavaType())) {
-				throw new AssertionError("Unexpected class");
-			}
-		}
-		
-		public DummyEntity createDummy(Integer id) {
-			DummyEntity e = new DummyEntity(id);
-			em.persist(e);
-			return e;
-		}
-		
-		public DummyEntity getDummy(Integer id) {
-			return em.find(DummyEntity.class, id);
-		}
-		
-		public void deleteDummy(DummyEntity e) {
-			e = em.merge(e);
-			em.remove(e);
 		}
 		
 	}

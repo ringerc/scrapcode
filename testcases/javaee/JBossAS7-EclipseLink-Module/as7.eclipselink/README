@@ -44,15 +44,15 @@ INSTALL AS7 MODULE FOR ECLIPSELINK
 To run this test case, you must first install the module. A module skeleton is
 provided in jboss7modules/ but I've omitted the EclipseLink archive to save space.
 
-The bundled module.xml specifies eclipselink-2.4.0-RC2.jar as the target archive,
+The bundled module.xml specifies eclipselink-2.4.0.jar as the target archive,
 and that's what I tested with. If you want to use a different version or filename,
 specify it by editing module.xml.
 
 To prepare and install the module:
 
   mvn depdendency:resolve
-  cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0-RC2/eclipselink-2.4.0-RC2.jar\
-     jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0-RC2.jar
+  cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0/eclipselink-2.4.0.jar\
+     jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0.jar
   cp -r jboss7modules/* $JBOSS_HOME/modules/
 
 INCREASE LOGGING DETAIL
