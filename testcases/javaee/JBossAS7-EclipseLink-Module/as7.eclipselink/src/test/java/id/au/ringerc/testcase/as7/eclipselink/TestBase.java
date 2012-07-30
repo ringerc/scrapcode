@@ -69,6 +69,12 @@ class TestBase {
 			Assert.fail("Static metamodel has null members: " + ex);
 		}
 	}
+	
+	protected void staticMetamodelWorksAfterTrivialEntityManagerCall() {
+		Assert.assertNull(DummyEntity_.id);
+		dummyEJB.trivialEntityManagerCall();
+		Assert.assertNotNull(DummyEntity_.id);
+	}
 
 	protected void isTransactional() {
 		try {

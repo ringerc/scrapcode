@@ -57,6 +57,11 @@ public class ExplicitClassesTest extends TestBase {
 		logger.info("Static metamodel test");
 		super.staticMetaModelWorks();
 	}
+	
+	@Test
+	public void staticMetamodelWorksAfterTrivialEntityManagerCall() {
+		super.staticMetamodelWorksAfterTrivialEntityManagerCall();
+	}
 
 	// Works, bizarrely. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=383199
 	@Test

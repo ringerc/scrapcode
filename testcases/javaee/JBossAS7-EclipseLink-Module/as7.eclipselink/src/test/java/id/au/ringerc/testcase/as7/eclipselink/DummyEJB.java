@@ -32,6 +32,10 @@ public class DummyEJB {
 		q.executeUpdate();
 	}
 	
+	public void trivialEntityManagerCall() {
+		em.isOpen();
+	}
+	
 	public void dynamicMetaModelWorks() {
 		logger.info("Before get metamodel, DummyEntity_.id is " + DummyEntity_.id);
 		Metamodel mm = em.getMetamodel();
