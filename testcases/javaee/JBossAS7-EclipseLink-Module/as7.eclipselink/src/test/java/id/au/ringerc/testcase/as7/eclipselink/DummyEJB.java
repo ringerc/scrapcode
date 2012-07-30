@@ -1,6 +1,9 @@
 package id.au.ringerc.testcase.as7.eclipselink;
 
+import java.util.logging.Logger;
+
 import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity;
+import id.au.ringerc.testcase.as7.eclipselink.entities.DummyEntity_;
 
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
@@ -10,10 +13,13 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.EntityType;
+import javax.persistence.metamodel.Metamodel;
 
 @Stateless
 public class DummyEJB {
 
+	private static final Logger logger = Logger.getLogger(DummyEJB.class.getName());
+	
 	@Inject
 	private EntityManager em;
 	
@@ -27,11 +33,17 @@ public class DummyEJB {
 	}
 	
 	public void dynamicMetaModelWorks() {
-		EntityType<DummyEntity> x = em.getMetamodel().entity(DummyEntity.class);
-		Attribute<? super DummyEntity, ?> y = x.getAttribute("dummy");
-		if (!String.class.equals(y.getJavaType())) {
+		logger.info("Before get metamodel, DummyEntity_.id is " + DummyEntity_.id);
+		Metamodel mm = em.getMetamodel();
+		logger.info("After get metamodel, DummyEntity_.id is " + DummyEntity_.id);
+		EntityType<DummyEntity> me = mm.entity(DummyEntity.class);
+		logger.info("After get entity, DummyEntity_.id is " + DummyEntity_.id);
+		Attribute<? super DummyEntity, ?> attr = me.getAttribute("dummy");
+		logger.info("After get attribute, DummyEntity_.id is " + DummyEntity_.id);
+		if (!String.class.equals(attr.getJavaType())) {
 			throw new AssertionError("Unexpected class");
 		}
+		logger.info("After get java type on attribute, DummyEntity_.id is " + DummyEntity_.id);
 	}
 	
 	public DummyEntity createDummy(Integer id) {
