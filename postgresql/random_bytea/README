@@ -12,6 +12,11 @@ If you encounter any errors, make sure you have the PostgreSQL development
 headers and tools, not just the runtime. On Linux you may need to install a
 -dev or -devel package.
 
+There are no pre-compiled Windows binaries of this extension and I haven't
+tested compiling it on Windows - or in fact anything except my Fedora 17 x64
+box running PostgreSQL 9.1. Needless to say, it's hardly production quality.
+
+
 
 To use the random_bytea extension connect to the database of your choice and
 run:
