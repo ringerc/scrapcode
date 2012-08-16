@@ -1,0 +1,36 @@
+This is a toy extension I wrote while playing with random bytea string
+generation in PostgreSQL. It was prompted by this Stack Overflow post:
+
+    http://dba.stackexchange.com/questions/22512/how-can-i-generate-a-random-bytea
+
+To compile and install, just make sure pg_config is on your PATH and run:
+
+    make
+    sudo make install
+
+If you encounter any errors, make sure you have the PostgreSQL development
+headers and tools, not just the runtime. On Linux you may need to install a
+-dev or -devel package.
+
+
+To use the random_bytea extension connect to the database of your choice and
+run:
+
+    CREATE EXTENSION random_bytea;
+
+You can now use the random_bytea(integer) function, eg:
+
+    SELECT random_bytea(1024);
+
+for 1kb of random garbage.
+
+It seems to take much longer for `psql' to format the bytea data as hex and
+transmit it over the wire than it does to actually generate the bytea data. For
+speed, turn off all psql's pretty-printing and/or redirect output.
+
+When you're using random_bytea for dummying data you'll usually be feeding its
+output to INSERT statements where psql formatting doesn't matter.
+
+For comparison there's also a random_bytea implementation in pure SQL, found
+in the random_bytea_sqlonly.sql file. It isn't part of the extension, doesn't
+require any of the other code, and can be used standalone.
