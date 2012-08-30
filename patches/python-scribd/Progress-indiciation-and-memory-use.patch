@@ -1,0 +1,318 @@
+From 1ce879da9a1c9687c49fa7fa1e0e6980a4b930fd Mon Sep 17 00:00:00 2001
+From: Craig Ringer <ringerc@ringerc.id.au>
+Date: Thu, 30 Aug 2012 11:45:11 +0800
+Subject: [PATCH] Enhance python-scribd for progress reporting and progressive
+ input file reading
+
+See https://github.com/ringerc/python-scribd
+
+This should probably be a patch series, but it's simple and small enough that
+it wasn't worth splitting it up.
+
+The issues referred to in the following description are:
+
+    Inefficient upload of large files
+    http://code.google.com/p/python-scribd/issues/detail?id=4
+
+    No upload progress indication
+    http://code.google.com/p/python-scribd/issues/detail?id=5
+
+Fix #4 part 1: Accept a file-like object passed by the user as a buffer to use
+instead of a string. If no buffer is passed, a StringIO is used to match the
+old behaviour. I'd prefer to use a tempfile, but didn't want to change existing
+behaviour. The upload.py example shows how a tempfile is used.
+
+Fix #4 part 2: Instead of reading the whole input file in the upload() routine,
+the file object is passed through to multipart.encode_multipart_formdata, which
+now handles both string and file-like payloads. The file is copied to the
+output buffer in blocks, so it's never all in memory.
+
+Fix required for both #4 and #5: Send the data in blocks rather than using
+httplib.request(...) to send the whole request (headers and data) in one go.
+Request is sent with h.putrequest(), then headers with h.putheader() and
+h.endheaders(), then finally data is sent in blocks by looping over h.send().
+This means we don't have to have the whole request in memory at once to pass to
+h.request()
+
+Fix #5: Accept a `progress_callback` parameter. If passed, call the callback
+for for every loop over h.send() to indicate progress. The callback takes two
+arguments, as documented; one the number of bytes sent so far and one the total
+number of bytes to send. Document this callback in the upload() method; it's
+actually accepted for all methods, but upload() is the only one you're likely
+to want to use it for. Update upload.py to show how to write a simple progress
+function.
+
+
+---
+ py_modules/python-scribd-1.1.0/examples/upload.py  | 12 ++-
+ py_modules/python-scribd-1.1.0/scribd/__init__.py  | 28 +++++--
+ py_modules/python-scribd-1.1.0/scribd/multipart.py | 87 ++++++++++++++++++----
+ 3 files changed, 101 insertions(+), 26 deletions(-)
+
+diff --git a/py_modules/python-scribd-1.1.0/examples/upload.py b/py_modules/python-scribd-1.1.0/examples/upload.py
+index 6b9c9cc..f11f323 100644
+--- a/py_modules/python-scribd-1.1.0/examples/upload.py
++++ b/py_modules/python-scribd-1.1.0/examples/upload.py
+@@ -6,6 +6,7 @@ Uploading a text file to scribd.com and removing it afterwards.
+ 
+ import time
+ import logging
++import tempfile
+ 
+ import scribd
+ 
+@@ -14,10 +15,12 @@ import scribd
+ API_KEY = ''
+ API_SECRET = ''
+ 
+-
+ # Uncomment to enable scribd package debugging.
+ #logging.basicConfig(level=logging.DEBUG)
+ 
++last_bytes_sent = 0
++def progress(bytes_sent, bytes_total):
++    print("%s of %s (%s%%)" % (bytes_sent, bytes_total, bytes_sent*100/bytes_total))
+ 
+ def main():
+     # Configure the Scribd API.
+@@ -28,7 +31,11 @@ def main():
+         print 'Uploading a document...'
+         
+         # Note that the default API user object is used.
+-        doc = scribd.api_user.upload(open('test.txt'))
++        doc = scribd.api_user.upload(
++            open('test.txt','rb'),
++            progress_callback=progress,
++            req_buffer = tempfile.TemporaryFile()
++            )
+         print 'Done (doc_id=%s, access_key=%s).' % (doc.id, doc.access_key)
+         
+         # Poll API until conversion is complete.
+@@ -59,6 +66,5 @@ def main():
+     except scribd.ResponseError, err:
+         print 'Scribd failed: code=%d, error=%s' % (err.errno, err.strerror)
+ 
+-
+ if __name__ == '__main__':
+     main()
+diff --git a/py_modules/python-scribd-1.1.0/scribd/__init__.py b/py_modules/python-scribd-1.1.0/scribd/__init__.py
+index ce951a1..5ebad7e 100644
+--- a/py_modules/python-scribd-1.1.0/scribd/__init__.py
++++ b/py_modules/python-scribd-1.1.0/scribd/__init__.py
+@@ -406,7 +406,7 @@ class User(Resource):
+             if kwargs['num_start'] >= int(results.attrs['totalResultsAvailable']):
+                 break
+ 
+-    def upload(self, file, name=None, **kwargs):
++    def upload(self, targetfile, name=None, **kwargs):
+         """Uploads a file object as a new document and returns the
+         corresponding document object.
+         
+@@ -428,6 +428,17 @@ class User(Resource):
+             existing file. If None, the name will be read from the "name"
+             attribute of the file object (objects created using the open()
+             built-in function provide this attribute).
++          req_buffer
++            (optional) A seekable, readable and writable file-like object
++            that temporary data can be stored in while processing the upload.
++            A tempfile.TemporaryFile() is a good choice.
++            If not supplied an in-memory buffer will be used.
++          progress_callback
++            (optional) A function or bound method that's called during the upload
++            to indicate progress. The function must accept two integer arguments,
++            the number of bytes sent and the total bytes to send, respectively.  If
++            not supplied no callback is used and no progress indication is given.
++            
+ 
+         Returns:
+             A [Document] object.
+@@ -437,12 +448,12 @@ class User(Resource):
+             for a list of document's initial resource attributes.
+         """
+         if name is None:
+-            name = file.name
++            name = targetfile.name
+         name = os.path.basename(name)
+         if 'doc_type' not in kwargs:
+             kwargs['doc_type'] = os.path.splitext(name)[-1]
+         kwargs['doc_type'] = kwargs['doc_type'].lstrip('.').lower()
+-        xml = self._send_request('docs.upload', file=(file.read(), name), **kwargs)
++        xml = self._send_request('docs.upload', file=(targetfile, name), **kwargs)
+         return Document(xml, self)
+         
+     def upload_from_url(self, url, **kwargs):
+@@ -804,7 +815,7 @@ class Document(Resource):
+ # Functions
+ #
+ 
+-def send_request(method, **fields):
++def send_request(method, progress_callback=None, req_buffer=None, **fields):
+     """Sends an API request to the HOST and returns the XML response.
+     
+     Parameters:
+@@ -851,7 +862,10 @@ def send_request(method, **fields):
+     del deb_fields['method'], deb_fields['api_key']
+     t = deb_fields.get('file', None)
+     if t is not None:
+-        deb_fields['file'] = (t[0][:16] + '(...)', t[1])
++        if isinstance(t[0], str):
++            deb_fields['file'] = (t[0][:16] + '(...)', t[1])
++        else:
++            deb_fields['file'] = (repr(t[0]), t[1])
+     logger.debug('Request: %s(%s)', method,
+                  ', '.join('%s=%s' % (k, repr(v)) for k, v in deb_fields.items()))
+ 
+@@ -867,7 +881,7 @@ def send_request(method, **fields):
+     start_time = time()
+     while True:
+         try:
+-            resp = post_multipart(HOST, REQUEST_PATH, fields.items(), headers, PORT)
++            resp = post_multipart(HOST, REQUEST_PATH, fields.items(), headers, PORT, req_buffer=req_buffer, progress_callback=progress_callback)
+         except Exception, err:
+             if time() - start_time < 10:
+                 continue
+@@ -887,7 +901,7 @@ def send_request(method, **fields):
+                             'remote host response could not be interpreted')
+             else:
+                 raise MalformedResponseError(
+-                        'unexpected remote host response format: %s' % ctype)
++                        'unexpected remote host response format: %s, contents are: %s' % (ctype, resp.read(100)))
+         elif status == '500': # Internal Server Error
+             # Retrying usually helps if this happens so lets do so for max. 10 seconds.
+             if time() - start_time < 10:
+diff --git a/py_modules/python-scribd-1.1.0/scribd/multipart.py b/py_modules/python-scribd-1.1.0/scribd/multipart.py
+index c7e09b6..9ce1488 100644
+--- a/py_modules/python-scribd-1.1.0/scribd/multipart.py
++++ b/py_modules/python-scribd-1.1.0/scribd/multipart.py
+@@ -7,15 +7,23 @@ http://code.activestate.com/recipes/146306/
+ with modifications to use HTTPConnection class by Chris Hoke
+ 
+ and final touches by me, Arkadiusz Wahlig.
++
++File buffer and progress reporting added by Craig Ringer
+ """
+ 
+ import sys
+ import httplib
+ import mimetypes
++import StringIO
+ from random import randrange
+ 
++# How many bytes are copied at once between file-like objects
++copy_block_size = 8192
++# How many bytes are sent to an uploading connection at once
++upload_block_size = copy_block_size
++
+ 
+-def post_multipart(host, selector, fields=(), headers=None, port=None):
++def post_multipart(host, selector, fields=(), headers=None, port=None, req_buffer=None, progress_callback=None):
+     """Posts a multipart/form-data request to an HTTP host/port.
+     
+     Parameters:
+@@ -27,41 +35,88 @@ def post_multipart(host, selector, fields=(), headers=None, port=None):
+         POST fields. A sequence of (name, value) tuples where "name" is the
+         field name and "value" may be either a string or a (data, name)
+         tuple in which case the "data" will be sent as a file of name "name".
++        For (data,name) tuples the data part must be a string or a file-like
++        object.
+       headers
+         A mapping of additional HTTP headers.
+       port
+         TCP/IP port. Defaults to 80.
++      req_buffer:
++        A seekable, writable and readable file-like object to store the
++        encoded request in while it is being uploaded. If None (default)
++        a StringIO object will be created to store the data. You may
++        want to pass a tempfile if you're doing a large upload.
++      progress_callback:
++        A callable object that takes two integer arguments, the
++        number of bytes sent so far and the total bytes to send
++        respectively. If None, no callback is invoked. If the
++        callback throws any exception then the upload will be aborted.
+         
+     Returns:
+         A httplib.HTTPResponse object.
+     """
+     boundary = '----------%s--%s----------' % \
+         (randrange(sys.maxint), randrange(sys.maxint))
++    if req_buffer is None:
++        req_buffer = StringIO.StringIO()
+     if headers is None:
+         headers = {}
+-    headers['Content-Type'] = 'multipart/form-data; boundary=%s' % boundary
+-    body = encode_multipart_formdata(fields, boundary)
++    buffer_size = encode_multipart_formdata(fields, boundary, req_buffer)
++    # Send the request
+     h = httplib.HTTPConnection(host, port)
+-    h.request('POST', selector, body, headers)
++    try:
++        h.putrequest('POST', selector)
++        headers['Content-Type'] = 'multipart/form-data; boundary=%s' % boundary
++        headers['Content-Length'] = buffer_size
++        for (k,v) in headers.items():
++            h.putheader(k,v)
++        h.endheaders()
++        # Progressively send data
++        nextblock = req_buffer.read(upload_block_size)
++        while nextblock:
++            h.send(nextblock)
++            if progress_callback is not None:
++                progress_callback( req_buffer.tell(), buffer_size )
++            nextblock = req_buffer.read(upload_block_size)
++        # And wait for server to respond
++    except Exception as ex:
++        h.close()
+     return h.getresponse()
+ 
++def copy_to_buffer(outfile, data):
++    """Copy `data' to the writable file-like object `outfile'.
++    `data' may its self be a file-like object, or it may be a string
++    or byte buffer."""
++    if hasattr(data, 'read'):
++        # Treat as file-like object and copy between buffers
++        buf = data.read(copy_block_size)
++        while buf:
++            outfile.write(buf)
++            buf = data.read(copy_block_size)
++    else:
++        outfile.write(data)
+ 
+-def encode_multipart_formdata(fields, boundary):
+-    lines = []
++def encode_multipart_formdata(fields, boundary, req_buffer):
++    req_buffer.seek(0)
+     for key, value in fields:
+-        lines.append('--' + boundary)
++        req_buffer.write('--' + boundary + '\r\n')
+         if isinstance(value, tuple): # file
+             data, name = value
+             ctype = mimetypes.guess_type(name)[0] or 'application/octet-stream'
+-            lines.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, name))
+-            lines.append('Content-Type: %s' % ctype)
+-            lines.append('')
+-            lines.append(data)
++            req_buffer.write('Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (key, name))
++            req_buffer.write('Content-Type: %s\r\n' % ctype)
++            req_buffer.write('\r\n')
++            copy_to_buffer(req_buffer, data)
+         elif isinstance(value, str): # str
+-            lines.append('Content-Disposition: form-data; name="%s"' % key)
+-            lines.append('')
+-            lines.append(value)
++            req_buffer.write('Content-Disposition: form-data; name="%s"\r\n' % key)
++            req_buffer.write('\r\n')
++            req_buffer.write(value)
+         else:
+             raise TypeError('value must be a tuple or str, not %s' % type(value).__name__)
+-    lines.append('--' + boundary + '--')
+-    return '\r\n'.join(lines)
++        req_buffer.write('\r\n')
++    req_buffer.write('--' + boundary + '--\r\n')
++    req_buffer.flush()
++    buffer_size = req_buffer.tell()
++    req_buffer.truncate()
++    req_buffer.seek(0)
++    return buffer_size
+-- 
+1.7.11.2
+
