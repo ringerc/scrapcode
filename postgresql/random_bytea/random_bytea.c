@@ -40,7 +40,7 @@ random_bytea(PG_FUNCTION_ARGS)
          remaining = remaining >> 8;
          lastrand = lastrand >> 8;
          if (remaining < 256) {
-	        lastrand = random();
+            lastrand = random();
             remaining = RAND_MAX;
          }
          *(cur_data_ptr++) = (unsigned char) lastrand;
