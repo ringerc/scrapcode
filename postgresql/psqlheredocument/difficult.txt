@@ -1,0 +1,2 @@
+Shell metacharacters like: $!(){}*?"'
+SQL-significant characters like "'()
