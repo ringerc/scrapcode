@@ -9,6 +9,7 @@ PG_FUNCTION_INFO_V1(int4_array_add);
 
 /**
  * Returns the sum of two int arrays.
+ * by Matt Solnit on Stack Overflow - http://stackoverflow.com/questions/16992339
  */
 Datum
 int4_array_add(PG_FUNCTION_ARGS)
