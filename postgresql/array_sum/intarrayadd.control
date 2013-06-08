@@ -1,0 +1,4 @@
+comment = 'Functions and aggregates for one-dimensional integer arrays of equal length'
+default_version = '1.0'
+module_pathname = '$libdir/intarrayadd'
+relocatable = true
