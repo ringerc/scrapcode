@@ -42,10 +42,21 @@ int4_array_add(PG_FUNCTION_ARGS)
   int i;
   ArrayType* resultArray;
 
+  if (PG_ARGISNULL(0) || PG_ARGISNULL(1))
+    ereport(ERROR, (errmsg("Null arrays not accepted")));
 
-  // Extract the PostgreSQL arrays from the parameters passed to this function call.
   array1 = PG_GETARG_ARRAYTYPE_P(0);
   array2 = PG_GETARG_ARRAYTYPE_P(1);
+
+  if (ARR_NDIM(array1) != 1 || ARR_NDIM(array2) != 1)
+    ereport(ERROR, (errmsg("One-dimesional arrays are required")));
+
+  arrayLength1 = (ARR_DIMS(array1))[0];
+  if (arrayLength1 != (ARR_DIMS(array2))[0])
+    ereport(ERROR, (errmsg("Arrays are of different lengths")));
+
+  if (array_contains_nulls(array1) || array_contains_nulls(array2))
+    ereport(ERROR, (errmsg("Array contains null elements")));
 
   // Determine the array element types.
   arrayElementType1 = ARR_ELEMTYPE(array1);
