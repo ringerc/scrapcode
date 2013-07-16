@@ -1,0 +1,13 @@
+This is a toy extension I wrote to expose the date2j function at the C level
+for this Stack Overflow discussion:
+
+http://stackoverflow.com/q/17672538/398670
+
+To use:
+
+	make
+	make install
+
+	CREATE EXTENSION makedate;
+
+	SELECT makedate(2012,01,01);
