@@ -1,0 +1,4 @@
+comment = 'Utility function to convert hex strings to decimal'
+default_version = '1.0'
+module_pathname = '$libdir/hex2dec'
+relocatable = true
