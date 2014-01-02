@@ -21,6 +21,13 @@ $dbh->commit();
 
 my $filedata = read_file($filename);
 my $sth = $dbh->prepare("INSERT INTO byteatest(blah) VALUES (?)");
+# Note the need to specify bytea type. Otherwise the text won't be escaped,
+# it'll be sent assuming it's text in client_encoding, so NULLs will cause the
+# string to be truncated.  If it isn't valid utf-8 you'll get an error. If it
+# is, it might not be stored how you want.
+#
+# So specify {pg_type => DBD::Pg::PG_BYTEA} .
+#
 $sth->bind_param(1, $filedata, { pg_type => DBD::Pg::PG_BYTEA });
 $sth->execute();
 undef $filedata;
