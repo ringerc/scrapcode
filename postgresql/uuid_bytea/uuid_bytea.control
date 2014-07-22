@@ -1,0 +1,4 @@
+comment = 'Convert uuid to/from bytea'
+default_version = '1.0'
+module_pathname = '$libdir/uuid_bytea'
+relocatable = true

@@ -1,0 +1,34 @@
+This is a toy extension I wrote while playing with uuid/binary conversion
+in PostgreSQL. It was prompted by this Stack Overflow post:
+
+    http://stackoverflow.com/q/24883127/398670
+
+To compile and install, just make sure pg_config is on your PATH and run:
+
+    make
+    sudo make install
+
+If you encounter any errors, make sure you have the PostgreSQL development
+headers and tools, not just the runtime. On Linux you may need to install a
+-dev or -devel package.
+
+There are no pre-compiled Windows binaries of this extension and I haven't
+tested compiling it on Windows - or in fact anything except my Fedora 17 x64
+box running PostgreSQL 9.1. Needless to say, it's hardly production quality.
+
+
+
+To use the random_bytea extension connect to the database of your choice and
+run:
+
+    CREATE EXTENSION uuid_bytea;
+
+You can now convert bytea to uuid:
+
+	SELECT bytea_to_uuid(BYTEA '\x0FCC6350118D11E4A5597DE5338EB025');
+
+or vice versa:
+
+    SELECT uuid_to_bytea(UUID '0fcc6350-118d-11e4-a559-7de5338eb025');
+
+Explicit casts between bytea and uuid are also provided.
