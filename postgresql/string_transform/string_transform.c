@@ -22,11 +22,11 @@ replc(PG_FUNCTION_ARGS)
 		{
 			case '[':
 				depth++;
-				if (depth > 2)
+				if (depth <= 2)
 					*ch = '{';
 				break;
 			case ']':
-				if (depth > 2)
+				if (depth <= 2)
 					*ch = '}';
 				depth--;
 				break;
