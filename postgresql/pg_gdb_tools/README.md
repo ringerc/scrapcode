@@ -9,3 +9,5 @@ Just
     (gdb) source pggdb.py
     (gdb) break myfunction
     (gdb) run
+
+More info at http://blog.2ndquadrant.com/processes-breakpoints-watchpoints-postgresql/
