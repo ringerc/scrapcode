@@ -3,6 +3,13 @@
 #
 # Watchpoints and catchpoints work too.
 #
+# Remember to use
+#
+#    continue -a &
+#
+# to continue.
+#
+
 gdb.execute("set breakpoint pending on")
 #gdb.execute("break PostgresMain")
 #gdb.execute("break PostmasterMain")
@@ -18,31 +25,26 @@ gdb.execute("set python print-stack full")
 gdb.execute("set detach-on-fork off")
 gdb.execute("set schedule-multiple on")
 gdb.execute("set follow-fork-mode parent")
+gdb.execute("set non-stop on")
+# There's no sensible version tuple, so we have to use string hacks
+if ' 7.7.' in gdb.VERSION:
+    # Only needed on 7.7.x; see http://tromey.com/blog/?p=734
+    gdb.execute("set target-async on")
+if ' 7.8.' in gdb.VERSION:
+    gdb.execute("set print symbol-loading off")
 
-
-# Stop the postmaster killing backends when it sees a
-# segfault or similar.
-gdb.execute("handle SIGQUIT nostop noprint nopass")
+# PostgreSQL likes to use SIGINT to signal the checkpointer, but gdb
+# wants to use it to interrupt processes.
+#
+# There aren't proper signal handlers in gdb's Python support yet
+# but we can work around it by trapping the stop event the signal
+# produces, delivering the signal, and continuing.
 
 def do_continue():
+    """Async callback to issue continue from the gdb event queue"""
     gdb.execute("continue")
 
-def exit_handler(event):
-    global my_stop_request
-    if event.exit_code == 0:
-        # TODO: Should also accept nonzero exits that aren't a result of fatal
-        # signals, except by 'postgres' backends under the postmaster. gdb doesn't
-        # give us enough information for this at the moment.
-        has_threads = [ inferior.num for inferior in gdb.inferiors() if inferior.threads() ]
-        if has_threads:
-            has_threads.sort()
-            gdb.execute("inferior %d" % has_threads[0])
-            my_stop_request = True
-
-gdb.events.exited.connect(exit_handler)
-
 def stop_handler(event):
-    global my_stop_request
     if isinstance(event, gdb.SignalEvent):
         if event.stop_signal == "SIGINT":
             # The checkpointer gets sigints normally, so skip them if we're in
@@ -60,15 +62,7 @@ def stop_handler(event):
                     gdb.execute("signal SIGINT")
                     gdb.post_event(do_continue)
             except gdb.error:
-                # Likely not the context we are interested in
+                # Likely not the context we are interested in - wrong process, etc.
                 pass
-        elif event.stop_signal in ("SIGSEGV", "SIGABRT"):
-            # Event of interest happened, disable exit handler
-            gdb.events.exited.disconnect(exit_handler)
-    elif isinstance(event, gdb.BreakpointEvent):
-        pass
-    elif my_stop_request:
-        my_stop_request = False
-        gdb.post_event(do_continue)
 
 gdb.events.stop.connect(stop_handler)
