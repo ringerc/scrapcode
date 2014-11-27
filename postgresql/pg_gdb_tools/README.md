@@ -11,3 +11,5 @@ Just
     (gdb) run
 
 More info at http://blog.2ndquadrant.com/processes-breakpoints-watchpoints-postgresql/
+
+**If you use this on a PostgreSQL instance running on data you care about, you're insane**.
