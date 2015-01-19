@@ -1,0 +1,97 @@
+http://vimawesome.com/
+
+:set list <-- show whitespace
+
+Use Pathogen
+sensible-vim
+https://github.com/ntpeters/vim-better-whitespace
+https://github.com/tpope/vim-fugitive
+https://github.com/scrooloose/syntastic.git
+https://github.com/bling/vim-airline
+https://github.com/elzr/vim-json
+https://github.com/justinmk/vim-sneak
+https://github.com/kien/ctrlp.vim
+https://github.com/majutsushi/tagbar
+https://github.com/xolox/vim-easytags
+https://github.com/airblade/vim-gitgutter
+https://github.com/tpope/vim-repeat
+https://github.com/scrooloose/nerdcommenter
+https://github.com/plasticboy/vim-markdown
+https://github.com/sjl/gundo.vim
+https://github.com/tpope/vim-sleuth
+https://github.com/tpope/vim-surround
+https://github.com/tomasr/molokai
+https://github.com/exu/pgsql.vim
+https://github.com/mattn/gist-vim
+https://github.com/embear/vim-localvimrc
+
+
+Maybe:
+https://github.com/Valloric/YouCompleteMe
+https://github.com/SirVer/ultisnips
+https://github.com/honza/vim-snippets
+https://github.com/mhinz/vim-signify
+
+Not at the moment, but useful:
+https://github.com/tpope/vim-projectionist
+
+
+learn about:
+
+vim jumplist
+``, ctl-o
+'f' and 't' motion commands
+
+ctrl-p from ctrlp.vim
+
+F8 key from tagbar
+
+:UpdateTags, :HighlightTags from vim-easytags
+
+vim-gitgutter's ]c and [c hunk jumping, hs and hr to stage/revert
+
+gundo commands: http://sjl.bitbucket.org/gundo.vim
+
+vim-surround quoting commands: https://github.com/tpope/vim-surround
+
+What is <Leader> ?
+
+
+:Gist commands
+
+ctrlp docs
+http://kien.github.io/ctrlp.vim/
+
+c-f to toggle file/buffer
+c-d to toggle path/filename
+? in ctlp mode for help
+
+
+vim wildignore
+
+
+c-space for tagsearch
+
+:help cscope
+
+:scs for split cscope . Tab versoin?
+
+http://vim.wikia.com/wiki/Easier_buffer_switching
+
+:help buffers
+:help buffer-list
+:buffers
+:b
+
+ctl-w s <-- split current window
+
+TABS!!!
+tab use
+https://joshldavis.com/2014/04/05/vim-tab-madness-buffers-vs-tabs/
+:tab command
+
+:h map-which-keys
+
+origin of a mapping: :verbose map <key>
+
+"leader" is "\" by default, it means etension command
