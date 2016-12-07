@@ -1,10 +1,20 @@
 #!/usr/local/bin/python
 #
 # See http://blog.ringerc.id.au/2010/07/how-to-make-sco-openserver-505-printing.html
+#
+# Modified by Harish Pillay on March 25 2012 
+#
+# The print server will be running on a RHEL 6 host receiving print requests from
+# a SCO OpenServer 5.0.5 running on a VM on the RHEL6 host.
+#
+# The spoolhost will therefore be the interface between the VM and the host
+# Setting the port to print to 16668 so as not to clash with anything else
+# The default queue is set to a PDF printer as well, which on the host is
+# called rhel6-pdf.
 
-spoolhost = "10.0.0.10"
-spoolport = 6668
-defaultqueue = "iprint"
+spoolhost = "192.168.122.1"
+spoolport = 16668
+defaultqueue = "rhel6-pdf"
 
 import sys
 import os
