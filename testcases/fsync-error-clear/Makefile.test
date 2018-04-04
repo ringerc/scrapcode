@@ -1,0 +1,2 @@
+fsync-error-clear: fsync-error-clear.c
+	gcc -g -o fsync-error-clear fsync-error-clear.c
