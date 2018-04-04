@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
 	int dots = 0;
 	while (1)
 	{
-		int write_err = 0;
+		int write_err = 0, fsync_err = 0;
 
 		ssize_t written = write(fd, buf, sizeof(buf));
 		if (written == -1)
@@ -97,7 +97,7 @@ int main(int argc, char ** argv)
 			{
 				perror("\nerror on fsync() after successful write()");
 				fprintf(stderr, "Will retry fsync()\n");
-				write_err = 1;
+				fsync_err = 1;
 			}
 			else
 			{
@@ -110,21 +110,29 @@ int main(int argc, char ** argv)
 		 * We just got EIO or ENOSPC from write() or fsync(); another fsync()
 		 * should report success since the error was reported by the last
 		 * syscall.
+		 *
+		 * It seems reasonable for fsync() to succeed here on write()
+		 * error because we were told about the error directly. But
+		 * succeeding after another fsync() failed is ... surprising.
 		 */
-		if (write_err)
+		if (write_err || fsync_err)
 		{
 			if (fsync(fd))
 			{
 				/* Huh, fsync() failed again? */
 				perror("fsync");
-				fprintf(stderr, "fsync() failed like it should (but not what we expected on Linux)\n");
+				fprintf(stderr, "GOOD: fsync() failed like it should (but not what we expected on Linux)\n");
 				exit(1);
 			}
 			else
 			{
 				/* We expect the error flag to have been cleared by the last call */
-				fprintf(stderr, "fsync() after write or fsync error succeeded as expected\n");
-				fprintf(stderr, "despite prior error\n");
+				if (fsync_err)
+					fprintf(stderr, "BAD: fsync() succeeded after prior fsync() error\n");
+				else if (write_err)
+					fprintf(stderr, "OK: fsync() succeeded after prior write() error\n");
+				else
+					abort();
 				exit(1);
 			}
 		}
