@@ -6,7 +6,7 @@ mkdir -p /tmp /mnt/tmp
 chmod +t /tmp
 
 # cleanup from prior runs
-[ "$(dmsetup ls| cut -f 1)" = "errdev1" ] && dmsetup remove errdev1
+[ "$(dmsetup ls --target=error | cut -f 1)" = "errdev1" ] && dmsetup remove errdev1
 for lodev in $(losetup -j /tmp/errblk | cut -d : -f  1)
 do
 	losetup -d $lodev
