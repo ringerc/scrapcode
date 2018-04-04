@@ -40,11 +40,13 @@
  *     http://stackoverflow.com/q/42434872/398670
  */
 
-char buf[4096];
+#define WRITE_BUF_SIZE 4096 * 10
+
+char buf[WRITE_BUF_SIZE];
 
 int main(int argc, char ** argv)
 {
-	memset(buf, 0, 4096);
+	memset(buf, 0, sizeof(buf));
 
 	if (argc != 2)
 	{
@@ -59,18 +61,22 @@ int main(int argc, char ** argv)
 		exit(1);
     }
 
+	fprintf(stderr, "writing %zu byte blocks per fsync() until write() or fsync() error\n",
+			WRITE_BUF_SIZE);
+
 	/* keep writing until we hit the error */
 	int dots = 0;
 	while (1)
 	{
 		int write_err = 0;
 
-		ssize_t written = write(fd, buf, 4096);
+		ssize_t written = write(fd, buf, sizeof(buf));
 		if (written == -1)
 		{
 			if (errno == EIO || errno == ENOSPC)
 			{
-				perror("I/O error on write(), will try to fsync()");
+				perror("\nI/O error on write()");
+				fprintf(stderr, "Will try to fsync()\n");
 				write_err = 1;
 			}
 			else
@@ -79,9 +85,9 @@ int main(int argc, char ** argv)
 				exit(1);
 			}
 		}
-		else if (written != 4096)
+		else if (written != sizeof(buf))
 		{
-			fprintf(stderr, "wrote %zd, expected 4096. Don't know what to do now.\n", written);
+			fprintf(stderr, "wrote %zd, expected %zd. Don't know what to do now.\n", written, WRITE_BUF_SIZE);
 			exit(1);
 		}
 
@@ -89,7 +95,8 @@ int main(int argc, char ** argv)
 		{
 			if (errno == EIO|| errno == ENOSPC)
 			{
-				perror("error on fsync() after successful write(), will retry fsync()");
+				perror("\nerror on fsync() after successful write(), will retry fsync()");
+				fprintf(stderr, "Will retry fsync()\n");
 				write_err = 1;
 			}
 			else
@@ -109,13 +116,15 @@ int main(int argc, char ** argv)
 			if (fsync(fd))
 			{
 				/* Huh, fsync() failed again? */
-				perror("fsync2");
+				perror("fsync");
+				fprintf(stderr, "fsync() failed like it should (but not what we expected on Linux)\n");
 				exit(1);
 			}
 			else
 			{
 				/* We expect the error flag to have been cleared by the last call */
-				fprintf(stderr, "second fsync() succeeded as expected\n");
+				fprintf(stderr, "fsync() after write or fsync error succeeded as expected\n");
+				fprintf(stderr, "despite prior error\n");
 				exit(1);
 			}
 		}
