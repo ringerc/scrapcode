@@ -95,7 +95,7 @@ int main(int argc, char ** argv)
 		{
 			if (errno == EIO|| errno == ENOSPC)
 			{
-				perror("\nerror on fsync() after successful write(), will retry fsync()");
+				perror("\nerror on fsync() after successful write()");
 				fprintf(stderr, "Will retry fsync()\n");
 				write_err = 1;
 			}
