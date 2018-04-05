@@ -1,0 +1,9 @@
+There are a few different but related tests here.
+
+All the tests share a common filesystem setup with a loopback volume wrapped by
+a device-mapper device which puts an error hole in the middle of the FS. Writes
+to and reads from the hole always EIO.
+
+standalone/ tests with a simple program designed to run write() then fsync() in
+a loop until it hits an error, then examine the error behavour. This is the
+default target of "make".
