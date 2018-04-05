@@ -33,11 +33,16 @@
  *
  * You can also observe this by writing until -ENOSPC on a volume without
  * artificial bad blocks, though this will usually fail during write()
- * rather than the first fsync().
+ * rather than the first fsync() as most file systems reserve space before
+ * returning from write().
  *
  * Some kernel level info on this behaviour can be found at
  *
  *     http://stackoverflow.com/q/42434872/398670
+ *
+ * and the PostgreSQL mailing list thread at
+ *
+ *     https://www.postgresql.org/message-id/CAMsr+YHh+5Oq4xziwwoEfhoTZgr07vdGG+hu=1adXx59aTeaoQ@mail.gmail.com
  */
 
 #define WRITE_BUF_SIZE 4096 * 10
