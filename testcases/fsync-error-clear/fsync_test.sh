@@ -21,6 +21,8 @@ MKFSOPTS="${2:-}"
 
 MOUNTOPTS="${3:-}"
 
+REOPEN_MODE="${4:-keepopen}"
+
 mkdir -p /tmp /mnt/tmp
 chmod +t /tmp
 
@@ -99,7 +101,7 @@ mount /dev/mapper/errdev1 /mnt/tmp $OPTSSTR
 trap "{ trap EXIT; umount /mnt/tmp; dmsetup remove errdev1; losetup -d ${LOOPDEV}; }" EXIT
 
 # Run the test program
-./fsync-error-clear /mnt/tmp/test_file
+./fsync-error-clear /mnt/tmp/test_file "${REOPEN_MODE}"
 
 losetup -d ${LOOPDEV}
 trap EXIT

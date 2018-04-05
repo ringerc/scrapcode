@@ -49,25 +49,145 @@
 
 char buf[WRITE_BUF_SIZE];
 
-int main(int argc, char ** argv)
+/*
+ * When we've failed a write of our main test file, write a spare second file
+ * to see if the FS is still online. This will catch cases where the FS
+ * remounts read-only or the like.
+ */
+static void
+write_another_file(const char * base_fname)
 {
-	memset(buf, 0, sizeof(buf));
+	int fnamelen = strlen(base_fname) + 5;
+	char * fname = malloc(fnamelen);
 
-	if (argc != 2)
+	fprintf(stderr, "\nTrying to write a second file to test FS\n");
+
+	snprintf(&fname[0], fnamelen, "%s.new", base_fname);
+	int fd = open(fname, O_WRONLY|O_CREAT|O_TRUNC);
+	if (fd == -1)
 	{
-		fprintf(stderr, "usage: %s path-to-write\n", argv[0]);
-		exit(2);
+		fprintf(stderr, "second file %s: %s\n", fname, strerror(errno));
+		exit(1);
+	}
+	free(fname);
+
+	ssize_t written = write(fd, buf, sizeof(buf));
+	if (written == -1)
+	{
+		perror("second file write()");
+		exit(1);
+	}
+	else if (written != sizeof(buf))
+	{
+		fprintf(stderr, "second file wrote %zd, expected %zd. Don't know what to do now.\n", written, WRITE_BUF_SIZE);
+		exit(1);
 	}
 
-    int fd = open(argv[1], O_WRONLY|O_CREAT|O_TRUNC);
-    if (fd == -1)
-    {
+	if (fsync(fd) == -1)
+	{
+		perror("second file fsync()");
+		exit(1);
+	}
+
+	if (close(fd))
+	{
+		perror("second file close()");
+		exit(1);
+	}
+
+	fprintf(stderr, "Wrote second file OK\n");
+}
+
+static int
+reopen_fd(int fd, const char *fname)
+{
+	off_t pos = lseek(fd, 0, SEEK_CUR);
+	if (pos == (off_t) -1)
+	{
+		perror("lseek() before close()");
+		/* we don't try to continue here */
+		exit(1);
+	}
+
+	if (close(fd))
+	{
+		perror("\nerror on close()");
+		fprintf(stderr, "Treating error on close() same as write() error; trying reopen and fsync()");
+	}
+
+	/*
+	 * It seems like nothing particularly interesting here happens unless the
+	 * FS does writeback while we don't have the file open. We'll force it with
+	 * a sync(). This is, of course, stunningly slow.
+	 *
+	 * You can instead set dirty_writeback_centisecs and
+	 * dirty_expire_centisecs to 1 and usleep(300000) here if you don't
+	 * mind waiting a while for the test to run.
+	 */
+	sync();
+	/*usleep(3 * 100 * 1000); */
+
+	fd = open(fname, O_WRONLY);
+	if (fd == -1)
+	{
+		fprintf(stderr, "reopen %s: %s\n", fname, strerror(errno));
+		exit(1);
+	}
+
+	if (lseek(fd, pos, SEEK_SET) == (off_t) -1)
+	{
+		perror("lseek() after re-open()");
+		exit(1);
+	}
+
+	return fd;
+}
+
+static void
+usage_die(const char *argv0)
+{
+	fprintf(stderr, "usage: %s path-to-write [reopen|keepopen]\n", argv0);
+	exit(2);
+}
+
+int main(int argc, char ** argv)
+{
+	int second_try = 0;
+	off_t last_offset = 0;
+	int reopen = 0;
+
+	memset(buf, 0, sizeof(buf));
+
+	if (argc < 2)
+		usage_die(argv[0]);
+
+	if (argc > 2)
+	{
+		if (strcmp(argv[2], "reopen") == 0)
+			reopen = 1;
+		else if (strcmp(argv[2], "keepopen") == 0)
+			reopen = 0;
+		else
+		{
+			fprintf(stderr, "unknown open option %s", argv[2]);
+			usage_die(argv[0]);
+		}
+	}
+
+	int fd = open(argv[1], O_WRONLY|O_CREAT|O_TRUNC);
+	if (fd == -1)
+	{
 		fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
 		exit(1);
-    }
+	}
 
 	fprintf(stderr, "writing %zu byte blocks per fsync() until write() or fsync() error\n",
 			WRITE_BUF_SIZE);
+
+	if (reopen)
+		fprintf(stderr, "Reopening file between each write() and fsync()\n");
+	else
+		fprintf(stderr, "Keeping file open across write()s and fsync()s\n");
 
 	/* keep writing until we hit the error */
 	int dots = 0;
@@ -75,13 +195,21 @@ int main(int argc, char ** argv)
 	{
 		int write_err = 0, fsync_err = 0;
 
+		last_offset = lseek(fd, 0, SEEK_CUR);
+		if (last_offset == (off_t) -1)
+		{
+			perror("\nUnexpected error from lseek()");
+			exit(3);
+		}
+
 		ssize_t written = write(fd, buf, sizeof(buf));
 		if (written == -1)
 		{
 			if (errno == EIO || errno == ENOSPC)
 			{
 				perror("\nI/O error on write()");
-				fprintf(stderr, "Will try to fsync()\n");
+				fprintf(stderr, "File position was %zu before write(), is now %zu",
+						last_offset, lseek(fd, 0, SEEK_CUR));
 				write_err = 1;
 			}
 			else
@@ -95,6 +223,17 @@ int main(int argc, char ** argv)
 			fprintf(stderr, "wrote %zd, expected %zd. Don't know what to do now.\n", written, WRITE_BUF_SIZE);
 			exit(1);
 		}
+
+		/*
+		 * PostgreSQL often write()s to a file, close()s it, re-open()s it, and fsync()s
+		 * it in the checkpointer process. We're not bothering to use separate processes
+		 * for now, but are simulating the same behaviour of close, write and reopen.
+		 *
+		 * TODO: We should also test a sync() while closed to test background dirty writeback
+		 * handling.
+		 */
+		if (reopen)
+			fd = reopen_fd(fd, argv[1]);
 
 		if (!write_err && fsync(fd))
 		{
@@ -126,8 +265,7 @@ int main(int argc, char ** argv)
 			{
 				/* Huh, fsync() failed again? */
 				perror("fsync");
-				fprintf(stderr, "GOOD: fsync() failed like it should (but not what we expected on Linux)\n");
-				exit(1);
+				fprintf(stderr, "GOOD: fsync() failed after prior error\n");
 			}
 			else
 			{
@@ -138,15 +276,35 @@ int main(int argc, char ** argv)
 					fprintf(stderr, "OK: fsync() succeeded after prior write() error\n");
 				else
 					abort();
+				fprintf(stderr, "File position was %zu before write(), is now %zu",
+						last_offset, lseek(fd, 0, SEEK_CUR));
+			}
+
+			if (second_try)
+			{
+				write_another_file(argv[1]);
 				exit(1);
 			}
+
+			/*
+			 * Go around once more to see what happens on a
+			 * subsequent write(), rewinding to retry the failed
+			 * write.
+			 */
+			if (lseek(fd, last_offset, SEEK_SET) == (off_t) -1)
+			{
+				fprintf(stderr, "lseek() after write() or fsync() error failed with");
+				exit(4);
+			}
+
+			second_try = 1;
 		}
 
 		fprintf(stdout, ".");
 		dots++;
-		if (dots == 80)
+		if (dots == 60)
 		{
-			fprintf(stdout, "\n");
+			fprintf(stdout, " %12zu\n", lseek(fd, 0, SEEK_CUR));
 			dots = 0;
 		}
 		fflush(stdout);
