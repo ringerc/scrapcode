@@ -7,3 +7,15 @@ to and reads from the hole always EIO.
 standalone/ tests with a simple program designed to run write() then fsync() in
 a loop until it hits an error, then examine the error behavour. This is the
 default target of "make".
+
+There's also a postgres/ test run with "make postgres-run". This puts WAL on a
+separate volume because we already PANIC on wal fsync (like we should
+apparently do for all fsync). So if the first error happens to be in WAL writes,
+we behave correctly. Then it runs a txn that does lots of inserts to grow the
+heap, while forcing periodic checkpoints until one fails. When the checkpoint
+fails it retries the checkpoint. Since we wrote to a bad chunk of disk and lost
+data, this should fail again, but it succeeds.
+
+Both these tests still need extending to show that reading the data back fails.
+Otherwise it could be that the FS retried with a new physical allocation and
+succeeded in writing, and everything's actually A-OK.
