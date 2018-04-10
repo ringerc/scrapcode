@@ -3,8 +3,10 @@
 import psycopg2
 import os
 import sys
+import time
 
-conn = psycopg2.connect("dbname=postgres")
+connstr = "dbname=postgres"
+conn = psycopg2.connect(connstr)
 curs = conn.cursor()
 
 curs.execute("""
@@ -29,17 +31,28 @@ while True:
 
     try:
         curs.execute("CHECKPOINT")
-    except psycopg2.Error as e:
+    except psycopg2.OperationalError as e:
         print("Checkpoint failed with {}".format(e))
         print("Retrying")
-        conn.rollback();
-        try:
-            curs.execute("CHECKPOINT")
-            print("Ooops, it worked! We ignored the error and checkpointed OK.")
-            sys.exit(1)
-        except psycopg2.Error as e:
-            print("Good, checkpoint failed again with {}".format(e))
-            sys.exit(0)
+        for i in range(1,10):
+            conn.close();
+            time.sleep(0.5);
+            try:
+                conn = psycopg2.connect(connstr)
+                curs = conn.cursor()
+            except psycopg2.OperationalError as e2:
+                # Cannot connect now: FATAL: the database system is starting up
+                if e2.pgcode != '57P03':
+                    print("Unexpected error code {} from exception {}".format(e2.pgcode, e2))
+                continue
+
+            try:
+                curs.execute("CHECKPOINT")
+                print("Ooops, it worked! We ignored the error and checkpointed OK.")
+                sys.exit(1)
+            except psycopg2.Error as e:
+                print("Good, checkpoint failed again with {}".format(e))
+                sys.exit(0)
 
     print(".", end='', flush=True)
     chars += 1

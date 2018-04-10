@@ -1,3 +1,4 @@
 .base-build
 .standalone-build
 .postgres-build
+ccache/

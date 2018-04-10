@@ -3,6 +3,8 @@ FSTYPE ?= xfs
 MKFSOPTS=
 MOUNTOPTS=
 
+# Expect PGGIT and PGBRANCH to be set for postgres runs
+
 default: standalone-run
 
 .base-build: fsync_test_setup.sh
@@ -36,6 +38,8 @@ standalone-run: .standalone-build
 	touch .postgres-build
 
 postgres-run: .postgres-build
-	docker run --rm --privileged -it fsync_error_postgres $(FSTYPE) "$(MKFSOPTS)" "$(MOUNTOPTS)" "$(REOPEN)"
+	$(if $(PGGIT),,$(error "PGGIT must be defined for postgres-run"))
+	$(if $(PGBRANCH),,$(error "PGBRANCH must be defined for postgres-run"))
+	docker run --rm --privileged --volume="$(PGGIT)":/postgres --env PGBRANCH="$(PGBRANCH)" -v $(CURDIR)/ccache:/ccache --env CCACHE_DIR=/ccache -it fsync_error_postgres $(FSTYPE) "$(MKFSOPTS)" "$(MOUNTOPTS)" "$(REOPEN)"
 
 .PHONY: postgres-run
