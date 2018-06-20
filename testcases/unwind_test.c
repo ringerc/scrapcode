@@ -22,17 +22,31 @@ save_context_jump(unw_context_t *ctx)
 	longjmp(buf, 1);
 }
 
+static void
+chain_alloca(unw_context_t *ctx)
+{
+	void *buf = alloca(20);
+	save_context_jump(ctx);
+}
+
+static inline void
+chaininline_alloca(unw_context_t *ctx)
+{
+	void *buf = alloca(100);
+	chain_alloca(ctx);
+}
+
 void
 chain2(unw_context_t *ctx)
 {
 	char dummy_buf[42];
 	strncpy(&dummy_buf[0], "life", 42);
-	save_context_jump(ctx);
+	chaininline_alloca(ctx);
 	printf("%s", &dummy_buf[0]);
 }
 
-inline static void
-chain(unw_context_t *ctx)
+static void
+chainvolatile(unw_context_t *ctx)
 {
 	volatile int thingy = 4;
 	chain2(ctx);
@@ -80,5 +94,5 @@ main(int argc, char ** argv)
 		exit(0);
 	}
 
-	chain(&ctx);
+	chainvolatile(&ctx);
 }
