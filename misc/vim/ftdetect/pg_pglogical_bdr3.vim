@@ -26,7 +26,7 @@ let s:pglsrcdir = $HOME . "/projects/2Q/" . b:pglver
 " We check in the sourcetree not the installed tree because we don't want to
 " find installed pglogical sources etc.
 function s:get_pg_INCLUDEDIRS()
-	return systemlist("find " . s:pgsrcdir . "/src/include -type d -print")
+	return systemlist("find " . s:pgsrcdir . " -type f -name \\*.h -printf '%h\n' | sort -u ")
 endfunction
 
 " Similarly for pgl3 we look in its source dir. Not bothering with compat
@@ -36,7 +36,7 @@ function s:get_pgl_INCLUDEDIRS()
 endfunction
 
 " Set the make command to use for pgl3 and bdr3 when you run :make
-autocmd BufRead,BufNewFile */pglogical*/*.[ch] let &makepgr=s:pgl3make
+autocmd BufRead,BufNewFile */pglogical*/*.[ch] let &makeprg=s:pgl3make
 autocmd BufRead,BufNewFile */bdr3*/*.[ch] let &makeprg=s:bdr3make
 
 " INCLUDEDIRS is set for cscope, which we use in the F5 binding,
