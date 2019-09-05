@@ -1,0 +1,153 @@
+downloaded LCD_show
+
+read script LCD35-show
+
+installed pkgs (some may be present)
+
+  sudo apt-get install xserver-xorg-input-evdev xinput-calibrator xserver-xorg-video-fbdev fbset
+
+copied device tree overlays from lcd-show
+
+  sudo cp ./waveshare35a-overlay.dtb /boot/overlays/waveshare35a.dtbo
+  sudo cp ./waveshare35a-overlay.dtb /boot/overlays/
+
+added to cmdline.txt
+
+  fbcon=map:10 fbcon=font:ProFont6x11
+
+modified config.txt (unsure yet if all mods needed)
+
+    dtparam=i2c_arm=on
+    dtparam=spi=on
+    enable_uart=1
+
+    dtoverlay=waveshare35a
+    #dtoverlay=ads7846,cs=1,penirq=17,penirq_pull=2,speed=1000000,keep_vref_on=1,swapxy=1,pmax=255,xohms=60,xmin=200,xmax=3900,ymin=200,ymax=3900
+
+    hdmi_force_hotplug=1
+    hdmi_group=2
+    hdmi_mode=1
+    hdmi_mode=87
+    hdmi_cvt 480 320 60 6 0 0 0
+    hdmi_drive=2
+
+docs:
+
+on fbcon, fbcon=map option etc:
+* https://www.kernel.org/doc/Documentation/fb/fbcon.txt
+* control after with con2fbmap command
+
+aha, so the trick here is to fake the pi into thinking it has hdmi, output to hdmi, then clone fb0->fb1 in userspace with fbcp, ew. But it's useful to keep the hdmi options
+in config.txt because otherwise the lcd will sometimes be fb0, sometimes fb1.
+
+created /etc/X11/xorg.conf.d/
+
+created  /etc/X11/xorg.conf.d/99-fbdev-lcd.conf
+
+	Section "Device"  
+		Identifier "lcd35"
+		Driver "fbdev"
+		Option "fbdev" "/dev/fb1"
+	EndSection
+
+
+(may need to change)
+
+/etc/init.d/lightdm restart
+
+... with which the display blanks, but doesn't do anything else, damn.
+
+
+made it work with a more complex x config; may break after reboot hdmi 
+
+	# Note that this supplements the default config loaded from
+	# /etc/X11/xorg.conf.d/99-fbdev-lcd.conf and the other .conf files there.
+
+	Section "Device"  
+	    Identifier  "lcd35"
+	    Driver      "fbdev"
+	    Option      "fbdev" "/dev/fb1"
+	EndSection
+
+	Section "Monitor"
+	    Identifier  "hdmi"
+	EndSection
+
+	Section "Monitor"
+	    Identifier  "lcd35"
+	    VendorName  "Wavecomm-clone"
+	    ModelName   "Touch-35"
+	    # DisplaySize ...
+	    # Option "Rotate" ...
+	EndSection
+
+	Section "Screen"
+	    Identifier "lcd35"
+	    Device "lcd35"
+	    Monitor "lcd35"
+	EndSection
+
+	# The device is defined in /etc/X11/xorg.conf.d/99-fbdev-lcd.conf
+	Section "Screen"
+	    Identifier "hdmi"
+	    Device "Allwinner A10/A13 FBDEV"
+	    Monitor "hdmi"
+	EndSection
+
+	Section "ServerLayout"
+	    Identifier   "lcd35"
+	    Screen       "lcd35"
+	    Screen       "hdmi" RightOf "lcd35"
+	    #InputDevice "ADS7846 Touchscreen" "SendCoreEvents"
+	EndSection
+
+touchscreen rotated. Used 
+
+	sudo DISPLAY=:0 XAUTHORITY=/var/run/lightdm/root/:0 xinput list
+
+
+pi@raspberrypi:~ $ sudo DISPLAY=:0 XAUTHORITY=/var/run/lightdm/root/:0 xinput list
+⎡ Virtual core pointer                    	id=2	[master pointer  (3)]
+⎜   ↳ Virtual core XTEST pointer              	id=4	[slave  pointer  (2)]
+⎜   ↳ ADS7846 Touchscreen                     	id=6	[slave  pointer  (2)]
+⎣ Virtual core keyboard                   	id=3	[master keyboard (2)]
+    ↳ Virtual core XTEST keyboard             	id=5	[slave  keyboard (3)]
+
+
+then ran
+
+	sudo DISPLAY=:0 XAUTHORITY=/var/run/lightdm/root/:0 xinput_calibrator
+
+to get
+
+	Section "InputClass"
+		Identifier	"calibration"
+		MatchProduct	"ADS7846 Touchscreen"
+		Option	"MinX"	"20980"
+		Option	"MaxX"	"22437"
+		Option	"MinY"	"50226"
+		Option	"MaxY"	"52274"
+		Option	"SwapXY"	"1" # unless it was already set to 1
+		Option	"InvertX"	"0"  # unless it was already set
+		Option	"InvertY"	"0"  # unless it was already set
+	EndSection
+
+installed in config as simplified
+
+
+	Section "InputClass"
+		Identifier	"calibration"
+		MatchProduct	"ADS7846 Touchscreen"
+		Option	"SwapXY"	"1" # unless it was already set to 1
+		Option	"InvertX"	"0"  # unless it was already set
+		Option	"InvertY"	"0"  # unless it was already set
+	EndSection
+
+but didn't work because swapxy not working
+
+
+
+If I want both displays to work I have to switch to using fbturbo for the driver on the little panel too,
+it doesn't like sharing with fbdev.
+
+
