@@ -115,6 +115,8 @@ http://vim.wikia.com/wiki/Easier_buffer_switching
 :buffers
 :b
 
+gf <-- "goto file" named by cursor pos
+
 ctl-w s <-- split current window
 
 TABS!!!

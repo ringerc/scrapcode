@@ -2,6 +2,8 @@ set exrc
 set secure
 set nocompatible
 
+" Hint: read ':help script'
+
 " Load installed plugins from ~/.vim/pack/*/opt/{name}
 " (first subdir is user defined arbitrary category)
 " see plugin-list.txt
@@ -28,7 +30,6 @@ packadd! vim-sleuth
 packadd! vim-sneak
 packadd! vim-surround
 
-
 " NOTE NOTE NOTE NOTE NOTE
 "
 " Do not put filetype autocmds here. Put them in ~/.vim/filetype.vim
@@ -42,11 +43,10 @@ let mapleader = ","
 set cscopetag
 
 " Discover filetype commands in ~/.vim/filetype.vim etc; see :help filetype
+" and enable autoload of plugin and indent configs
 filetype on
-" Autoload plugin filetypes too
 filetype plugin on
-" Want indent on by default
-filetype plugin indent on
+filetype indent on
 
 " syntastic plugin
 set statusline+=%#warningmsg#
@@ -56,9 +56,26 @@ let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
-" Config for C compilers is stored in .syntastic_c_config
-" See https://github.com/scrooloose/syntastic/wiki/C:---gcc 
+let g:syntastic_enable_signs=1
+" Check header files too
+let g:syntastic_c_check_header = 1
+let g:syntastic_cpp_check_header = 1
+" But don't report errors from headers in .c file editing
+let g:syntastic_c_remove_include_errors = 1
+let g:syntastic_cpp_remove_include_errors = 1
+" Syntastic config for C compilers is stored in .syntastic_c_config
+" in project directory by default, but we don't really want that
+" as it's a pain when not everyone in the proj uses vim.
+"
+" See https://github.com/scrooloose/syntastic/wiki/C:---gcc
+"
 " One line per -I directive or other command
+"
+" To avoid keeping them in the project dirs, and working aronud multiple
+" clones etc, we keep them in ftdetect plugins and set them there.
+"
+" Handy hint - use :call SyntasticInfo()
+
 
 " localvimrc plugin
 let g:localvimrc_sandbox = 0
@@ -72,6 +89,9 @@ let g:ctrlp_extensions = ['tag', 'mixed']
 
 " Use the nearest revision control dir as the ctrlp root
 let g:ctrlp_working_path_mode = 'r'
+
+" use gotofile (gf) via ctrlp to highlight and goto filename
+nmap <leader>gf :CtrlP<CR><C-\>w
 
 " Easy bindings for its various modes
 nmap <F2> :CtrlPBuffer<cr>
@@ -101,8 +121,12 @@ nmap <A-Home> :enew<CR>
 " End for close buffer
 nmap <A-End> :bp <BAR> bd #<CR>
 
-" Keymap F5 to rebuild and reload cscope db
-map <F5> :!cscope -b<CR>:cs reset<CR><CR>
+" Keymap F5 to rebuild and reload cscope db;
+" use the -q option to build an inverted index too
+"
+" We set INCLUDEDIRS to control what cscope looks for
+"
+map <F5> :!cscope -R -q -b<CR>:cs reset<CR><CR>
 
 
 " Persistent undo history; must create directory in advance
