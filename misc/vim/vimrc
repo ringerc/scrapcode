@@ -2,13 +2,50 @@ set exrc
 set secure
 set nocompatible
 
+" Load installed plugins from ~/.vim/pack/*/opt/{name}
+" (first subdir is user defined arbitrary category)
+" see plugin-list.txt
+packadd  vim-misc
+packadd! ctrlp.vim
+packadd! gist-vim
+packadd! gundo.vim
+packadd! molokai
+packadd! nerdcommenter
+packadd! pgsql.vim
+packadd! syntastic
+packadd! tagbar
+packadd! vim-airline
+packadd! vim-better-whitespace
+packadd! vim-easytags
+packadd! vim-fugitive
+packadd! vim-gitgutter
+packadd! vim-json
+packadd! vim-localvimrc
+packadd! vim-markdown
+packadd! vim-repeat
+packadd! vim-sensible
+packadd! vim-sleuth
+packadd! vim-sneak
+packadd! vim-surround
+
+
+" NOTE NOTE NOTE NOTE NOTE
+"
+" Do not put filetype autocmds here. Put them in ~/.vim/filetype.vim
+"
+" NOTE NOTE NOTE NOTE NOTE
+
 " Use , instead of \ for the <Leader> key
 let mapleader = ","
 
 " always use cscope as well as ctags if both present
 set cscopetag
 
-execute pathogen#infect()
+" Discover filetype commands in ~/.vim/filetype.vim etc; see :help filetype
+filetype on
+" Autoload plugin filetypes too
+filetype plugin on
+" Want indent on by default
 filetype plugin indent on
 
 " syntastic plugin
@@ -64,18 +101,32 @@ nmap <A-Home> :enew<CR>
 " End for close buffer
 nmap <A-End> :bp <BAR> bd #<CR>
 
+" Keymap F5 to rebuild and reload cscope db
+map <F5> :!cscope -b<CR>:cs reset<CR><CR>
 
-" Do not put filetype autocmds here. Put them in ~/.vim/filetype.vim
 
-" Highlight extra whitespace
-" see http://vim.wikia.com/wiki/Highlight_unwanted_spaces
-autocmd ColorScheme * highlight ExtraWhitespace ctermbg=red guibg=red
-" Show trailing whitepace and spaces before a tab:
-autocmd Syntax * syn match ExtraWhitespace /\s\+$\| \+\ze\t/
+" Persistent undo history; must create directory in advance
+set undofile
+set undodir=/home/craig/.vimundo/
 
-nmap <F8> :TagbarToggle<CR>
-
-colorscheme molokai
+" Change the colours
+"colorscheme molokai
 
 " Use pgsql syntax for all .sql files
 let g:sql_type_default = 'pgsql'
+
+
+" Automatic space highlighting 
+" (DISABLED now in favour of better-whitespace plugin)
+"
+" https://vim.fandom.com/wiki/Highlight_unwanted_spaces
+"
+" but note that this will clobber your pattern list
+" so I'd like a better way really
+"
+"highlight ExtraWhitespace ctermbg=red guibg=red
+"match ExtraWhitespace /\s\+$/
+"autocmd BufWinEnter * match ExtraWhitespace /\s\+$\| \+\ze\t/
+"autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+"autocmd InsertLeave * match ExtraWhitespace /\s\+$\| \+\ze\t/
+"autocmd BufWinLeave * call clearmatches()

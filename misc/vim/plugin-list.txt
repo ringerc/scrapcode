@@ -1,30 +1,62 @@
 http://vimawesome.com/
 
+# handy for test async running
+https://github.com/tpope/vim-dispatch
+
 :set list <-- show whitespace
 
-Use Pathogen
-sensible-vim
-https://github.com/ntpeters/vim-better-whitespace
-https://github.com/tpope/vim-fugitive
-https://github.com/scrooloose/syntastic.git
-https://github.com/bling/vim-airline
-https://github.com/elzr/vim-json
-https://github.com/justinmk/vim-sneak
-https://github.com/kien/ctrlp.vim
-https://github.com/majutsushi/tagbar
-https://github.com/xolox/vim-easytags
-https://github.com/airblade/vim-gitgutter
-https://github.com/tpope/vim-repeat
-https://github.com/scrooloose/nerdcommenter
-https://github.com/plasticboy/vim-markdown
-https://github.com/sjl/gundo.vim
-https://github.com/tpope/vim-sleuth
-https://github.com/tpope/vim-surround
-https://github.com/tomasr/molokai
-https://github.com/exu/pgsql.vim
-https://github.com/mattn/gist-vim
-https://github.com/embear/vim-localvimrc
+~~~ no longer use Pathogen ~~~ now use :help packages
+~~~
+~~~ see https://vi.stackexchange.com/questions/9522/what-is-the-vim8-package-feature-and-how-should-i-use-it
+~~~
+~~~ in short use   ~/.vim/pack/main/opt/${package}
+~~~ and use :packadd! in vimrc, or let autoload
+~~~ note that "main" is arbitrarily chosen local name for
+~~~ plugin collection
+~~~
+~~~ for packages in git just e.g.
+~~~ mkdir -p ~/.vim/pack/main/opt
+~~~ git clone git://github.com/ntpeters/vim-better-whitespace ~/.vim/pack/main/opt/vim-better-whitespace
+~~~
+~~~ note github will let you clone the bare repo url w/o .git 
+~~~
+~~~ use :scriptnames             to list loaded
+~~~ use :help local-additions    to list plugins with help files
+~~~ use :helptags ~/.vim/pack    to reindex plugin help
+~~~ use :packadd! plugin         to load plugin
 
+
+mkdir -p ~/.git/pack
+pushd ~/.git/pack
+for url in \
+	https://github.com/tpope/vim-sensible \
+	https://github.com/ntpeters/vim-better-whitespace \
+	https://github.com/tpope/vim-fugitive \
+	https://github.com/scrooloose/syntastic.git \
+	https://github.com/bling/vim-airline \
+	https://github.com/elzr/vim-json \
+	https://github.com/justinmk/vim-sneak \
+	https://github.com/kien/ctrlp.vim \
+	https://github.com/majutsushi/tagbar \
+	https://github.com/xolox/vim-easytags \
+	https://github.com/airblade/vim-gitgutter \
+	https://github.com/tpope/vim-repeat \
+	https://github.com/scrooloose/nerdcommenter \
+	https://github.com/plasticboy/vim-markdown \
+	https://github.com/sjl/gundo.vim \
+	https://github.com/tpope/vim-sleuth \
+	https://github.com/tpope/vim-surround \
+	https://github.com/tomasr/molokai \
+	https://github.com/exu/pgsql.vim \
+	https://github.com/mattn/gist-vim \
+	https://github.com/embear/vim-localvimrc \
+; do
+	git clone $url;
+done
+popd
+
+# for development use
+https://github.com/tpope/vim-scriptease
 
 Maybe:
 https://github.com/Valloric/YouCompleteMe
@@ -93,5 +125,9 @@ https://joshldavis.com/2014/04/05/vim-tab-madness-buffers-vs-tabs/
 :h map-which-keys
 
 origin of a mapping: :verbose map <key>
+
+switchbuf var
+
+quickfix?
 
 "leader" is "\" by default, it means etension command
