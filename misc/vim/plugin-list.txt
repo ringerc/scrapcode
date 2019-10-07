@@ -131,5 +131,17 @@ origin of a mapping: :verbose map <key>
 switchbuf var
 
 quickfix?
+    :help quickfix
+    :copen, :cw <-- view quickfix in window (latter better)
+    :.cc <-- jump to error under cursor, or just enter in window
+    :cl <-- list quickfix candidate errors
+    :cl! <-- list all error info
+    :cc1 <-- list error <1>
+    :cn <-- next
+    :cp <-- prev
+    :cr <-- rewind to start
+    :cexpr <-- make temp quickfix list from a command or expression, handy for "grep for all of <x>"
+    :cdo , :cfdo <-- loop over quickfix entries and do a cmd
+
 
 "leader" is "\" by default, it means etension command

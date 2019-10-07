@@ -9,12 +9,12 @@
 " These two control which sources Syntastic, CScope, etc look at
 " when working on projects that use these as dependencies.
 let b:pgver="2Qpg11"
-let b:pglver="pglogical3"
+let b:pglver="pglogical3-master"
 
-let s:pgl3make="pgl3build 2Qpg11 all install"
-let s:pgl3check="pgl3build 2Qpg11 all install check"
-let s:bdr3make="bdr3build 2Qpg11 all install"
-let s:bdr3check="bdr3build 2Qpg11 all install check"
+let s:pgl3make="pgl3build 2>&1 2Qpg11 -w all install"
+let s:pgl3check="pgl3build 2>&1 2Qpg11 -w all install check"
+let s:bdr3make="bdr3build 2>&1 2Qpg11 -w all install"
+let s:bdr3check="bdr3build 2>&1 2Qpg11 -w all install check"
 
 let s:pgsrcdir = $HOME . "/projects/2Q/" . b:pgver
 let s:pglsrcdir = $HOME . "/projects/2Q/" . b:pglver
@@ -25,8 +25,12 @@ let s:pglsrcdir = $HOME . "/projects/2Q/" . b:pglver
 
 " We check in the sourcetree not the installed tree because we don't want to
 " find installed pglogical sources etc.
+"
+" We look for src/include/port/ but not its children so we don't get muddled
+" by win32 wrappers etc.
+"
 function s:get_pg_INCLUDEDIRS()
-	return systemlist("find " . s:pgsrcdir . " -type f -name \\*.h -printf '%h\n' | sort -u ")
+	return systemlist("find " . s:pgsrcdir . " -path '*/include/port/*' -printf '%h\n' -prune -o  -type f -name \\*.h -printf '%h\n' | sort -u ")
 endfunction
 
 " Similarly for pgl3 we look in its source dir. Not bothering with compat
@@ -46,10 +50,12 @@ autocmd BufRead,BufNewFile */bdr3*/*.[ch] let &makeprg=s:bdr3make
 autocmd BufRead,BufNewFile */bdr*/\(*.[ch]\|*.cpp\|*.pl\|*.pm\)
 			\ set tabstop=4 shiftwidth=4 noexpandtab autoindent |
 			\ let g:syntastic_c_include_dirs=s:get_pgl_INCLUDEDIRS() |
+			\ let g:syntastic_cpp_include_dirs=s:get_pgl_INCLUDEDIRS() |
 			\ let $INCLUDEDIRS=join(s:get_pgl_INCLUDEDIRS(), ':')
 autocmd BufRead,BufNewFile */pglogical*/*.[ch]
 			\ set tabstop=4 shiftwidth=4 noexpandtab autoindent |
 			\ let g:syntastic_c_include_dirs=s:get_pg_INCLUDEDIRS() |
+			\ let g:syntastic_cpp_include_dirs=s:get_pg_INCLUDEDIRS() |
 			\ let $INCLUDEDIRS=join(s:get_pg_INCLUDEDIRS(), ':')
 autocmd BufRead,BufNewFile */pg*/*.[ch]
 			\ set tabstop=4 shiftwidth=4 noexpandtab autoindent
