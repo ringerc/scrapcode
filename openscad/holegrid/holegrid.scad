@@ -1,16 +1,37 @@
-beam_length_1 = 120;
-beam_height = 21;
-beam_thickness = 3;
+// Length (mm) of board section (x axis)
+board_length = 120;
+// Width (mm) of board section (y axis)
+board_width = 21;
+// Depth (mm) of board section (z axis)
+board_thickness = 3;
 
+// Diameter of holes in board
 hole_diameter = 4.0;
-// Distance between centers of holes.
+// Hole pitch (distance between centers of holes)
 hole_pitch = 3.9;
+// Should holes be in a packed triangular environment (true) or a regular grid (false)
 hole_stagger = true;
-// Margins can be 2-array or scalar
+// Margins around the edges of the board where no holes should be placed. Can be a 2-array [x,y] or a scalar.
 beam_margins = hole_pitch/2;
+
+/*
+ * Example usage:
+ *
+ * track_strip([board_length, board_width, board_thickness],
+ *              hole_diameter, hole_pitch, hole_stagger,
+ *              beam_margins);
+ *              
+ */
+
+// Stop Customiser seeing the rest of the params
+module dummy() {
+}
+
+// Hole generation quality
 $fn = 25;
 
-// Set to true if you want to run the rests
+// Set to true if you want to run the rests instead of building the
+// specified object.
 run_tests = true;
 
 module track_strip(t_dims, t_hole_diam, t_pitch, t_stagger, t_margins, t_hole_depth)
