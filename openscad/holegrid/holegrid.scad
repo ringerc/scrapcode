@@ -11,7 +11,7 @@ hole_diameter = 4.0;
 hole_pitch = 3.9;
 // Should holes be in a packed triangular environment (true) or a regular grid (false)
 hole_stagger = true;
-// Margins around the edges of the board where no holes should be placed. Can be a 2-array [x,y] or a scalar.
+// Margins around the edges of the board where no holes should be placed. Can be a 2-array [x,y] or a scalar. Actual margins will be slightly larger because the hole grid will get centered.
 beam_margins = hole_pitch/2;
 
 /*
@@ -34,21 +34,35 @@ $fn = 25;
 // specified object.
 run_tests = true;
 
-module track_strip(t_dims, t_hole_diam, t_pitch, t_stagger, t_margins, t_hole_depth)
+module track_strip(t_dims, t_hole_diam, t_pitch, t_stagger, t_margins, t_hole_depth, center = true)
 {
-    t_length = t_dims[0];
-    t_height = t_dims[1];
-    t_thickness = t_dims[2];
+    t_length = t_dims[0]; // x
+    t_height = t_dims[1]; // y
+    t_thickness = t_dims[2]; // z
+    
     t_hole_depth = 
-        t_hole_depth == undef ? t_thickness: t_hole_depth; 
-    // t_margins can be an xy array or a scalar, or unset
+        t_hole_depth == undef ? t_thickness: t_hole_depth;
+    // t_margins can be an xy array or a scalar, or unset. Negative
+    // margins are allowed.
     margin_x = t_margins == undef ? t_hole_diam/2 :
         t_margins[0] == undef ? t_margins : t_margins[0];
     margin_y = t_margins[1] == undef ? margin_x : t_margins[1];
-    // X gap between rows
+    
+    assert(t_length > 0);
+    assert(t_height > 0);
+    assert(t_thickness > 0);
+    assert(t_hole_diam > 0);
+    assert(t_pitch >= 0);
+    assert(margin_x != undef);
+    assert(margin_y != undef);
+    
+    /*
+     * distance between centers of two adjacent holes in the same row.
+     */
     xpitch = t_pitch;
     /*
-     * Y gap between cols. If staggered then there are equilateral
+     * Y gap between lines drawn through centers of holes in two
+     *  adjacent rows. If staggered then there are equilateral
      * triangles between centers of each row; the pitch is the
      * hypotenuse so the y-gap is the long side of the triangle
      * formed between the y-axis and the line between the centers.
@@ -58,6 +72,8 @@ module track_strip(t_dims, t_hole_diam, t_pitch, t_stagger, t_margins, t_hole_de
         (t_height - margin_y * 2 - t_hole_diam)/ypitch));
     ncols = 1 + max(0, floor(
         (t_length - margin_x * 2 - t_hole_diam)/t_pitch));
+    assert(xpitch > 0 || nrows == 0);
+    assert(ypitch > 0 || ncols == 0);
     /*
      * Compute bridge size for reporting use. Bridge min
      * size should not vary based on stagger since we x-offset
@@ -65,14 +81,24 @@ module track_strip(t_dims, t_hole_diam, t_pitch, t_stagger, t_margins, t_hole_de
      */
     bridge_size = (t_pitch - t_hole_diam);
     
-    echo(str("strip ", t_length, "x", t_height, " margins ", margin_x, "x", margin_y, " rows ", nrows, " cols ", ncols, , " holes diameter ", t_hole_diam, (t_stagger ? " staggered" : " straight"), " at pitch ", t_pitch, " (bridges ", bridge_size, ")"));
+    /*
+     * Work out how much space is left once we pack in the hole grid
+     * area and subtract the margins. If we pad the margins by this
+     * leftover/unused space the grid will be centered.
+     */
+    unused_x = t_length - margin_x * 2 - xpitch * (ncols-1) - t_hole_diam;
+    unused_y = t_height - margin_y * 2 - ypitch * (nrows-1) - t_hole_diam;
+    adjusted_margin_x = margin_x + (center ? unused_x / 2 : 0);
+    adjusted_margin_y = margin_y + (center ? unused_y / 2 : 0);
+     
+    echo(str("strip ", t_length, "x", t_height, " margins ", adjusted_margin_x, "x", adjusted_margin_y, " rows ", nrows, " cols ", ncols, , " holes diameter ", t_hole_diam, (t_stagger ? " staggered" : " straight"), " at pitch ", t_pitch, " (bridges ", bridge_size, ")"));
     
     difference()
     {
         cube([t_length, t_height, t_thickness]);
         
-        translate([margin_x + t_hole_diam/2,
-                   margin_y + t_hole_diam/2, 0])
+        translate([adjusted_margin_x + t_hole_diam/2,
+                   adjusted_margin_y + t_hole_diam/2, 0])
         
         color("#CCCCCCCC")
         for (r = [0 : 1 : nrows - 1])
@@ -133,7 +159,7 @@ module track_strip(t_dims, t_hole_diam, t_pitch, t_stagger, t_margins, t_hole_de
 }
 
 // Hint: use F12 "thrown together" view for tests
-module test()
+module holegrid_test()
 {
 
     // Coarse draft for tests; we don't need quality and we're going
@@ -222,11 +248,23 @@ module test()
     translate([40, 50, 0])
     track_strip([2, 2, 3], 1, 2, false, 0.5, 1.5);
     
+    // Centered vs uncentered. Uncentered should have holes
+    // cutting through edges. Also tests negative margins.
+    translate([0, 60, 0])
+    track_strip([8,8,5], 2, 4, false, 0, t_hole_depth=undef, center=true);
+    
+    translate([10, 60, 0])
+    track_strip([8,8,5], 2, 4, false, 0, t_hole_depth=undef, center=false);
+    
+    // Negative margins: Holes will cut through edges
+    // to form semicircular cutouts + one hole in center.
+    translate([20, 60, 0])
+    track_strip([8,8,5], 2, 4, false, -2);
     
     // === TIGHT PACKING ===
     
     // No stagger. Holes should touch, bridge ~= 0
-    translate([20, 60, 0])
+    translate([30, 60, 0])
     track_strip([7, 7, 3], 2, 2, false, 0.5) {
         assert($strip_ncols == 3);
         assert($strip_nrows == 3);
@@ -240,7 +278,21 @@ module test()
         assert($strip_nrows == 3);
     }
     
+    // Hole bigger than object will force 1 hole
+    // which will cut out edges
+    translate([50, 60, 0])
+    track_strip([7, 7, 3], 8, 1, true, 0.5) {
+        assert($strip_ncols == 1);
+        assert($strip_nrows == 1);
+    }
     
+    // Holes bigger than pitch will overlap holes.
+    translate([60, 60, 0])
+    track_strip([20, 7, 3], 6, 5, true, 0.5) {/*
+        assert($strip_ncols == 1);
+        assert($strip_nrows == 1);
+        */
+    }
     
     // === LONG THIN FORMS ===
     // 2 x 30
@@ -259,7 +311,7 @@ module test()
 }
 
 if (run_tests) {
-    test();
+    holegrid_test();
 }
 else
 {
