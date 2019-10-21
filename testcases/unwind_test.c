@@ -83,6 +83,16 @@ print_context(unw_context_t *ctx)
 	printf("\n");
 }
 
+static void
+clobber_stack(void)
+{
+	char dummy[1000];
+	void *stackpad;
+	stackpad = alloca(2000);
+	memset(&dummy[0], '\x7f', 1000);
+	memset((char *)stackpad, '\x7f', 2000);
+}
+
 int
 main(int argc, char ** argv)
 {
@@ -90,6 +100,7 @@ main(int argc, char ** argv)
 
 	if (setjmp(buf))
 	{
+		clobber_stack();
 		print_context(&ctx);
 		exit(0);
 	}
