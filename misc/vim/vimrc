@@ -23,7 +23,7 @@ packadd! vim-fugitive
 packadd! vim-gitgutter
 packadd! vim-json
 packadd! vim-localvimrc
-packadd! vim-markdown
+"packadd! vim-markdown
 packadd! vim-repeat
 packadd! vim-sensible
 packadd! vim-sleuth
