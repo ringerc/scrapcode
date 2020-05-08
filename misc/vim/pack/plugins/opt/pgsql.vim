@@ -1,0 +1,1 @@
+../all/pgsql.vim

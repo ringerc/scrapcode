@@ -1,0 +1,57 @@
+[submodule "misc/vim/pack/plugins/opt/ctrlp"]
+	path = misc/vim/pack/plugins/all/ctrlp.vim
+	url = https://github.com/kien/ctrlp.vim.git
+[submodule "misc/vim/pack/plugins/opt/vim-misc"]
+	path = misc/vim/pack/plugins/all/vim-misc
+	url = https://github.com/xolox/vim-misc.git
+[submodule "misc/vim/pack/plugins/opt/nerdcommenter"]
+	path = misc/vim/pack/plugins/all/nerdcommenter
+	url = https://github.com/preservim/nerdcommenter.git
+[submodule "misc/vim/pack/plugins/opt/tagbar.git"]
+	path = misc/vim/pack/plugins/all/tagbar
+	url = https://github.com/majutsushi/tagbar.git
+[submodule "misc/vim/pack/plugins/opt/syntastic"]
+	path = misc/vim/pack/plugins/all/syntastic
+	url = https://github.com/vim-syntastic/syntastic.git
+[submodule "misc/vim/pack/plugins/opt/vim-better-whitespace"]
+	path = misc/vim/pack/plugins/all/vim-better-whitespace
+	url = https://github.com/ntpeters/vim-better-whitespace.git
+[submodule "misc/vim/pack/plugins/opt/vim-easytags"]
+	path = misc/vim/pack/plugins/all/vim-easytags
+	url = https://github.com/xolox/vim-easytags.git
+[submodule "misc/vim/pack/plugins/opt/vim-fugitive"]
+	path = misc/vim/pack/plugins/all/vim-fugitive
+	url = https://github.com/tpope/vim-fugitive.git
+[submodule "misc/vim/pack/plugins/opt/vim-gitgutter"]
+	path = misc/vim/pack/plugins/all/vim-gitgutter
+	url = https://github.com/airblade/vim-gitgutter.git
+[submodule "misc/vim/pack/plugins/opt/vim-sensible"]
+	path = misc/vim/pack/plugins/all/vim-sensible
+	url = https://github.com/tpope/vim-sensible.git
+[submodule "misc/vim/pack/plugins/opt/vim-sneak"]
+	path = misc/vim/pack/plugins/all/vim-sneak
+	url = https://github.com/justinmk/vim-sneak.git
+[submodule "misc/vim/pack/plugins/opt/vim-sleuth"]
+	path = misc/vim/pack/plugins/all/vim-sleuth
+	url = https://github.com/tpope/vim-sleuth.git
+[submodule "misc/vim/pack/plugins/opt/gundo.vim"]
+	path = misc/vim/pack/plugins/all/gundo.vim
+	url = https://github.com/sjl/gundo.vim.git
+[submodule "misc/vim/pack/colors/start/molokai"]
+	path = misc/vim/pack/colors/start/molokai
+	url = https://github.com/tomasr/molokai.git
+[submodule "misc/vim/pack/plugins/start/vim-airline"]
+	path = misc/vim/pack/plugins/all/vim-airline
+	url = https://github.com/vim-airline/vim-airline
+[submodule "misc/vim/pack/plugins/all/vim-surround"]
+	path = misc/vim/pack/plugins/all/vim-surround
+	url = https://github.com/tpope/vim-surround.git
+[submodule "misc/vim/pack/plugins/all/vim-json"]
+	path = misc/vim/pack/plugins/all/vim-json
+	url = https://github.com/elzr/vim-json.git
+[submodule "misc/vim/pack/plugins/all/vim-markdown"]
+	path = misc/vim/pack/plugins/all/vim-markdown
+	url = https://github.com/plasticboy/vim-markdown.git
+[submodule "misc/vim/pack/plugins/all/pgsql.vim"]
+	path = misc/vim/pack/plugins/all/pgsql.vim
+	url = https://github.com/lifepillar/pgsql.vim.git

@@ -7,25 +7,17 @@ set nocompatible
 " Load installed plugins from ~/.vim/pack/*/opt/{name}
 " (first subdir is user defined arbitrary category)
 " see plugin-list.txt
-packadd  vim-misc
-packadd! ctrlp.vim
-packadd! gist-vim
+"
+" vim plugins autoadded from pack/plugins/start/{name} are not listed here
 packadd! gundo.vim
 packadd! molokai
 packadd! nerdcommenter
 packadd! pgsql.vim
 packadd! syntastic
-packadd! tagbar
-packadd! vim-airline
 packadd! vim-better-whitespace
 packadd! vim-easytags
 packadd! vim-fugitive
-packadd! vim-gitgutter
 packadd! vim-json
-packadd! vim-localvimrc
-"packadd! vim-markdown
-packadd! vim-repeat
-packadd! vim-sensible
 packadd! vim-sleuth
 packadd! vim-sneak
 packadd! vim-surround
