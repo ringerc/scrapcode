@@ -121,8 +121,10 @@ function bdr3build() {
 alias pgl3make=pgl3build
 alias bdr3make=bdr3build
 
-read -r TPA_2Q_SUBSCRIPTION_TOKEN < ~/.local/TPA_2Q_SUBSCRIPTION_TOKEN
-export TPA_2Q_SUBSCRIPTION_TOKEN
+if [ -e ~/.local/TPA_2Q_SUBSCRIPTION_TOKEN ]; then
+    read -r TPA_2Q_SUBSCRIPTION_TOKEN < ~/.local/TPA_2Q_SUBSCRIPTION_TOKEN
+    export TPA_2Q_SUBSCRIPTION_TOKEN
+fi
 
 # Launch a psql against a running pg_regress instance
 # without messing around reading the logs.
