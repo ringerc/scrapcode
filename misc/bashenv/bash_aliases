@@ -164,3 +164,8 @@ export JENKINS_CREDS=$HOME/.jenkins_creds
 
 # git completions
 . /usr/share/doc/git/contrib/completion/git-completion.bash
+. /usr/share/doc/git/contrib/completion/git-prompt.sh
+
+PROMPT_COMMAND='__git_ps1 "\\j \\w" "\\\$ "'
+PROMPT_DIRTRIM=2
+export PROMPT_COMMAND PROMPT_DIRTRIM
