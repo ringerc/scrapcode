@@ -1,0 +1,164 @@
+#
+# This script expects to generally be sourced once by the login shell,
+# so in gnome terminal use
+#
+#    "Preferences -> Profiles -> Command -> Run Command as Login Shell"
+#
+# then source from your ~/.bash_profile .
+#
+# It should work OK when re-sourced in a .bashrc, it's just not useful.
+#
+
+function pgbuild() {
+    if ! [ -e src/include/pg_config_manual.h ]
+    then
+        echo "not postgres directory?"
+        return
+    fi
+    local destname="${1:-"$(basename $(pwd))"}"
+    local dest="$HOME/pg/$destname"
+    if [ -z "${NO_SILENT}" ]
+    then
+	CONFQUIET="--quiet"
+	SILENT="-s"
+    else
+	echo "NO_SILENT assigned, going loud"
+    fi
+    echo "configuring for $dest"
+    CFLAGS="-ggdb3 -O0" ./configure $CONFQUIET --cache-file=config.cache --prefix="$dest" --enable-debug --enable-cassert --enable-tap-tests --enable-dtrace && \
+    echo "configured, making" && \
+    make $SILENT clean && \
+    make $SILENT -j4 && make $SILENT -C contrib -j4 && \
+    echo "compiled" && \
+    make $SILENT install && make $SILENT -C contrib install && \
+    echo "installed to $dest"
+}
+
+#
+# Builder wrapper for pgl3 and bdr3 that sets up the right path, does
+# out-of-tree builds, cleans cores, etc.
+#
+function extbuild() {
+    declare extlabel=${1?no ext descriptive label supplied}
+    declare extname=${2?no ext name specified}
+    declare extfile=${3?no file to test for presence of specified}
+    declare extgenfile=${4?no file to test for dirty vpath specified}
+    if [ -z "${5:-}" ]; then
+	echo 1>&2 "no target postgres version specified"
+	echo 1>&2 "candidates are:"
+	(cd $HOME/pg && find * -maxdepth 0 -type d) | sed 's/^/    /' 1>&2
+	echo 1>&2
+	return 1
+    fi
+    declare pgver=$5
+    shift 5
+
+    if ! [ -e ${extfile} ]; then
+	echo "not a ${extname} directory: no ${extfile}"
+	return 1
+    fi
+
+    # find target
+    declare destname="$HOME/pg/${pgver}"
+    if [ ! -e $destname/bin/psql ]; then
+	echo "no postgresql in $destname"
+	return 1
+    fi
+    local pgpath="${destname}/bin"
+    local newpath="${pgpath}:${PATH}"
+    echo "Using $pgpath"
+    echo "Targeting $(PATH=$newpath psql --version)"
+    # corefile cleanup for regress
+    mkdir -p $HOME/core/old >&/dev/null
+    mv -f ~/core/*.core ~/core/old/ >&/dev/null
+    # vpath checking and setup
+    srcdir="$(pwd)"
+    if [ -z "$NO_VPATH" ]; then
+	if [ -e "${extgenfile}" ]; then
+	    echo "${extgenfile} exists in srcdir. Cleaning source directory to allow clean vpath build."
+	    PATH="$newpath" make -s clean
+	fi
+	if [ -e "${extgenfile}" ]; then
+	    echo "${extgenfile} still exists in srcdir, clean vpath build not possible. Clean source dir."
+	    return 1
+	fi
+	builddir=$(dirname "$srcdir")/$(basename "$srcdir")-build
+	if [ -z "$builddir" ]; then
+	    echo "unable to determine valid build-directory, aborting"
+	    return 1
+	else
+	    echo "Building $srcdir out-of-tree in $builddir"
+	fi
+	if [ -d "$builddir".old ]; then
+	    rm -rf "$builddir".old
+	fi
+	if [ -d "$builddir" ]; then
+	    mv "$builddir" "$builddir".old
+	fi
+	mkdir -p "$builddir";
+	MAKEFILEARG="-f $srcdir/Makefile"
+    else
+	echo "in-tree build"
+	builddir=$srcdir
+	MAKEFILEARG=""
+    fi
+    # and finally go
+    (
+	cd "$builddir";
+	PATH="$newpath" make $MAKEFILEARG ${NO_SILENT:-"-s"} REGRESS_LOG_MIN_MESSAGES=debug2 PROVE_FLAGS="--verbose" "$@"
+    )
+    echo "rebuild and install done"
+}
+
+function pgl3build() {
+    extbuild "pglogical3" "pglogical" "pglogical.h" "pglogical.control" "$@"
+}
+
+function bdr3build() {
+    extbuild "bdr3" "bdr" "bdr.h" "bdr.control" "$@"
+}
+
+alias pgl3make=pgl3build
+alias bdr3make=bdr3build
+
+read -r TPA_2Q_SUBSCRIPTION_TOKEN < ~/.local/TPA_2Q_SUBSCRIPTION_TOKEN
+export TPA_2Q_SUBSCRIPTION_TOKEN
+
+# Launch a psql against a running pg_regress instance
+# without messing around reading the logs.
+#
+function regress_psql() {
+    pgpidf="tmp_check/data/postmaster.pid"
+    if ! [ -e "$pgpidf" ]
+    then
+	echo "no postmaster.pid at $pgpidf"
+	return 1
+    fi
+
+    PGPORT="$(awk 'NR==4 { print $0; }' "$pgpidf")"
+    PGHOST="$(awk 'NR==5 { print $0; }' "$pgpidf")"
+    connstr="host='$PGHOST' port=$PGPORT dbname='postgres'"
+    echo "connstr: \"$connstr\""
+    psql -v PROMPT1="%M:%> [%p] %n@%/=%# " -v PROMPT2="%M:%> [%p] %n@%/+%# " -q "$connstr" "$@"
+}
+
+# Run gdb on the latest core file, resolving the correct executable
+# automatically.
+function gdblast() {
+    c=$(cd ~/core/ && ls -c *.core | tail -1 );
+    p=$(echo $c | awk -F . '{ gsub("!","/",$2); print $2;}');
+    gdb -q $p ~/core/"$c" -ex 'info inferiors' -ex 'info sharedlibrary \(pglogical\|bdr\)';
+}
+
+export PG_REGRESS_DIFF_OPTS="-u"
+
+export LESS="--tabs=4 -R"
+
+export PATH=$HOME/.cargo/bin:$PATH:$HOME/apps/groovy/bin
+
+# for jremote tool:
+export JENKINS_URL=https://ci.2ndquadrant.com/jenkins/
+export JENKINS_CREDS=$HOME/.jenkins_creds
+
+# git completions
+. /usr/share/doc/git/contrib/completion/git-completion.bash
