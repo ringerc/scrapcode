@@ -17,10 +17,10 @@ function pgbuild() {
     fi
     local destname="${1:-"$(basename $(pwd))"}"
     local dest="$HOME/pg/$destname"
-    if [ -z "${NO_SILENT}" ]
+    if [ -z "${NO_SILENT:-}" ]
     then
-	CONFQUIET="--quiet"
-	SILENT="-s"
+	local CONFQUIET="--quiet"
+	local SILENT="-s"
     else
 	echo "NO_SILENT assigned, going loud"
     fi
@@ -72,7 +72,7 @@ function extbuild() {
     mkdir -p $HOME/core/old >&/dev/null
     mv -f ~/core/*.core ~/core/old/ >&/dev/null
     # vpath checking and setup
-    srcdir="$(pwd)"
+    local srcdir="$(pwd)"
     if [ -z "$NO_VPATH" ]; then
 	if [ -e "${extgenfile}" ]; then
 	    echo "${extgenfile} exists in srcdir. Cleaning source directory to allow clean vpath build."
@@ -82,7 +82,7 @@ function extbuild() {
 	    echo "${extgenfile} still exists in srcdir, clean vpath build not possible. Clean source dir."
 	    return 1
 	fi
-	builddir=$(dirname "$srcdir")/$(basename "$srcdir")-build
+	local builddir=$(dirname "$srcdir")/$(basename "$srcdir")-build
 	if [ -z "$builddir" ]; then
 	    echo "unable to determine valid build-directory, aborting"
 	    return 1
@@ -96,16 +96,22 @@ function extbuild() {
 	    mv "$builddir" "$builddir".old
 	fi
 	mkdir -p "$builddir";
-	MAKEFILEARG="-f $srcdir/Makefile"
+	local MAKEFILEARG="-f $srcdir/Makefile"
     else
 	echo "in-tree build"
-	builddir=$srcdir
-	MAKEFILEARG=""
+	local builddir=$srcdir
+	local MAKEFILEARG=""
+    fi
+    if [ -z "${NO_SILENT:-}" ]
+    then
+	local SILENT="-s"
+    else
+	echo "NO_SILENT assigned, going loud"
     fi
     # and finally go
     (
 	cd "$builddir";
-	PATH="$newpath" make $MAKEFILEARG ${NO_SILENT:-"-s"} REGRESS_LOG_MIN_MESSAGES=debug2 PROVE_FLAGS="--verbose" "$@"
+	PATH="$newpath" make $MAKEFILEARG $SILENT REGRESS_LOG_MIN_MESSAGES=debug2 PROVE_FLAGS="--verbose" "$@"
     )
     echo "rebuild and install done"
 }
@@ -169,3 +175,4 @@ export JENKINS_CREDS=$HOME/.jenkins_creds
 PROMPT_COMMAND='__git_ps1 "\\j \\w" "\\\$ "'
 PROMPT_DIRTRIM=2
 export PROMPT_COMMAND PROMPT_DIRTRIM
+
