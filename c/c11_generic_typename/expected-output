@@ -1,0 +1,15 @@
+------- C standard: 199901, using typeof: 0 ---------
+format string is ?, ?, ?, ?
+format string is %d, %s, %d, %p
+?, ?, ?, ?
+10, foo, 9, 0xdeadbeef
+------- C standard: 201112, using typeof: 1 ---------
+detected typenames:
+    int
+    const char *
+    int
+    void *
+format string is %d, %s, %d, %p
+format string is %d, %s, %d, %p
+10, foo, 9, 0xdeadbeef
+10, foo, 9, 0xdeadbeef
