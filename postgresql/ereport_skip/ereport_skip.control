@@ -1,0 +1,4 @@
+comment = 'Test code for ereport skip'
+default_version = '1.0'
+module_pathname = '$libdir/ereport_skip'
+relocatable = true

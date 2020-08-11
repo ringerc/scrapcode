@@ -1,0 +1,5 @@
+log
+regress.*
+tmp_check
+*.so
+*.o
