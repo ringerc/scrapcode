@@ -18,6 +18,7 @@ function pgbuild() {
     local destname="${1:-"$(basename $(pwd))"}"
     local variant="${2:-}"
     local configure_args
+    local CC=/usr/lib64/ccache/gcc
     case "${variant:-}" in
 	"")
 	    configure_args="--enable-debug --enable-cassert --enable-tap-tests --enable-dtrace"
@@ -25,6 +26,9 @@ function pgbuild() {
 	"NDEBUG")
 	    configure_args=""
 	    ;;
+    "CLANG")
+	    configure_args="--enable-debug --enable-cassert --enable-tap-tests --enable-dtrace CC=/usr/lib64/ccache/clang"
+        ;;
 	*)
 	    echo "unrecognised build variant $variant"
 	    return
@@ -89,6 +93,9 @@ function pgbuildall() {
     echo "building NDEBUG variant"
     pgbuild "$(basename $(pwd))" "NDEBUG"
     echo "NDEBUG variant built"
+    echo "building NDEBUG variant"
+    pgbuild "$(basename $(pwd))" "CLANG"
+    echo "CLANG variant built"
     ls -d build*
 }
 
@@ -214,7 +221,7 @@ function regress_psql() {
 # automatically.
 function gdblast() {
     c=$(cd ~/core/ && ls -c *.core | tail -1 );
-    p=$(echo $c | awk -F . '{ gsub("!","/",$2); print $2;}');
+    p=$(echo "$c" | awk -F - '{ gsub("!","/",$2); print $2;}');
     gdb -q $p ~/core/"$c" -ex 'info inferiors' -ex 'info sharedlibrary \(pglogical\|bdr\)';
 }
 
