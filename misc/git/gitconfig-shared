@@ -1,0 +1,18 @@
+[user]
+	name = Craig Ringer
+	email = craig.ringer@2ndquadrant.com
+[credential]
+	helper = /usr/libexec/git-core/git-credential-libsecret
+[push]
+	default = current
+[merge]
+	tool = vimdiff
+	conflictstyle = diff3
+[log]
+	abbrevCommit = true
+[rebase]
+	abbreviateCommands = true
+	stat = true
+	autoSquash = true
+[core]
+	excludesfile = ~/projects/scrapcode/misc/git/gitignore-global
