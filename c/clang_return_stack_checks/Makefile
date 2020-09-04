@@ -1,5 +1,10 @@
-CC ?= clang
-CFLAGS ?= -Wall -Wextra
+ifeq ($(origin CC),default)
+CC = scan-build clang
+endif
+
+ifeq ($(origin CFLAGS),default)
+CFLAGS = -Wall -Wextra
+endif
 
 all: return_stack_escape
 
