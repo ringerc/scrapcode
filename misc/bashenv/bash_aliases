@@ -15,19 +15,27 @@ function pgbuild() {
         echo "not postgres directory?"
         return
     fi
-    local destname="${1:-"$(basename $(pwd))"}"
+    local destname="${1:-.}"
+    if [ -z "$destname" -o "$destname" == "." ]; then
+        destname="$(basename $(pwd))"
+    fi
     local variant="${2:-}"
-    local configure_args
-    local CC=/usr/lib64/ccache/gcc
+    declare -a configure_args=(--enable-debug --enable-cassert --enable-tap-tests --enable-dtrace)
+    local CPP="/usr/lib64/ccache/gcc -E"
+    local CC="/usr/lib64/ccache/gcc"
+    local LD="/usr/bin/ld"
+    local CPPFLAGS=
+    local CFLAGS="-Og -ggdb3"
     case "${variant:-}" in
 	"")
-	    configure_args="--enable-debug --enable-cassert --enable-tap-tests --enable-dtrace"
 	    ;;
 	"NDEBUG")
-	    configure_args=""
+        configure_args=()
 	    ;;
     "CLANG")
-	    configure_args="--enable-debug --enable-cassert --enable-tap-tests --enable-dtrace CC=/usr/lib64/ccache/clang"
+        CPP="/usr/lib64/ccache/clang -E"
+        CC="/usr/lib64/ccache/clang"
+        LD="/usr/bin/lld"
         ;;
 	*)
 	    echo "unrecognised build variant $variant"
@@ -68,7 +76,7 @@ function pgbuild() {
     	cd $builddir
 	set -e
 	echo "configuring for $dest"
-	CFLAGS="-ggdb3 -O0" $configurepath $CONFQUIET --cache-file=config.cache --prefix="$dest" --enable-debug --enable-cassert --enable-tap-tests --enable-dtrace
+	CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CPP="${CPP}" CC="${CC}" LD="${LD}" $configurepath $CONFQUIET --cache-file=config.cache${variant:=-${variant}} --prefix="$dest" "${configure_args[@]}"
 	echo "configured, making"
 	make $SILENT clean
 	make $SILENT -j4
