@@ -47,8 +47,11 @@ sigjmp_escape_hdr: sigjmp_escape_hdr.c sigjmp_escape_hdr_try.c | tmpdir
 	$(CC) $(CFLAGS) -DUSE_FINALLY -c sigjmp_escape_hdr.c -o sigjmp_escape_hdr.o
 	$(CC) $(CFLAGS_LINK) sigjmp_escape_hdr.o sigjmp_escape_hdr_try.o -o $@
 
+mask_local_escape: mask_local_escape.c | tmpdir
+	$(CC) $(CFLAGS) $< -o $@
+
 clean:
-	rm -f *.o guard.so return_stack_escape sigjmp_escape sigjmp_escape_fake* sigjmp_escape_guard sigjmp_escape_guard_fake* sigjmp_escape_guard_inner_pop sigjmp_escape_hdr
+	rm -f *.o guard.so return_stack_escape sigjmp_escape sigjmp_escape_fake* sigjmp_escape_guard sigjmp_escape_guard_fake* sigjmp_escape_guard_inner_pop sigjmp_escape_hdr mask_local_escape
 	rm -rf scan-build-*
 
 run_return_stack_escape: return_stack_escape
@@ -67,6 +70,9 @@ run_sigjmp_escape_hdr: sigjmp_escape_hdr
 	if ./sigjmp_escape_hdr 0 1; then exit 1; fi
 	./sigjmp_escape_hdr 1 1
 
-run: run_return_stack_escape run_sigjmp_escape run_sigjmp_escape_hdr
+run_mask_local_escape: mask_local_escape
+	./mask_local_escape
+
+run: run_return_stack_escape run_sigjmp_escape run_sigjmp_escape_hdr run_mask_local_escape
 
 check: run

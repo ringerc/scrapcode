@@ -7,4 +7,5 @@ sigjmp_escape_noinner
 sigjmp_escape_noinner_fake*
 sigjmp_escape_hdr
 sigjmp_escape_inner_pop
+mask_local_escape
 scan-build-*/
