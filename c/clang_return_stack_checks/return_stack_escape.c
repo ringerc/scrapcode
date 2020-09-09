@@ -7,9 +7,17 @@
 int
 foo(int do_fail)
 {
-	struct guard g = {0};
+	struct guard g = {0, "g", 0};
 	set_guard(&g);
 
+	/*
+	 * This should emit a warning from clang's scan-build like
+	 *
+	 * return_stack_escape.c:14:3: warning: Address of stack memory
+	 * associated with local variable 'g' is still referred to by the
+	 * global variable 'guard_ptr' upon returning to the caller.  This will
+	 * be a dangling reference
+	 */
 	if (do_fail)
 		return do_fail;
 
@@ -32,12 +40,10 @@ main(int argc, char * argv[])
 	if (*endpos != '\0')
 		error(2, 0, "couldn't parse \"%s\" as an integer", argv[1]);
 
-	ret = foo(do_fail);
+	(void) foo(do_fail);
 
-	if (guard_ptr)
-		printf("guard value: %hhd\n", guard_ptr->guard_set);
-	else
-		printf("guard value: no guard pointer\n");
-
+	ret = !check_guard();
+	fputc('\n', stderr);
 	return ret;
+
 }

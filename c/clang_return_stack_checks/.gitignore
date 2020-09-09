@@ -1,2 +1,10 @@
+*.o
 guard.so
 return_stack_escape
+sigjmp_escape
+sigjmp_escape_fake*
+sigjmp_escape_noinner
+sigjmp_escape_noinner_fake*
+sigjmp_escape_hdr
+sigjmp_escape_inner_pop
+scan-build-*/
