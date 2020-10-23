@@ -23,7 +23,6 @@ function pgbuild() {
     declare -a configure_args=(--enable-debug --enable-cassert --enable-tap-tests --enable-dtrace)
     local CPP="/usr/lib64/ccache/gcc -E"
     local CC="/usr/lib64/ccache/gcc"
-    local LD="/usr/bin/ld"
     local CPPFLAGS=
     local CFLAGS="-Og -ggdb3"
     case "${variant:-}" in
@@ -35,7 +34,38 @@ function pgbuild() {
     "CLANG")
         CPP="/usr/lib64/ccache/clang -E"
         CC="/usr/lib64/ccache/clang"
-        LD="/usr/bin/lld"
+        CFLAGS="${CFLAGS} -fuse-ld=lld -fdebug-macro -O1"
+        # The non-asan clang build is also fully valgrind-enabled, it doesn't
+        # do much unless run under valgrind.
+        CFLAGS="${CFLAGS} -DUSE_VALGRIND -fno-omit-frame-pointer"
+        ;;
+    "CLANG_ASAN")
+        # this is not included in pgbuildall for now
+        CPP="/usr/lib64/ccache/clang -E"
+        CC="/usr/lib64/ccache/clang"
+        CFLAGS="${CFLAGS} -fuse-ld=lld -fdebug-macro -O1"
+        # TODO: sanitizer coverage per  https://clang.llvm.org/docs/SanitizerCoverage.html
+        # TODO why do we have to set explicit rpath?
+        # Pg adds CFLAGS to LDFLAGS already
+        CFLAGS="${CFLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize-address-use-odr-indicator -frtlib-add-rpath -shared-libasan -fno-common -rpath /usr/lib64/clang/10.0.0/lib/linux -rpath /usr/lib64/clang/10.0.0/lib"
+        # TODO runtime  ASAN_OPTIONS=strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1
+        # via __asan_default_options per https://github.com/google/sanitizers/wiki/AddressSanitizerFlags 
+        ASAN_OPTIONS="detect_leaks=0:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:replace_str=1:replace_intrin=1:print_stats=1:atexit=1"
+        export ASAN_OPTIONS
+        # We could also experiment with memory sanitizing but it's not allowed at the same time as
+        # address sanitizing.
+        #CFLAGS="${CFLAGS} -fsanitize=memory -fsanitize-memory-track-origins"
+        # and flow-control protection
+        CFLAGS="${CFLAGS} -fcf-protection"
+        # maybe also experiment with heap profiling if palloc doesn't mask it too much
+        #CFLAGS="${CFLAGS} -fmemory-profile"
+        # TODO: experiment with -flto. Right now it doesn't work because we use 'ar' to create
+        # libpgcommon.a and then we break when trying to link it.
+        # Enable stack guards on the asan build too
+        CFLAGS="${CFLAGS} -fstack-protector-strong"
+        ;;
+	"CLOBBER")
+        CFLAGS="${CFLAGS} -DCLOBBER_CACHE_ALWAYS"
         ;;
 	*)
 	    echo "unrecognised build variant $variant"
@@ -76,7 +106,7 @@ function pgbuild() {
     	cd $builddir
 	set -e
 	echo "configuring for $dest"
-	CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CPP="${CPP}" CC="${CC}" LD="${LD}" $configurepath $CONFQUIET --cache-file=config.cache${variant:=-${variant}} --prefix="$dest" "${configure_args[@]}"
+	CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CPP="${CPP}" CC="${CC}" $configurepath $CONFQUIET --cache-file=config.cache${variant:=-${variant}} --prefix="$dest" "${configure_args[@]}"
 	echo "configured, making"
 	make $SILENT clean
 	make $SILENT -j4
@@ -202,10 +232,21 @@ function bdr3build() {
 alias pgl3make=pgl3build
 alias bdr3make=bdr3build
 
-if [ -e ~/.local/TPA_2Q_SUBSCRIPTION_TOKEN ]; then
-    read -r TPA_2Q_SUBSCRIPTION_TOKEN < ~/.local/TPA_2Q_SUBSCRIPTION_TOKEN
-    export TPA_2Q_SUBSCRIPTION_TOKEN
-fi
+# Use libsecret for my secret env vars now
+#
+# Store or update with:
+#
+#    echo -n 'xxsecretxx' | secret-tool store --label 'Environment variable TPA_2Q_SUBSCRIPTION_TOKEN' ENV_VAR TPA_2Q_SUBSCRIPTION_TOKEN
+#
+
+declare -a secret_env_vars=(TPA_2Q_SUBSCRIPTION_TOKEN SECONDQ_GITLAB_READ_ONLY_TOKEN)
+
+for secret_env_var in "${secret_env_vars[@]}"; do
+    read -r $secret_env_var < <(secret-tool lookup ENV_VAR $secret_env_var)
+done
+
+TPA_GIT_CREDENTIALS=${SECONDQ_GITLAB_READ_ONLY_TOKEN:-"unable to read SECONDQ_GITLAB_READ_ONLY_TOKEN"}
+export TPA_GIT_CREDENTIALS
 
 # Launch a psql against a running pg_regress instance
 # without messing around reading the logs.
@@ -253,7 +294,7 @@ export PROMPT_COMMAND PROMPT_DIRTRIM
 
 
 function pg() {
-    local ver=${1:-2q1136}
+    local ver=${1:-2q1137}
     local subdir
     case "${ver}" in
         2[qQ]10)
@@ -268,7 +309,13 @@ function pg() {
         2[qQ]12)
             subdir=2QREL_12_STABLE_dev
             ;;
-        10|11|12)
+        2[qQ]13)
+            subdir=2QREL_13_STABLE_dev
+            ;;
+        2[qQ]14)
+            subdir=2QREL_14_STABLE_dev
+            ;;
+        10|11|12|13|14)
             subdir=REL_${ver}_STABLE
             ;;
         9*4)
@@ -302,5 +349,8 @@ function bdr() {
     fi
     pushd ~/projects/2Q/bdr/bdr-${subdir}
 }
+
+PAGER="less -x 4"
+export PAGER
 
 # vim: ts=4 sw=4 et ai
