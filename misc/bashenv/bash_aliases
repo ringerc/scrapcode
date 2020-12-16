@@ -288,10 +288,15 @@ export JENKINS_CREDS=$HOME/.jenkins_creds
 . /usr/share/doc/git/contrib/completion/git-completion.bash
 . /usr/share/doc/git/contrib/completion/git-prompt.sh
 
-PROMPT_COMMAND='__git_ps1 "\\j \\w" "\\\$ "'
-PROMPT_DIRTRIM=2
-export PROMPT_COMMAND PROMPT_DIRTRIM
+# This just does the git bash prompt
+#PROMPT_COMMAND='__git_ps1 "\\j \\w" "\\\$ "'
 
+# This sets the title too
+PROMPT_COMMAND='__git_ps1 "\\j \\w" "\\\$ "; printf "\e]2;%s\a" "${PS1@P}"'
+PROMPT_DIRTRIM=2
+GIT_PS1_SHOWDIRTYSTATE=1
+GIT_PS1_SHOWUNTRACKEDFILES=1
+export PROMPT_COMMAND PROMPT_DIRTRIM
 
 function pg() {
     local ver=${1:-2q1137}
