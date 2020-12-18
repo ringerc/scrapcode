@@ -1,0 +1,152 @@
+#probe postgres = process("/home/craig/pg/lwlock-tracepoints/bin/postgres") {}
+
+@define POSTGRES_PATH %( "/home/craig/projects/2Q/postgres/dev/lwlock-tracepoints/build/tmp_install/home/craig/pg/lwlock-tracepoints/bin/postgres" %)
+
+probe postgres = process(@POSTGRES_PATH) {}
+
+// Track currently-held locks by pid
+private locks_held;
+
+// Stats array indexed by [pid(), tranche_id, mode]
+// zero pid is used as a counter incremented for all hits
+private held_durations;
+
+// tranche id -> name mapping, since we don't want to rely on seeing
+// the tranches registered at startup.
+private tranche_names;
+
+// enum LWLockMode
+@define LW_EXCLUSIVE        %( 0 %)
+@define LW_SHARED           %( 1 %)
+@define LW_WAIT_UNTIL_FREE  %( 2 %)
+
+probe postgres.mark("lwlock__acquired") {
+	mode = $arg2
+	lwlock_p = $arg3
+	tranche_id = $arg4
+	assert (mode == @LW_EXCLUSIVE || mode == @LW_SHARED, sprintf("invalid lockmode %d", mode));
+	if (!([tranche_id] in tranche_names)) {
+		// This assumes tranche id->name is consistent across procs. That's not
+		// guaranteed, but it's close enough for this purpose.
+		tranche_name_p = $arg1
+		tranche_names[tranche_id] = user_string(tranche_name_p);
+	}
+	locks_held[pid(), lwlock_p, tranche_id, mode] = gettimeofday_us();
+}
+
+probe postgres.mark("lwlock__release") {
+	//tranche_name = user_string($arg1)
+	mode = $arg2
+	lwlock_p = $arg3
+	tranche_id = $arg4
+	assert (mode == @LW_EXCLUSIVE || mode == @LW_SHARED, sprintf("invalid lockmode %d", mode));
+	acquired_us = locks_held[pid(), lwlock_p, tranche_id, mode]
+	if (acquired_us != 0) {
+		released_us = gettimeofday_us();
+		held = released_us - acquired_us;
+		// Summary across all pids by lockmode, and by (tranche_id, lockmode)
+		held_durations[0, -1, mode] <<< held;
+		held_durations[0, tranche_id, mode] <<< held;
+		// And for this process
+		held_durations[pid(), tranche_id, mode] <<< held;
+		// Rollup all locks held by this process by mode
+		held_durations[pid(), -1, mode] <<< held;
+
+		// TODO: We should really categorize processes, but there's not
+		// currently an easy way to do ask "what kind of process is
+		// this" and get a sensible answer, short of using
+		// application_name. The backend_type populated by
+		// pg_stat_activity is a string fetched dynamically. Don't want to have
+		// to check am_walsender and all that individually. So for now not
+		// doing backend categories.
+		delete locks_held[pid(), lwlock_p, tranche_id, mode]
+	}
+}
+
+probe postgres.end {
+	foreach (acquired_us = [pid, lwlock_p, tranche_id, mode] in locks_held[pid(), *, *, *])
+	{
+		leaked_locks ++;
+		printf("[%6d] leaked LWLock %p in tranche %d (%s) mode %s!\n", pid, lwlock_p, tranche_id,
+				tranche_id_str(tranche_id), lockmode_str(mode));
+	}
+	delete locks_held[pid(), *, *, *];
+}
+
+function tranche_id_str:string(tranche_id:long) {
+	n = tranche_names[tranche_id]
+	return n != "" ? n : sprintf("<tranche_id %d>", tranche_id)
+}
+
+function lockmode_str:string(mode:long) {
+	if (mode == @LW_EXCLUSIVE) {
+		return "E"
+	} else if (mode == @LW_SHARED) {
+		return "S"
+	} else if (mode == @LW_WAIT_UNTIL_FREE) {
+		return "W"
+	} else {
+		error(sprintf("unknown lockmode %d", mode));
+	}
+}
+
+function print_stats_header(label) {
+	printf("%-20s %8s %20s %4s %8s %8s %8s %8s %8s\n", label, "pid", "tranche", "mode", "count", "avg", "variance", "min", "max");
+}
+
+/*
+ * Can't pass a stats-variable directly so we have to pass the keys, and repeat them
+ * for each access, making it much harder to generalize this.
+ */
+
+function print_stats_one(label:string,forpid:long,fortranche:long,formode:long)
+{
+	held_count = @count(held_durations[forpid,fortranche,formode])
+	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
+	pid_label = forpid == 0 ? "(all)" : sprintf("%d", forpid)
+	if (held_count > 0) {
+		printf("%-20s %8s %20s %4s %8d %8d %8d %8d %8d\n",
+				label, tranche_name, pid_label, lockmode_str(formode),
+				held_count,
+				@avg(held_durations[forpid,fortranche,formode]),
+				@variance(held_durations[forpid,fortranche,formode]),
+				@min(held_durations[forpid,fortranche,formode]),
+				@max(held_durations[forpid,fortranche,formode]))
+	}
+	else {
+		/* @avg etc will error on zero samples so dummy some output */
+		printf("%-20s %8s %20s %4s %8d %8s %8s %8s %8s\n",
+				label, tranche_name, pid_label, lockmode_str(formode),
+				held_count, "-", "-", "-", "-");
+	}
+}
+
+function print_stats(full_pid_list:long) {
+	print_stats_header("all procs")
+	// By-mode rollup
+	print_stats_one("  LW_EXCLUSIVE", 0, -1, @LW_EXCLUSIVE);
+	print_stats_one("  LW_SHARED", 0, -1, @LW_SHARED);
+	// By tranche id and mode, all procs
+	print_stats_header("all procs by tranche")
+	foreach ([_ign1, tranche_id, mode] in held_durations[0, *, *]) {
+		print_stats_one("  ", 0, tranche_id, mode)
+	}
+	if (full_pid_list) {
+		print_stats_header("all procs")
+		foreach ([pid, tranche_id, mode] in held_durations[*, *, *]) {
+			if (pid != 0) {
+				print_stats_one("  ", pid, tranche_id, mode)
+			}
+		}
+	}
+	printf("\n");
+}
+
+probe timer.ms(5000)
+{
+	print_stats(0);
+}
+
+probe end {
+	print_stats(1);
+}
