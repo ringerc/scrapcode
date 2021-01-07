@@ -1,15 +1,72 @@
-#probe postgres = process("/home/craig/pg/lwlock-tracepoints/bin/postgres") {}
+
+
+#
+# This tapscript requires a postgres patched with my lwlock tracepoint enhancements.
+#
+# You'll have to run with a bunch of resource limits turned off for this to work since the script
+# is very expensive and not optimised right now.
+#
+# I use
+#
+#     stap -v -g --suppress-time-limits
+#
+# You may want to also pass
+#
+#     -G track_per_process=0
+#
+# for less overhead and only summary output.
+#
+# There's also
+#
+#     -G cumulative=0
+#
+# if you want to see samples reset each time interval.
+#
+# To report specific lock waits and/or holds longer than a given interval in us set
+#
+#     -G log_waits_longer_than_us=50000
+#     -G log_holds_longer_than_us=50000
+#
+# TODO measure time lock is held while contested separately
+# TODO filter out timings for locks that were uncontested and short
+#
 
 @define POSTGRES_PATH %( "/home/craig/projects/2Q/postgres/dev/lwlock-tracepoints/build/tmp_install/home/craig/pg/lwlock-tracepoints/bin/postgres" %)
 
+// Define track_per_process = 0 to lower overhead
+// of collection and reduce verbosity.
+global track_per_process = 1;
+
+// Set cumulative = 0 if you want the stats to reset after each display of the
+// allprocs stats. Does not affect per-proc stats reporting.
+global cumulative = 1;
+
+// To log waits or holds longer than this number of micros separately. Off (0) by default.
+global log_waits_longer_than_us = 0;
+global log_holds_longer_than_us = 0;
+
+// To get backtraces for long waits or holds
+global backtrace_long_waits_or_holds = 1;
+
 probe postgres = process(@POSTGRES_PATH) {}
 
-// Track currently-held locks by pid
-private locks_held;
+// Track currently-held locks by pid. Indexed by [lwlock_p, pid()] => timestamp acquired
+private locks_held_by_pid;
+
+// For lock waits in progress track the waiting pid's start wait time
+private lock_waits;
+
+// Stats arrays indexed by [tranche_id, mode], for lock wait stats and lock hold stats
+private held_durations_allprocs[1000];
+private wait_durations_allprocs[1000];
 
 // Stats array indexed by [pid(), tranche_id, mode]
-// zero pid is used as a counter incremented for all hits
-private held_durations;
+//
+// This array must be very large if we're going to accumulate all pid stats so
+// instead we write stats for each pid once it exits. Also let this array cycle
+// (% suffix)
+private held_durations_pid[5000];
+private wait_durations_pid[5000];
 
 // tranche id -> name mapping, since we don't want to rely on seeing
 // the tranches registered at startup.
@@ -31,7 +88,7 @@ probe postgres.mark("lwlock__acquired") {
 		tranche_name_p = $arg1
 		tranche_names[tranche_id] = user_string(tranche_name_p);
 	}
-	locks_held[pid(), lwlock_p, tranche_id, mode] = gettimeofday_us();
+	locks_held_by_pid[pid(), lwlock_p] = gettimeofday_us();
 }
 
 probe postgres.mark("lwlock__release") {
@@ -40,17 +97,25 @@ probe postgres.mark("lwlock__release") {
 	lwlock_p = $arg3
 	tranche_id = $arg4
 	assert (mode == @LW_EXCLUSIVE || mode == @LW_SHARED, sprintf("invalid lockmode %d", mode));
-	acquired_us = locks_held[pid(), lwlock_p, tranche_id, mode]
+	acquired_us = locks_held_by_pid[pid(), lwlock_p]
 	if (acquired_us != 0) {
 		released_us = gettimeofday_us();
 		held = released_us - acquired_us;
 		// Summary across all pids by lockmode, and by (tranche_id, lockmode)
-		held_durations[0, -1, mode] <<< held;
-		held_durations[0, tranche_id, mode] <<< held;
+		//
+		held_durations_allprocs[-1, mode] <<< held;
+		held_durations_allprocs[tranche_id, mode] <<< held;
 		// And for this process
-		held_durations[pid(), tranche_id, mode] <<< held;
-		// Rollup all locks held by this process by mode
-		held_durations[pid(), -1, mode] <<< held;
+		if (track_per_process) {
+			held_durations_pid[pid(), tranche_id, mode] <<< held;
+			held_durations_pid[pid(), -1, mode] <<< held;
+		}
+
+		if (log_holds_longer_than_us > 0 && held > log_holds_longer_than_us) {
+			printf("!!H!! [%6d] [%s] %8d (%s)\n",
+					pid(), tranche_id_str(tranche_id),
+					held, usecs_to_string(held));
+		}
 
 		// TODO: We should really categorize processes, but there's not
 		// currently an easy way to do ask "what kind of process is
@@ -59,18 +124,64 @@ probe postgres.mark("lwlock__release") {
 		// pg_stat_activity is a string fetched dynamically. Don't want to have
 		// to check am_walsender and all that individually. So for now not
 		// doing backend categories.
-		delete locks_held[pid(), lwlock_p, tranche_id, mode]
+		delete locks_held_by_pid[pid(), lwlock_p]
+	}
+}
+
+// LWLock waits. Note that we may wait multiple times for a given acquire. We don't presently
+// try to keep track of the total wait time for each acquire, we treat each wait as individual
+// incidents.
+//
+// TODO track across multiple waits and sum the times, then report one stat once acquire
+// finishes.
+//
+probe postgres.mark("lwlock__wait__start") {
+	mode = $arg2;
+	lwlock_p = $arg3;
+	tranche_id = $arg4;
+	lock_waits[pid(), lwlock_p] = gettimeofday_us();
+	// This is how to get the pid that holds the lock now. It's slow though. And
+	// we could land up waiting on a different holder each time we wake if it's
+	// quite contested.
+	//
+	//foreach ([pid, ignored_lwlock_p] in locks_held_by_pid[*, lwlock_p]) {
+	//}
+}
+
+probe postgres.mark("lwlock__wait__done") {
+	mode = $arg2;
+	lwlock_p = $arg3;
+	tranche_id = $arg4;
+	wait_start_us = lock_waits[pid(), lwlock_p];
+	if (wait_start_us != 0) {
+		wait_end_us = gettimeofday_us();
+		waited = wait_end_us - wait_start_us;
+
+		wait_durations_allprocs[-1, mode] <<< waited;
+		wait_durations_allprocs[tranche_id, mode] <<< waited;
+		if (track_per_process) {
+			wait_durations_pid[pid(), tranche_id, mode] <<< waited;
+			wait_durations_pid[pid(), -1, mode] <<< waited;
+		}
+
+		if (log_waits_longer_than_us > 0 && waited > log_waits_longer_than_us) {
+			printf("!!W!! [%6d] [%s] %8d (%s)\n",
+					pid(), tranche_id_str(tranche_id),
+					waited, usecs_to_string(waited));
+		}
+
+		delete lock_waits[pid(), lwlock_p];
 	}
 }
 
 probe postgres.end {
-	foreach (acquired_us = [pid, lwlock_p, tranche_id, mode] in locks_held[pid(), *, *, *])
+	foreach (acquired_us = [pid, lwlock_p] in locks_held_by_pid[pid(), *])
 	{
 		leaked_locks ++;
-		printf("[%6d] leaked LWLock %p in tranche %d (%s) mode %s!\n", pid, lwlock_p, tranche_id,
-				tranche_id_str(tranche_id), lockmode_str(mode));
+		printf("[%6d] leaked LWLock %p!\n", pid, lwlock_p);
 	}
-	delete locks_held[pid(), *, *, *];
+	delete locks_held_by_pid[pid(), *];
+	delete lock_waits[pid(), *];
 }
 
 function tranche_id_str:string(tranche_id:long) {
@@ -91,62 +202,163 @@ function lockmode_str:string(mode:long) {
 }
 
 function print_stats_header(label) {
-	printf("%-20s %8s %20s %4s %8s %8s %8s %8s %8s\n", label, "pid", "tranche", "mode", "count", "avg", "variance", "min", "max");
+	printf("%-20s %30s %4s %8s %12s %8s %8s %8s %8s\n", label, "tranche", "mode", "count", "total", "avg", "variance", "min", "max");
 }
 
 /*
  * Can't pass a stats-variable directly so we have to pass the keys, and repeat them
  * for each access, making it much harder to generalize this.
  */
-
-function print_stats_one(label:string,forpid:long,fortranche:long,formode:long)
+function print_held_stats_summary(label:string,fortranche:long,formode:long)
 {
-	held_count = @count(held_durations[forpid,fortranche,formode])
 	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
-	pid_label = forpid == 0 ? "(all)" : sprintf("%d", forpid)
+	held_count = @count(held_durations_allprocs[fortranche,formode])
 	if (held_count > 0) {
-		printf("%-20s %8s %20s %4s %8d %8d %8d %8d %8d\n",
-				label, tranche_name, pid_label, lockmode_str(formode),
+		printf("%-20s %30s %4s %8d %12d %8d %8d %8d %8d\n",
+				label, tranche_name, lockmode_str(formode),
 				held_count,
-				@avg(held_durations[forpid,fortranche,formode]),
-				@variance(held_durations[forpid,fortranche,formode]),
-				@min(held_durations[forpid,fortranche,formode]),
-				@max(held_durations[forpid,fortranche,formode]))
-	}
-	else {
-		/* @avg etc will error on zero samples so dummy some output */
-		printf("%-20s %8s %20s %4s %8d %8s %8s %8s %8s\n",
-				label, tranche_name, pid_label, lockmode_str(formode),
-				held_count, "-", "-", "-", "-");
+				@sum(held_durations_allprocs[fortranche,formode]),
+				@avg(held_durations_allprocs[fortranche,formode]),
+				@variance(held_durations_allprocs[fortranche,formode]),
+				@min(held_durations_allprocs[fortranche,formode]),
+				@max(held_durations_allprocs[fortranche,formode]))
 	}
 }
 
-function print_stats(full_pid_list:long) {
-	print_stats_header("all procs")
-	// By-mode rollup
-	print_stats_one("  LW_EXCLUSIVE", 0, -1, @LW_EXCLUSIVE);
-	print_stats_one("  LW_SHARED", 0, -1, @LW_SHARED);
-	// By tranche id and mode, all procs
-	print_stats_header("all procs by tranche")
-	foreach ([_ign1, tranche_id, mode] in held_durations[0, *, *]) {
-		print_stats_one("  ", 0, tranche_id, mode)
+function print_wait_stats_summary(label:string,fortranche:long,formode:long)
+{
+	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
+	wait_count = @count(wait_durations_allprocs[fortranche,formode])
+	if (wait_count > 0) {
+		printf("%-20s %30s %4s %8d %12d %8d %8d %8d %8d\n",
+				label, tranche_name, lockmode_str(formode),
+				wait_count,
+				@sum(wait_durations_allprocs[fortranche,formode]),
+				@avg(wait_durations_allprocs[fortranche,formode]),
+				@variance(wait_durations_allprocs[fortranche,formode]),
+				@min(wait_durations_allprocs[fortranche,formode]),
+				@max(wait_durations_allprocs[fortranche,formode]))
 	}
-	if (full_pid_list) {
-		print_stats_header("all procs")
-		foreach ([pid, tranche_id, mode] in held_durations[*, *, *]) {
-			if (pid != 0) {
-				print_stats_one("  ", pid, tranche_id, mode)
-			}
+}
+
+function print_stats_pid(forpid:long,fortranche:long,formode:long,atexit:long)
+{
+	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
+	held_count = @count(held_durations_pid[forpid,fortranche,formode])
+	if (held_count > 0) {
+		printf("%1s     H [%06d]     %30s %4s %8d %12d %8d %8d %8d %8d\n",
+				atexit == 0 ? "*" : " ",
+				forpid, tranche_name, lockmode_str(formode),
+				held_count,
+				@sum(held_durations_pid[forpid,fortranche,formode]),
+				@avg(held_durations_pid[forpid,fortranche,formode]),
+				@variance(held_durations_pid[forpid,fortranche,formode]),
+				@min(held_durations_pid[forpid,fortranche,formode]),
+				@max(held_durations_pid[forpid,fortranche,formode]))
+	}
+	wait_count = @count(wait_durations_pid[forpid,fortranche,formode])
+	if (wait_count > 0) {
+		printf("%1s     W [%06d]     %30s %4s %8d %12d %8d %8d %8d %8d\n",
+				atexit == 0 ? "*" : " ",
+				forpid, tranche_name, lockmode_str(formode),
+				wait_count,
+				@sum(wait_durations_pid[forpid,fortranche,formode]),
+				@avg(wait_durations_pid[forpid,fortranche,formode]),
+				@variance(wait_durations_pid[forpid,fortranche,formode]),
+				@min(wait_durations_pid[forpid,fortranche,formode]),
+				@max(wait_durations_pid[forpid,fortranche,formode]))
+	}
+}
+
+function print_stats() {
+	// Suppress action if nothing collected at all
+	if ([*, *] in held_durations_allprocs) {
+
+		// By-mode rollup
+		printf("\n")
+		print_stats_header("held locks: all procs")
+		print_held_stats_summary("  H LW_EXCLUSIVE", -1, @LW_EXCLUSIVE);
+		print_held_stats_summary("  H LW_SHARED", -1, @LW_SHARED);
+
+		// By tranche id and mode, all procs
+		printf("\n")
+		print_stats_header("all procs by tranche")
+		foreach ([tranche_id+, mode] in held_durations_allprocs[*, *]) {
+			print_held_stats_summary("  H tranche ", tranche_id, mode)
 		}
 	}
-	printf("\n");
+
+	if ([*, *] in wait_durations_allprocs) {
+
+		// By-mode rollup
+		printf("\n")
+		print_stats_header("wait locks: all procs")
+		print_wait_stats_summary("  W LW_EXCLUSIVE", -1, @LW_EXCLUSIVE);
+		print_wait_stats_summary("  W LW_SHARED", -1, @LW_SHARED);
+
+		// By tranche id and mode, all procs
+		printf("\n")
+		print_stats_header("all procs by tranche")
+		foreach ([tranche_id+, mode] in wait_durations_allprocs[*, *]) {
+			print_wait_stats_summary("  W tranche ", tranche_id, mode)
+		}
+		printf("------\n");
+	}
+
+	if (! cumulative) {
+		delete held_durations_allprocs[*, *];
+		delete wait_durations_allprocs[*, *];
+	}
+
 }
 
-probe timer.ms(5000)
-{
-	print_stats(0);
+probe timer.ms(5000) {
+	print_stats();
+}
+
+// We print stats on a proc when it exits so we can forget it and not bloat the
+// arrays too much.
+probe postgres.end if (track_per_process) {
+	if ([pid(), *, *] in held_durations_pid) {
+		print_stats_header(sprintf("[%6d]", pid()))
+		foreach ([pid, tranche_id+, mode] in held_durations_pid[pid(), *, *]) {
+			print_stats_pid(pid, tranche_id, mode, 1)
+		}
+
+		delete held_durations_pid[pid(), *, *];
+
+		printf("=======\n");
+	}
 }
 
 probe end {
-	print_stats(1);
+	print_stats();
+
+	if (track_per_process)
+	{
+		if ([*, *, *] in held_durations_pid) {
+			print_stats_header("all remaining backends by pid")
+			// How to print the rollup line first while preserving sorting
+			// by both pid and tranche? Do we need another var again? Or
+			// nested loop? A nested loop seems likely to be extemely slow.
+			// Build a global array of pids just for this job?
+			/*
+			last_pid = 0
+			foreach ([pid, _ign1, _ign2] in held_durations_pid[*, *, *]) {
+				if (last_pid != pid)
+				{
+					foreach ([_ign3, tranche_id+, mode] in held_durations_pid[pid, *, *]) {
+						print_stats_pid(pid, tranche_id, mode, 0)
+					}
+					last_pid = pid
+				}
+			}
+			*/
+			foreach ([pid, tranche_id, mode] in held_durations_pid[pid, *, *]) {
+				print_stats_pid(pid, tranche_id, mode, 0)
+			}
+		}
+	}
+
+	printf("------\n");
 }
