@@ -10,43 +10,70 @@
 #
 #     stap -v -g --suppress-time-limits
 #
-# You may want to also pass
+# PARAMETERS
+#
+#     -G hide_wait_total_summary_lt_us=0
+#     -G hide_held_total_summary_lt_us=0
+#     -G hide_wait_total_pid_lt_us=0
+#     -G hide_held_total_pid_lt_us=0
+#
+#         Suppress display of wait or hold entries whose totals are less than
+#         the supplied values. Helps reduce noise in output.
 #
 #     -G track_per_process=0
 #
-# for less overhead and only summary output.
-#
-# There's also
+#         Produce summary output but omit per-process-id tracking of locks.
+#         Signficantly reduces overhead and reduces the volume of output.
 #
 #     -G cumulative=0
 #
-# if you want to see samples reset each time interval.
-#
-# To report specific lock waits and/or holds longer than a given interval in us set
+#         Reset allprocs samples each time interval. Does not affect
+#         per-process samples since they're only emitted once at process exit
+#         anyway.
 #
 #     -G log_waits_longer_than_us=50000
 #     -G log_holds_longer_than_us=50000
 #
+#         Report individual waits or holds if they are long. Time in
+#         microseconds above which the wait or hold is reported.
+#
+#         If debuginfo is available this will report the application_name or,
+#         if unset, the backend type, for both waiter and holder if possible.
+#
+#     -G track_application_names=0
+#
+#         Don't attempt to track application names and backend IDs. Only
+#         affects log_waits_longer_than_us and log_holds_longer_than_us.
+#
+#         Turning this off saves some runtime.
+#
+#     -G track_blockers=0
+#
+#         Don't try to track blocker for waits. Only affects
+#         log_waits_longer_than_us and log_holds_longer_than_us.
+#
+#         Turning this off saves some runtime.
+#
 # TODO measure time lock is held while contested separately
 # TODO filter out timings for locks that were uncontested and short
+# TODO support tracking by MyBackendType category
 #
 
 @define POSTGRES_PATH %( "/home/craig/projects/2Q/postgres/dev/lwlock-tracepoints/build/tmp_install/home/craig/pg/lwlock-tracepoints/bin/postgres" %)
 
-// Define track_per_process = 0 to lower overhead
-// of collection and reduce verbosity.
+// These globals control options that can be set with -G flags on the
+// command line. See the header comment.
 global track_per_process = 1;
-
-// Set cumulative = 0 if you want the stats to reset after each display of the
-// allprocs stats. Does not affect per-proc stats reporting.
 global cumulative = 1;
-
-// To log waits or holds longer than this number of micros separately. Off (0) by default.
 global log_waits_longer_than_us = 0;
 global log_holds_longer_than_us = 0;
-
-// To get backtraces for long waits or holds
 global backtrace_long_waits_or_holds = 1;
+global track_blockers = 0;
+global track_application_names = 1;
+global hide_wait_total_summary_lt_us = 0
+global hide_held_total_summary_lt_us = 0
+global hide_wait_total_pid_lt_us = 0
+global hide_held_total_pid_lt_us = 0
 
 probe postgres = process(@POSTGRES_PATH) {}
 
@@ -55,6 +82,16 @@ private locks_held_by_pid;
 
 // For lock waits in progress track the waiting pid's start wait time
 private lock_waits;
+
+// For lwlock wait tracking of the blocking pid, if it can be found. Also blocking pid's
+// application_name at the time we noticed it was blocking.
+private lock_wait_blockers;
+private lock_wait_blocker_appnames;
+
+// If we're tracking application names, track the application_name of each pid
+private application_names;
+// Track MyBackendType for each backend too, if we're tracking appnames.
+private backend_types;
 
 // Stats arrays indexed by [tranche_id, mode], for lock wait stats and lock hold stats
 private held_durations_allprocs[1000];
@@ -112,9 +149,14 @@ probe postgres.mark("lwlock__release") {
 		}
 
 		if (log_holds_longer_than_us > 0 && held > log_holds_longer_than_us) {
-			printf("!!H!! [%6d] [%s] %8d (%s)\n",
-					pid(), tranche_id_str(tranche_id),
-					held, usecs_to_string(held));
+			appname = application_names[pid()]
+			backend_type = backend_types[pid()]
+			if (appname != "")
+				appname = " (" . appname . ")"
+			printf("!!H!! [%6d]:%-3d %20s %8d (%10s)%s\n",
+					pid(), backend_type, tranche_id_str(tranche_id),
+					held, usecs_to_string(held),
+					appname);
 		}
 
 		// TODO: We should really categorize processes, but there's not
@@ -132,20 +174,35 @@ probe postgres.mark("lwlock__release") {
 // try to keep track of the total wait time for each acquire, we treat each wait as individual
 // incidents.
 //
-// TODO track across multiple waits and sum the times, then report one stat once acquire
-// finishes.
+// We want to accumulate each wait into a total since the number of wakeups is less interesting
+// than the total time waited. We won't bother counting the wakeups.
 //
 probe postgres.mark("lwlock__wait__start") {
 	mode = $arg2;
 	lwlock_p = $arg3;
 	tranche_id = $arg4;
 	lock_waits[pid(), lwlock_p] = gettimeofday_us();
-	// This is how to get the pid that holds the lock now. It's slow though. And
-	// we could land up waiting on a different holder each time we wake if it's
-	// quite contested.
-	//
-	//foreach ([pid, ignored_lwlock_p] in locks_held_by_pid[*, lwlock_p]) {
-	//}
+
+	if (track_blockers) {
+		// This is how to get the pid that holds the lock now. It's slow though. And
+		// we could land up waiting on a different holder each time we wake if it's
+		// quite contested. So this is optional.
+		//
+		foreach ([blocker_pid, entry_lwlock_p] in locks_held_by_pid[*, *]) {
+			/* Workaround for issue where specifying lwlock_p as search filter fails */
+			if (entry_lwlock_p == lwlock_p)
+			{
+				lock_wait_blockers[pid(), entry_lwlock_p] = blocker_pid;
+				// Save blocker's application name or backend
+				// type now, since it might be cleared due to
+				// blocker exit before we notice the lock
+				// release and go to report it.
+				lock_wait_blocker_appnames[pid(), entry_lwlock_p] = application_names[blocker_pid]
+				break;
+			}
+		}
+	}
+
 }
 
 probe postgres.mark("lwlock__wait__done") {
@@ -165,16 +222,132 @@ probe postgres.mark("lwlock__wait__done") {
 		}
 
 		if (log_waits_longer_than_us > 0 && waited > log_waits_longer_than_us) {
-			printf("!!W!! [%6d] [%s] %8d (%s)\n",
-					pid(), tranche_id_str(tranche_id),
+			backend_type = backend_types[pid()]
+			msg = sprintf("!!W!! [%6d]:%-3d %20s %8d (%10s)",
+					pid(), backend_type, tranche_id_str(tranche_id),
 					waited, usecs_to_string(waited));
+			appname = application_names[pid()]
+			if (appname != "") {
+				msg .= " (" . appname . ")"
+			}
+			if (track_blockers) {
+				blocked_by = lock_wait_blockers[pid(), lwlock_p];
+				if (blocked_by != 0) {
+					msg .= sprintf(" => [%6d]", blocked_by)
+				}
+				blocker_appname = lock_wait_blocker_appnames[pid(), lwlock_p]
+				if (blocker_appname != "") {
+					msg .= " (" . blocker_appname . ")"
+				}
+				delete lock_wait_blockers[pid(), lwlock_p];
+			}
+			println(msg);
 		}
 
 		delete lock_waits[pid(), lwlock_p];
 	}
 }
 
-probe postgres.end {
+// If we're tracking application names. This will only work with debuginfo so make it
+// an optional probe.
+//
+// Only called for backends that actually have an application_name, so can't be used
+// to init the backend type.
+//
+// TODO ensure this gets an SDT marker in future.
+//
+probe postgres.function("assign_application_name") if (track_application_names) {
+	if ($newval != 0) {
+		appname = user_string($newval,"")
+		if (appname == "") {
+			appname = describe_my_backend();
+		}
+		if (appname != "") {
+			application_names[pid()] = appname
+		}
+	}
+}
+
+// enum BackendType from miscadmin.h
+@define B_INVALID %( 0 %)
+@define B_AUTOVAC_LAUNCHER %( 1 %)
+@define B_AUTOVAC_WORKER %( 2 %)
+@define B_BACKEND %( 3 %)
+@define B_BG_WORKER %( 4 %)
+@define B_BG_WRITER %( 5 %)
+@define B_CHECKPOINTER %( 6 %)
+@define B_STARTUP %( 7 %)
+@define B_WAL_RECEIVER %( 8 %)
+@define B_WAL_SENDER %( 9 %)
+@define B_WAL_WRITER %( 10 %)
+@define B_ARCHIVER %( 11 %)
+@define B_STATS_COLLECTOR %( 12 %)
+@define B_LOGGER %( 13 %)
+
+// Describe the backend type for this backend. We shouldn't need all this mess,
+// but postgres doesn't give us a single sensible place to look for it.
+//
+// Follow similar logic to log_line_prefix() and GetBackendTypeDesc()
+//
+function describe_my_backend:string() {
+	if (pid() == @var("PostmasterPid", @POSTGRES_PATH))
+		return "postmaster";
+	betype = @var("MyBackendType", @POSTGRES_PATH)
+	backend_types[pid()] = betype
+	return describe_backend_type(betype)
+}
+
+function describe_backend_type:string(betype:long) {
+	if (betype == @B_INVALID)
+		return ""
+	if (betype == @B_AUTOVAC_LAUNCHER)
+		return "autovacuum launcher"
+	if (betype == @B_AUTOVAC_WORKER)
+		return "autovacuum worker"
+	if (betype == @B_BACKEND)
+		return "backend"
+	if (betype == @B_BG_WORKER)
+		return user_string(@var("MyBgworkerEntry", @POSTGRES_PATH)->bgw_type, "background worker");
+	if (betype == @B_BG_WRITER)
+		return "bgwriter"
+	if (betype == @B_CHECKPOINTER)
+		return "checkpointer"
+	if (betype == @B_STARTUP)
+		return "startup process"
+	if (betype == @B_WAL_RECEIVER)
+		return "walreceiver"
+	if (betype == @B_WAL_SENDER)
+		return "walsender"
+	if (betype == @B_WAL_WRITER)
+		return "wal writer"
+	if (betype == @B_ARCHIVER)
+		return "archiver"
+	if (betype == @B_STATS_COLLECTOR)
+		return "stats collector"
+	if (betype == @B_LOGGER)
+		return "logging collector"
+	return ""
+}
+
+/*
+ * There's no set accessor for setting the backend type and it isn't set in any
+ * consistent place. Many processes set it at the start of their main loops. So
+ * it's not easy to probe.
+ *
+ * At least we should be able to rely on it being set before init_ps_display()
+ * is called, and that should get called by most if not all worker types. If
+ * application_name is set, we'll override this with the app name later.
+ */
+probe postgres.function("init_ps_display") if (track_application_names) {
+	application_names[pid()] = describe_my_backend()
+}
+
+/*
+ * We have to clean up entries for all the per-pid arrays manually
+ * to ensure we don't leak and fill the arrays.
+ */
+function delete_per_pid_entries()
+{
 	foreach (acquired_us = [pid, lwlock_p] in locks_held_by_pid[pid(), *])
 	{
 		leaked_locks ++;
@@ -182,6 +355,10 @@ probe postgres.end {
 	}
 	delete locks_held_by_pid[pid(), *];
 	delete lock_waits[pid(), *];
+	delete lock_wait_blockers[pid(), *];
+	delete lock_wait_blocker_appnames[pid(), *];
+	delete application_names[pid()];
+	delete backend_types[pid()];
 }
 
 function tranche_id_str:string(tranche_id:long) {
@@ -213,11 +390,13 @@ function print_held_stats_summary(label:string,fortranche:long,formode:long)
 {
 	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
 	held_count = @count(held_durations_allprocs[fortranche,formode])
-	if (held_count > 0) {
+	held_total = @sum(held_durations_allprocs[fortranche,formode])
+	if (held_count > 0
+		&& (hide_held_total_summary_lt_us == 0 || held_total > hide_held_total_summary_lt_us))
+	{
 		printf("%-20s %30s %4s %8d %12d %8d %8d %8d %8d\n",
 				label, tranche_name, lockmode_str(formode),
-				held_count,
-				@sum(held_durations_allprocs[fortranche,formode]),
+				held_count, held_total,
 				@avg(held_durations_allprocs[fortranche,formode]),
 				@variance(held_durations_allprocs[fortranche,formode]),
 				@min(held_durations_allprocs[fortranche,formode]),
@@ -229,11 +408,13 @@ function print_wait_stats_summary(label:string,fortranche:long,formode:long)
 {
 	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
 	wait_count = @count(wait_durations_allprocs[fortranche,formode])
-	if (wait_count > 0) {
+	wait_total = @sum(wait_durations_allprocs[fortranche,formode])
+	if (wait_count > 0
+		&& (hide_wait_total_summary_lt_us == 0 || wait_total > hide_wait_total_summary_lt_us))
+	{
 		printf("%-20s %30s %4s %8d %12d %8d %8d %8d %8d\n",
 				label, tranche_name, lockmode_str(formode),
-				wait_count,
-				@sum(wait_durations_allprocs[fortranche,formode]),
+				wait_count, wait_total,
 				@avg(wait_durations_allprocs[fortranche,formode]),
 				@variance(wait_durations_allprocs[fortranche,formode]),
 				@min(wait_durations_allprocs[fortranche,formode]),
@@ -245,24 +426,28 @@ function print_stats_pid(forpid:long,fortranche:long,formode:long,atexit:long)
 {
 	tranche_name = fortranche == -1 ? "(all)" : tranche_id_str(fortranche)
 	held_count = @count(held_durations_pid[forpid,fortranche,formode])
-	if (held_count > 0) {
-		printf("%1s     H [%06d]     %30s %4s %8d %12d %8d %8d %8d %8d\n",
+	held_total = @sum(held_durations_pid[forpid,fortranche,formode])
+	if (held_count > 0
+		&& (hide_held_total_pid_lt_us == 0 || fortranche == -1 || held_total > hide_held_total_pid_lt_us))
+	{
+		printf("%1s     H [%06d]    %30s %4s %8d %12d %8d %8d %8d %8d\n",
 				atexit == 0 ? "*" : " ",
 				forpid, tranche_name, lockmode_str(formode),
-				held_count,
-				@sum(held_durations_pid[forpid,fortranche,formode]),
+				held_count, held_total,
 				@avg(held_durations_pid[forpid,fortranche,formode]),
 				@variance(held_durations_pid[forpid,fortranche,formode]),
 				@min(held_durations_pid[forpid,fortranche,formode]),
 				@max(held_durations_pid[forpid,fortranche,formode]))
 	}
 	wait_count = @count(wait_durations_pid[forpid,fortranche,formode])
-	if (wait_count > 0) {
-		printf("%1s     W [%06d]     %30s %4s %8d %12d %8d %8d %8d %8d\n",
+	wait_total = @sum(wait_durations_pid[forpid,fortranche,formode])
+	if (wait_count > 0
+		&& (hide_wait_total_pid_lt_us == 0 || fortranche == -1 || wait_total > hide_wait_total_pid_lt_us))
+	{
+		printf("%1s     W [%06d]    %30s %4s %8d %12d %8d %8d %8d %8d\n",
 				atexit == 0 ? "*" : " ",
 				forpid, tranche_name, lockmode_str(formode),
-				wait_count,
-				@sum(wait_durations_pid[forpid,fortranche,formode]),
+				wait_count, wait_total,
 				@avg(wait_durations_pid[forpid,fortranche,formode]),
 				@variance(wait_durations_pid[forpid,fortranche,formode]),
 				@min(wait_durations_pid[forpid,fortranche,formode]),
@@ -320,7 +505,11 @@ probe timer.ms(5000) {
 // arrays too much.
 probe postgres.end if (track_per_process) {
 	if ([pid(), *, *] in held_durations_pid) {
-		print_stats_header(sprintf("[%6d]", pid()))
+		backend_type = backend_types[pid()]
+		backend_description = application_names[pid()]
+		printf("[%6d] backend_type=%-3d (%s) exited\n", pid(), backend_type, backend_description)
+		print_stats_header(sprintf("[%6d]:", pid()))
+
 		foreach ([pid, tranche_id+, mode] in held_durations_pid[pid(), *, *]) {
 			print_stats_pid(pid, tranche_id, mode, 1)
 		}
@@ -329,6 +518,11 @@ probe postgres.end if (track_per_process) {
 
 		printf("=======\n");
 	}
+}
+
+// Prevent resource leaks
+probe postgres.end {
+	delete_per_pid_entries()
 }
 
 probe end {
