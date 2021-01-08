@@ -3,12 +3,19 @@
 #
 # This tapscript requires a postgres patched with my lwlock tracepoint enhancements.
 #
+# It requires the absolute path to the target postgres executable as the first
+# positional argument after the script.
+#
 # You'll have to run with a bunch of resource limits turned off for this to work since the script
 # is very expensive and not optimised right now.
 #
 # I use
 #
 #     stap -v -g --suppress-time-limits
+#
+# A typical invocation with some parameters might be:
+#
+#     /usr/local/systemtap/bin/stap -v -g --suppress-time-limits -G track_per_process=1 -G cumulative=1 -G log_waits_longer_than_us=9000 -G log_holds_longer_than_us=20000 -G track_blockers=1 -G hide_wait_total_summary_lt_us=10000 -G hide_held_total_summary_lt_us=20000 -G hide_wait_total_pid_lt_us=1000 -G hide_held_total_pid_lt_us=5000 lwlock_hold_durations.stp /path/to/your/postgres
 #
 # PARAMETERS
 #
@@ -59,7 +66,11 @@
 # TODO support tracking by MyBackendType category
 #
 
-@define POSTGRES_PATH %( "/home/craig/projects/2Q/postgres/dev/lwlock-tracepoints/build/tmp_install/home/craig/pg/lwlock-tracepoints/bin/postgres" %)
+%( $# > 0 %?
+	@define POSTGRES_PATH %( @1 %)
+%:
+	@define POSTGRES_PATH %( "/home/craig/projects/2Q/postgres/dev/lwlock-tracepoints/build/tmp_install/home/craig/pg/lwlock-tracepoints/bin/postgres" %)
+%)
 
 // These globals control options that can be set with -G flags on the
 // command line. See the header comment.
