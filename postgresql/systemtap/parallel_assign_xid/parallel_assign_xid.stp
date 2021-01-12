@@ -1,0 +1,99 @@
+#
+# Systemtap tapscript to observe parallel backends that call
+# AssignTransactionId()
+#
+# Tested on systemtap 4.5
+#
+# SETUP
+# ----
+#
+# Make sure you have kernel headers and debuginfo
+# installed. You also need postgres and postgres extension debuginfo.
+#
+# Run "sudo stap-prep" before use.
+#
+# For postgres debuginfo use
+#
+#     PGDIR=/usr/pgsql-11/
+#     yum -y install yum-utils
+#     debuginfo-install $PGDIR/bin/postgres
+#
+# as appropriate for your target.
+#
+# RUNNING THE SCRIPT
+# ----
+#
+# Run the script with something like:
+#
+#    PGDIR=/usr/pgsql-11/
+#    sudo stap --ldd -v \
+#         $(find $($PGDIR/bin/pg_config --pkglibdir) -name \*.so -printf '-d %p ' )
+#         parallel_assign_xid.stp \
+#         $PGDIR/bin/postgres
+#
+# Then run the target workload once the script prints "Run target workload now".
+#
+# GETTING CORE DUMPS
+# ----
+#
+# You can optionally add the stap arguments
+#
+#     --guru-mode -G crash_backends=1
+#
+# if you want to send a SIGABRT after printing info. If the system limits are set
+# appropriately this will produce a core file in the path configured by
+# /proc/sys/kernel/core.pattern .
+#
+# WARNING: --guru-mode allows systemtap to modify process and kernel memory,
+# so read and understand this script first and take care on production systems.
+# This script doesn't do anything except send a signal, so it's actually
+# very safe.
+#
+# ERRORS
+# ----
+#
+# If running the script produces an error like:
+#
+#     semantic error: unable to find global 'application_names', [man error::dwarf] [...]
+#
+# then you're missing debuginfo for your postgres.
+#
+
+%( $# > 0 %?
+	@define POSTGRES_PATH %( @1 %)
+%:
+	@define POSTGRES_PATH %( "/usr/pgsql-11/bin/postgres" %)
+%)
+global crash_backends = 0
+
+probe postgres = process(@POSTGRES_PATH) {}
+
+private parallel_workers[1000]
+
+probe postgres.function("ParallelWorkerMain") {
+	parallel_workers[pid()] = 1
+}
+
+probe postgres.function("AssignTransactionId") {
+	if ([pid()] in parallel_workers) {
+		appname = user_string(@var("application_name", @POSTGRES_PATH),"")
+		query = user_string(@var("debug_query_string", @POSTGRES_PATH),"")
+		printf("[%06d] AssignTransactionId() called from parallel worker\n        application_name: %s\n        query: %s\n",
+				pid(), appname, query)
+		print_ubacktrace()
+		printf("------")
+
+		/* See "crash_backends" option above */
+		if (crash_backends) {
+			raise(6)
+		}
+	}
+}
+
+probe postgres.end {
+	delete parallel_workers[pid()]
+}
+
+probe begin {
+	printf("Run target workload now\n")
+}
