@@ -1,0 +1,4 @@
+comment = 'Test code for parallel unsafe functions'
+default_version = '1.0'
+module_pathname = '$libdir/parallel_unsafe'
+relocatable = true
