@@ -5,7 +5,9 @@
 # positional argument after the script.
 #
 # You'll have to run with resource limits turned off for this to work since the
-# script is very expensive and not optimised right now.
+# script is very expensive and not optimised right now. Use 'stap -t' if you
+# want to see probe workload and time spent. It spends quite a lot of time on
+# lock contention for various global arrays right now.
 #
 # I use
 #
@@ -118,6 +120,9 @@ global hide_wait_total_summary_lt_us = 0
 global hide_held_total_summary_lt_us = 0
 global hide_wait_total_pid_lt_us = 0
 global hide_held_total_pid_lt_us = 0
+
+// Debug mode that turns off stats accumulation
+@define TRACK_STATS %( 1 %)
 
 // Sanity checking for script development and debugging.
 //
@@ -533,6 +538,7 @@ function report_long_waits(waited_us:long, mode:long, tranche_id:long) {
 }
 
 @define append_stats(statvar_allprocs, statvar_pid, duration_us, mode, tranche_id) %(
+if (@TRACK_STATS)
 {
     // Summary across all pids by lockmode, and by (@tranche_id, lockmode)
     @statvar_allprocs[-1, @mode] <<< @duration_us;
