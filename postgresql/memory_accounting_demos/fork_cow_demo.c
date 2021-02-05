@@ -3,9 +3,13 @@
  *
  * It allocates chunks of memory on the heap that are
  *
- * - unused ("heap_untouched")
- * - written only on parent process ("heap_parent")
- * - written by parent then child after fork ("heap_cow")
+ * - unused ("heap_untouched"), 1 chunk
+ * - written only on parent process ("heap_parent"), 2 chunks
+ * - written by parent then child after fork ("heap_cow"), 4 chunks
+ *
+ * If the second argument shmem_size is nonzero, it also opens a POSIX shmem
+ * segment and follows a similar pattern: leaves 1 chunk untouched, writes 2
+ * chunks on parent only, writes 4 chunks on parent then child.
  *
  * The same could be done for global arrays but it's not really
  * any different.
@@ -20,12 +24,18 @@
 #include <signal.h>
 #include <stdint.h>
 #include <assert.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 static volatile int got_sigusr1;
 static void wait_for_sigusr1(void);
 static void child_main() __attribute__((noreturn));
 static void report_memory_use(pid_t child);
 static void usage_die(const char * argv0, const char *msg);
+static void * shm_alloc(size_t sz, int shm_fd);
+static int setup_shmem(size_t shm_total_size);
 
 /*
  * Each chunk we allocate will be 10 MiB multiplied by a power of two.
@@ -35,36 +45,64 @@ static void usage_die(const char * argv0, const char *msg);
  * The same behaviour exists for stack and globals, but it's not
  * worth illustrating that separately.
  */
-static size_t chunk_size_bytes;
+static size_t chunk_size_bytes, shm_chunk_size_bytes;
 static size_t heap_untouched_size, heap_parent_dirty_size, heap_cow_size;
+static size_t shm_untouched_size, shm_parent_dirty_size, shm_cow_size;
 
 /* Globals accessible to child after fork() */
 static pid_t parent_pid;
 static char *heap_cow_dirty_mem;
+static char *shm_cow_dirty_mem = 0;
 
 int main(int argc, char * argv[])
 {
-	if (argc != 2)
+	char *endpos;
+	int shm_fd;
+
+	if (argc < 2 || argc > 3)
 		usage_die(argv[0], "wrong argument count");
 
-	char *endpos;
-	long int arg_chunk_size_bytes = strtol(argv[1], &endpos, 10);
-	if (endpos == 0 || *endpos != '\0')
-		usage_die(argv[0], "couldn't parse chunk_size_bytes");
-	if (arg_chunk_size_bytes <= 0)
-		usage_die(argv[0], "chunk_size must be > 0");
+	if (argc >= 2)
+	{
+		long int arg_chunk_size_bytes = strtol(argv[1], &endpos, 10);
+		if (endpos == 0 || *endpos != '\0')
+			usage_die(argv[0], "couldn't parse chunk_size_bytes");
+		if (arg_chunk_size_bytes <= 0)
+			usage_die(argv[0], "chunk_size must be > 0");
 
-	chunk_size_bytes = (size_t)arg_chunk_size_bytes;
-	heap_untouched_size = chunk_size_bytes;
-	heap_parent_dirty_size = 2 * chunk_size_bytes;
-	heap_cow_size = 4 * chunk_size_bytes;
+		chunk_size_bytes = (size_t)arg_chunk_size_bytes;
+
+		heap_untouched_size = chunk_size_bytes;
+		heap_parent_dirty_size = 2 * chunk_size_bytes;
+		heap_cow_size = 4 * chunk_size_bytes;
+
+		const long int total_bytes = heap_untouched_size + heap_parent_dirty_size + heap_cow_size;
+		printf("# will allocate %ld bytes (%f GiB)\n",
+				total_bytes, ((float)total_bytes) / (1024*1024*1024));
+	}
+
+	if (argc >= 3)
+	{
+		long int arg_chunk_size_bytes = strtol(argv[2], &endpos, 10);
+		if (endpos == 0 || *endpos != '\0')
+			usage_die(argv[0], "couldn't parse shm_chunk_size_bytes");
+		if (arg_chunk_size_bytes <= 0)
+			usage_die(argv[0], "shm_chunk_size must be > 0");
+
+		shm_chunk_size_bytes = (size_t)arg_chunk_size_bytes;
+
+		shm_untouched_size = shm_chunk_size_bytes;
+		shm_parent_dirty_size = 2 * shm_chunk_size_bytes;
+		shm_cow_size = 4 * shm_chunk_size_bytes;
+
+		const long int total_bytes = shm_untouched_size + shm_parent_dirty_size + shm_cow_size;
+		printf("# will allocate %ld bytes (%f GiB)\n",
+				total_bytes, ((float)total_bytes) / (1024*1024*1024));
+
+		shm_fd = setup_shmem((size_t)total_bytes);
+	}
 
 	parent_pid = getpid();
-	printf("# parent pid: %u\n\n", parent_pid);
-
-	const long int total_bytes = heap_untouched_size + heap_parent_dirty_size + heap_cow_size;
-	printf("# will allocate %ld bytes (%f GiB)\n",
-			total_bytes, ((float)total_bytes) / (1024*1024*1024));
 
 	printf("free -k before parent allocations:\n");
 	system("free -k");
@@ -98,6 +136,21 @@ int main(int argc, char * argv[])
 	heap_cow_dirty_mem = malloc(heap_cow_size);
 	memset(heap_cow_dirty_mem, '\x7f', heap_cow_size);
 	printf("%20s: %lu\n", "heap_cow kb", heap_cow_size/1024);
+
+	if (shm_fd >= 0)
+	{
+		/* Use the same scheme for shmem allocations */
+		char * shm_untouched_mem __attribute__((unused)) = shm_alloc(shm_untouched_size, shm_fd);
+		printf("%20s: %lu\n", "shm_untouched kb", shm_untouched_size / 1024);
+
+		char *shm_parent_dirty_mem = shm_alloc(shm_parent_dirty_size, shm_fd);
+		memset(shm_parent_dirty_mem, '\x7f', shm_parent_dirty_size);
+		printf("%20s: %lu\n", "shm_parent_dirty kb", shm_parent_dirty_size/1024);
+
+		shm_cow_dirty_mem = shm_alloc(shm_cow_size, shm_fd);
+		memset(shm_cow_dirty_mem, '\x7f', shm_cow_size);
+		printf("%20s: %lu\n", "shm_cow kb", shm_cow_size/1024);
+	}
 
 	putchar('\n');
 	printf("free -k after parent allocations, before fork():\n");
@@ -242,6 +295,10 @@ static void child_main(void)
 	/* Here we'll re-dirty the CoW memory chunk to show we'll get charged for it again */
 	memset(heap_cow_dirty_mem, '\x8f', heap_cow_size);
 
+	/* Same for the POSIX shmem segment if shmem was enabled */
+	if (shm_cow_dirty_mem)
+		memset(shm_cow_dirty_mem, '\x7f', shm_cow_size);
+
 	/* Tell parent proc we're ready to be measured */
 	kill(parent_pid, SIGUSR1);
 
@@ -260,6 +317,45 @@ static void usage_die(const char * argv0, const char * msg)
 	exit(1);
 }
 
+static void * shm_alloc(size_t sz, int shm_fd)
+{
+	void * mem = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+	if (mem == 0) {
+		fprintf(stderr, "failed to mmap() %ld bytes of posix shmem: %m\n", sz);
+		exit(1);
+	}
+	return mem;
+}
+
+/* see "man 7 shm_overview" for info on POSIX shmem */
+static int setup_shmem(size_t shm_total_size) {
+	int shm_fd;
+
+	/* In case we left a segment from a prior crash */
+	shm_unlink("fork_cow_demo");
+
+	/* open the fd in /dev/shmem */
+	if ((shm_fd = shm_open("/fork_cow_demo", O_CREAT | O_RDWR | O_EXCL | O_CLOEXEC, 0600)) < 0)
+	{
+		fprintf(stderr, "failed to shm_open() requested segment: %m\n");
+		exit(1);
+	}
+
+	/*
+	 * Immediately unlink the shmem file. It'll remain accessible to this proc
+	 * and its children until they all exit.
+	 */
+	shm_unlink("/fork_cow_demo");
+
+	/* expand the tempfile to the desired size */
+	if (ftruncate(shm_fd, shm_total_size) < 0)
+	{
+		fprintf(stderr, "failed to ftruncate() shmem segment to %ld bytes: %m\n", shm_total_size);
+		exit(1);
+	}
+
+	return shm_fd;
+}
 
 /*
  * vim: ts=4 sw=4 ai noet
