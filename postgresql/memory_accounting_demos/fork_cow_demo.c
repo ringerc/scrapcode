@@ -25,6 +25,7 @@ static volatile int got_sigusr1;
 static void wait_for_sigusr1(void);
 static void child_main() __attribute__((noreturn));
 static void report_memory_use(pid_t child);
+static void usage_die(const char * argv0, const char *msg);
 
 /*
  * Each chunk we allocate will be 10 MiB multiplied by a power of two.
@@ -34,21 +35,40 @@ static void report_memory_use(pid_t child);
  * The same behaviour exists for stack and globals, but it's not
  * worth illustrating that separately.
  */
-static const size_t heap_chunk_size = 100*1024*1024;
-static const size_t heap_untouched_size = heap_chunk_size,
-					heap_parent_dirty_size = 2 * heap_chunk_size,
-					heap_cow_size = 4 * heap_chunk_size;
+static size_t chunk_size_bytes;
+static size_t heap_untouched_size, heap_parent_dirty_size, heap_cow_size;
 
 /* Globals accessible to child after fork() */
 static pid_t parent_pid;
 static char *heap_cow_dirty_mem;
 
-int main()
+int main(int argc, char * argv[])
 {
+	if (argc != 2)
+		usage_die(argv[0], "wrong argument count");
+
+	char *endpos;
+	long int arg_chunk_size_bytes = strtol(argv[1], &endpos, 10);
+	if (endpos == 0 || *endpos != '\0')
+		usage_die(argv[0], "couldn't parse chunk_size_bytes");
+	if (arg_chunk_size_bytes <= 0)
+		usage_die(argv[0], "chunk_size must be > 0");
+
+	chunk_size_bytes = (size_t)arg_chunk_size_bytes;
+	heap_untouched_size = chunk_size_bytes;
+	heap_parent_dirty_size = 2 * chunk_size_bytes;
+	heap_cow_size = 4 * chunk_size_bytes;
 
 	parent_pid = getpid();
-	printf("# parent pid: %u\n", parent_pid);
+	printf("# parent pid: %u\n\n", parent_pid);
 
+	const long int total_bytes = heap_untouched_size + heap_parent_dirty_size + heap_cow_size;
+	printf("# will allocate %ld bytes (%f GiB)\n",
+			total_bytes, ((float)total_bytes) / (1024*1024*1024));
+
+	printf("free -k before parent allocations:\n");
+	system("free -k");
+	putchar('\n');
 
 	/*
 	 * malloc() a big chunk of RAM in the parent process that we won't
@@ -78,6 +98,10 @@ int main()
 	heap_cow_dirty_mem = malloc(heap_cow_size);
 	memset(heap_cow_dirty_mem, '\x7f', heap_cow_size);
 	printf("%20s: %lu\n", "heap_cow kb", heap_cow_size/1024);
+
+	putchar('\n');
+	printf("free -k after parent allocations, before fork():\n");
+	system("free -k");
 
 	/*
 	 * fork() a child process without a following exec(). This creates
@@ -119,7 +143,7 @@ static void print_proc_statm(pid_t pid, const char * const label)
 {
 	static const int KERNEL_PAGE_SIZE_KB = 4;
 	char statm_path[40];
-	snprintf(statm_path, 40, "/proc/%u/statm", pid);
+	snprintf(statm_path, sizeof(statm_path), "/proc/%u/statm", pid);
 	FILE *statm = fopen(statm_path, "r");
 	uint64_t statm_size, statm_resident, statm_shared, statm_text, statm_lib, statm_data, statm_dt;
 	if (fscanf(statm, "%lu %lu %lu %lu %lu %lu %lu",
@@ -137,6 +161,26 @@ static void print_proc_statm(pid_t pid, const char * const label)
 			statm_text * KERNEL_PAGE_SIZE_KB,
 			statm_data* KERNEL_PAGE_SIZE_KB);
 	fclose(statm);
+}
+
+/*
+ * /proc/$pid/smaps_rollup  has sums of process memory allocations.
+ *
+ * There's also /proc/$pid/smaps, which breaks them down in much more
+ * detail, but that's impractical to just print directly here.
+ */
+static void print_proc_smaps(pid_t pid, const char * const label)
+{
+	char smaps_rollup_path[40];
+	snprintf(smaps_rollup_path, sizeof(smaps_rollup_path), "/proc/%u/smaps_rollup", pid);
+	FILE *smaps_rollup = fopen(smaps_rollup_path, "r");
+	char * line;
+	char linebuf[100];
+	(void) fgets(linebuf, sizeof(linebuf), smaps_rollup); /* discard first line */
+	while ((line = fgets(linebuf, sizeof(linebuf), smaps_rollup)) != NULL)
+		printf("%10d %-10s %s", pid, label, line);
+	putchar('\n');
+	fclose(smaps_rollup);
 }
 
 static void report_memory_use(pid_t child_pid)
@@ -162,6 +206,16 @@ static void report_memory_use(pid_t child_pid)
 	print_proc_statm_header();
 	print_proc_statm(parent_pid, "parent");
 	print_proc_statm(child_pid, "child");
+	putchar('\n');
+	print_proc_smaps(parent_pid, "parent");
+	print_proc_smaps(child_pid, "child");
+
+	/*
+	 * And system total memory
+	 */
+	putchar('\n');
+	printf("free -k after fork() and CoW overwrite:\n");
+	system("free -k");
 }
 
 static void sigusr1_handler(int sig __attribute__((unused)))
@@ -199,6 +253,14 @@ static void child_main(void)
 	__builtin_unreachable();
 }
 
+static void usage_die(const char * argv0, const char * msg)
+{
+	fprintf(stderr, "error: %s\n", msg);
+	fprintf(stderr, "usage: %s chunk_size_bytes\n", argv0);
+	exit(1);
+}
 
 
-/* vim: ts=4 sw=4 ai noet */
+/*
+ * vim: ts=4 sw=4 ai noet
+ */

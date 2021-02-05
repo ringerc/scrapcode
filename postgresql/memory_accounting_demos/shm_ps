@@ -1,0 +1,196 @@
+#!/usr/bin/gawk -f
+#
+# This tool is intended as a `ps` that handles shared memory sanely.
+#
+# It reports an estimate of the private memory allocation by a process
+# that uses shared memory. This isn't very practical to do with the ps
+# command from procps-ng, because it doesn't handle shared memory very
+# intelligently. Or at all, really.
+#
+# Takes a list of pids on stdin, and prints some memory stats for each one.
+# Typically invoked with the list of child procs for a given postmaster with
+# something like:
+#
+#      ( pgrep -f postmaster; pgrep -P $(pgrep -f postmaster)) | awk -f shm_ps.awk
+#
+# You can use any list of pids instead, you don't have to use pgrep. E.g.  `ps
+# --no-headers -u postgres -o pid` will work, or various `pgrep` variants. But
+# the above usage is often most convenient.
+#
+# which will produce output like:
+#
+#     $ (pgrep -f postmaster; pgrep -P $(pgrep -f postmaster)) | awk -f shm_ps.awk
+#            pid       size   resident     shared    binsize    private (all in KiB)
+#           1327     423616      23440      22132       5424       1308 /usr/pgsql-12/bin/postmaster-D/var/lib/pgsql/12/data/
+#           1416     277996       4692       3408       5424       1284 postgres: logger
+#         207463     423616       3752       2444       5424       1308 postgres: checkpointer
+#         207464     423748       5672       4352       5424       1320 postgres: background writer
+#         207465     423616       9940       8608       5424       1332 postgres: walwriter
+#         207466     424168       6584       5056       5424       1528 postgres: autovacuum launcher
+#         207467     277996       4716       3408       5424       1308 postgres: stats collector
+#         207468     424172       6288       4764       5424       1524 postgres: logical replication launcher
+#
+# The field you'll be most interested in from the output will be the "private"
+# field which shows an estimate of the non-shared memory used by the process.
+#
+# These are freshly restarted so they won't have much memory allocated. Note that
+# "shared" is lower for all the backends vs the postmaster? That's because shared
+# memory only gets "charged to" a copy-on-write fork()ed process once the process
+# reads or writes a page.
+#
+# [Note that I'm not sure yet whether that private memory is all dirty memory
+# that requires writeback. It might also include clean private memory that can
+# be evicted under memory pressure. Haven't determined that yet.]
+#
+
+BEGIN {
+	printf "%10s %10s %10s %10s %10s %10s %10s %10s %10s (all in KiB)\n", "pid", "RSS", "PSS", "PSS Anon", "PSS File", "PSS Shared", "Anonymous", "shared", "private";
+}
+
+{
+	pid = $1
+	n_procs ++
+	getline cmdline < sprintf("/proc/%d/cmdline", pid)
+	# Read /proc/$pid/statm fields of interest
+	getline < sprintf("/proc/%d/statm", pid)
+	size = $1 * 4
+	resident = $2 * 4;  # same as smaps[Rss]
+	shared = $3 * 4
+	text=$4 * 4
+	# Read /proc/$pid/smaps, discarding first line
+	# Interesting fields are Pss, Pss_Anon, Pss_File, Pss_Shmem, Private_Dirty, Shared_Dirty, Anonymous
+	# see man 5 proc
+	smaps_file = sprintf("/proc/%d/smaps_rollup", pid)
+	rc = getline < smaps_file
+	if (rc < 0) {
+		printf("getline(%s): %s\n", smaps_file, ERRNO) > "/dev/stderr"
+	} else {
+		while ((rc = getline < smaps_file) > 0)
+		{
+			key = substr($1, 0, length($1) - 1)
+			smaps[key] = $2
+			smaps_totals[key] = smaps_totals[key] + $2
+			if (verbose)
+				printf("%20s: %d\n", key, smaps[key])
+		}
+	}
+	unshared_private = resident - shared
+	printf "%10d %10d %10d %10d %10d %10d %10d %10d %10d %s\n", pid, resident, smaps["Pss"], smaps["Pss_Anon"], smaps["Pss_File"], smaps["Pss_Shmem"], shared, smaps["Anonymous"], unshared_private, cmdline
+	totals["resident"] += resident
+	totals["Pss"] += smaps["Pss"]
+	totals["Pss_Anon"] += smaps["Pss_Anon"]
+	totals["Pss_File"] += smaps["Pss_File"]
+	totals["Pss_Shmem"] += smaps["Pss_Shmem"]
+	totals["shared"] += shared
+	totals["Anonymous"] += smaps["Anonymous"]
+	totals["unshared_private"] += unshared_private
+}
+
+END {
+	print ""
+	if (verbose) {
+		print "TOTAL (" n_procs " processes)"
+		for (key in smaps_totals) {
+			printf("%20s: %d\n", key, smaps_totals[key])
+		}
+		# note that Pss_Anon + Pss_File + Pss_Shmem should ~= Pss
+	}
+	printf("%10s %10d %10d %10d %10d %10d %10d %10d %10d\n", "TOTALS", totals["resident"], totals["Pss"], totals["Pss_Anon"], totals["Pss_File"], totals["Pss_Shmem"], totals["shared"], totals["Anonymous"], totals["unshared_private"])
+}
+
+# OK, so how'd I check the sanity of this?
+#
+# For comparison with the sample output given in the header for this script,
+# the same processes got the ps output at roughly the same time:
+#
+#     $ ps --ppid $(pgrep -f postmaster) -p $(pgrep -f postmaster) -o pid,sz:10,rss:10,drs:10,vsz:10,size:10,cmd
+#        PID         SZ        RSS        DRS        VSZ       SIZE CMD
+#       1327     105904      23440     423616     423616       1268 /usr/pgsql-12/bin/postmaster -D /var/lib/pgsql/12/data/
+#       1416      69499       4692     277996     277996       1268 postgres: logger
+#     207463     105904       3752     423616     423616       1268 postgres: checkpointer
+#     207464     105937       5672     423748     423748       1400 postgres: background writer
+#     207465     105904       9940     423616     423616       1268 postgres: walwriter
+#     207466     106042       6584     424168     424168       1820 postgres: autovacuum launcher
+#     207467      69499       4716     277996     277996       1268 postgres: stats collector
+#     207468     106043       6288     424172     424172       1824 postgres: logical replication launcher
+#
+# The RSS agrees between both, but the others don't seem to resemble reality
+# much. That's ok. The VSZ isn't really useful and it turns out the DRS is
+# pretty bogus too. "SZ" seems to be reported in pages not KiB and
+# 105904 * 4 = 423616 which matches the KiB output given by shm_ps.awk. So
+# the sane ps output matches.
+#
+# Now how do we check that the computation of private memory is sane?
+#
+#
+# CHECKING SHARED ALLOCATIONS
+# ----
+#
+# First, check `shared_buffers`. You should expect the shared size
+# reported to be a little above the total shared_buffers size once a given long
+# lived postgres process has fully warmed up so that it touches all of
+# shared_buffers. This takes time. Until then the shared usage reported for a
+# process will be below shared_buffers because the kernel doesn't account for
+# shmem in a process until the process touches that shmem. For the postmaster
+# that means the postmaster must've dirtied the memory.
+#
+# In the case of my test system we have:
+#
+#    postgres=# SHOW shared_buffers;
+#     shared_buffers
+#    ----------------
+#     128MB
+#    (1 row)
+#
+# ... and postgres also allocates shared memory for various arrays (PGPROC etc)
+# on top of that. In my test the postmaster reports 22132 KiB shmem, or only 21
+# MiB.  Why? [XXX1].
+#
+# TODO finish this section
+#
+# CHECKING PRIVATE HEAP
+# ---
+#
+# Now, what if we allocate memory in the private heap? We should see the process
+# grow in reported private size accordingly. We can use gdb to do that in a currently
+# running victim postgres process:
+#
+#    $ sudo -u postgres gdb -q -batch  -ex 'set pagination off' \
+#           -ex 'attach '$(pgrep -f checkpointer) \
+#           -ex 'p MemoryContextAlloc(TopMemoryContext,524288000)' \
+#           -ex 'p MemoryContextStats(TopMemoryContext)' \
+#           -ex 'q'
+#
+#    $ (pgrep -f checkpointer) | awk -f shm_ps.awk
+#       pid       size   resident     shared    binsize    private (all in KiB)
+#    207463     935620       6036       4700       5424       1336 postgres: checkpointer
+#
+#    $ sudo -u postgres tail -n 20 /var/lib/pgsql/12/data/log/postgresql-Wed.log | grep ^TopMemoryContext
+#    TopMemoryContext: 524296248 total in 2 blocks; 320 free (0 chunks); 524295928 used
+#
+# Huh, what? TopMemoryContext went up, but the reported private memory use didn't.
+#
+# The reason is that postgres has accounted for the memory as allocated, but it hasn't touched
+# the pages, so the kernel doesn't yet report them as owned by the process. If we zero the
+# allocated memory it'll work, so rerun the gdb command above using
+# MemoryContextAllocZero instead of MemoryContextAlloc. Now you'll see:
+#
+#    $ gdb ... MemoryContextAllocZero ...
+#
+#    $ (pgrep -f checkpointer) | awk -f shm_ps.awk
+#           pid       size   resident     shared    binsize    private (all in KiB)
+#        207463    1447624     518332       5148       5424     513184 postgres: checkpointer
+#
+#    $ sudo -u postgres tail -n 20 /var/lib/pgsql/12/data/log/postgresql-Wed.log | grep ^TopMemoryContext
+#    TopMemoryContext: 1048584304 total in 3 blocks; 320 free (0 chunks); 1048583984 used
+#
+# You can see that there's 1 GB reserved in TopMemoryContext now, for both our
+# 500MB allocations.  But only the second was charged against the backend by
+# the kernel. That's as expected.
+#
+# So our private memory accounting looks sensible.
+
+
+#TODOS:
+#
+# [XXX1] wtf? postmaster must surely allocate and dirty all of shared_buffers during startup?
