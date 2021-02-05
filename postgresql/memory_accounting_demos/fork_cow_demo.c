@@ -57,9 +57,10 @@ static char *shm_cow_dirty_mem = 0;
 int main(int argc, char * argv[])
 {
 	char *endpos;
-	int shm_fd;
+	int shm_fd = 0;
+	int fork_child = 1;
 
-	if (argc < 2 || argc > 3)
+	if (argc < 2 || argc > 4)
 		usage_die(argv[0], "wrong argument count");
 
 	if (argc >= 2)
@@ -77,7 +78,7 @@ int main(int argc, char * argv[])
 		heap_cow_size = 4 * chunk_size_bytes;
 
 		const long int total_bytes = heap_untouched_size + heap_parent_dirty_size + heap_cow_size;
-		printf("# will allocate %ld bytes (%f GiB)\n",
+		printf("# will allocate %ld private bytes (%f GiB)\n",
 				total_bytes, ((float)total_bytes) / (1024*1024*1024));
 	}
 
@@ -96,10 +97,16 @@ int main(int argc, char * argv[])
 		shm_cow_size = 4 * shm_chunk_size_bytes;
 
 		const long int total_bytes = shm_untouched_size + shm_parent_dirty_size + shm_cow_size;
-		printf("# will allocate %ld bytes (%f GiB)\n",
+		printf("# will allocate %ld shared bytes (%f GiB)\n",
 				total_bytes, ((float)total_bytes) / (1024*1024*1024));
 
 		shm_fd = setup_shmem((size_t)total_bytes);
+	}
+
+	if (argc >= 4)
+	{
+		/* Can't be bothered */
+		fork_child = atoi(argv[3]);
 	}
 
 	parent_pid = getpid();
@@ -137,13 +144,15 @@ int main(int argc, char * argv[])
 	memset(heap_cow_dirty_mem, '\x7f', heap_cow_size);
 	printf("%20s: %lu\n", "heap_cow kb", heap_cow_size/1024);
 
+	char *shm_untouched_mem __attribute__((unused)) = 0;
+	char *shm_parent_dirty_mem = 0;
 	if (shm_fd >= 0)
 	{
 		/* Use the same scheme for shmem allocations */
-		char * shm_untouched_mem __attribute__((unused)) = shm_alloc(shm_untouched_size, shm_fd);
+		shm_untouched_mem = shm_alloc(shm_untouched_size, shm_fd);
 		printf("%20s: %lu\n", "shm_untouched kb", shm_untouched_size / 1024);
 
-		char *shm_parent_dirty_mem = shm_alloc(shm_parent_dirty_size, shm_fd);
+		shm_parent_dirty_mem = shm_alloc(shm_parent_dirty_size, shm_fd);
 		memset(shm_parent_dirty_mem, '\x7f', shm_parent_dirty_size);
 		printf("%20s: %lu\n", "shm_parent_dirty kb", shm_parent_dirty_size/1024);
 
@@ -161,22 +170,38 @@ int main(int argc, char * argv[])
 	 * a copy-on-write shared copy of the parent process's memory in the
 	 * child process.
 	 */
-	pid_t child_pid = fork();
-	if (child_pid == 0) {
-		/* In child process */
-		child_main();
-	}
+	pid_t child_pid = 0;
 
-	/*
-	 * fork returned nonzero so we're still in the parent process.
-	 *
-	 * Child process will signal us when it has done its memory allocations.
-	 */
-	wait_for_sigusr1();
+	if (fork_child)
+	{
+		child_pid = fork();
+		if (child_pid == 0) {
+			/* In child process */
+			child_main();
+		}
+
+		/*
+		 * fork returned nonzero so we're still in the parent process.
+		 *
+		 * Child process will signal us when it has done its memory allocations.
+		 */
+		wait_for_sigusr1();
+	}
 
 	report_memory_use(child_pid);
 
-	kill(child_pid, SIGTERM);
+	if (child_pid)
+		kill(child_pid, SIGTERM);
+
+	free(heap_untouched_mem);
+	free(heap_parent_dirty_mem);
+	free(heap_cow_dirty_mem);
+	if (shm_fd > 0)
+	{
+		munmap(shm_untouched_mem, shm_untouched_size);
+		munmap(shm_parent_dirty_mem, shm_parent_dirty_size);
+		munmap(shm_cow_dirty_mem, shm_cow_size);
+	}
 }
 
 static void print_proc_statm_header(void)
@@ -247,7 +272,7 @@ static void report_memory_use(pid_t child_pid)
 	 * Lets get output from ps first.
 	 */
 	char ps_cmd_buf[100];
-	snprintf(ps_cmd_buf, 100, "ps -p %d -p %d -o pid,ppid,pmem,rss,size,vsz,drs,sz", parent_pid, child_pid);
+	snprintf(ps_cmd_buf, 100, "ps  -o pid,ppid,pmem,rss,size,vsz,drs,sz -p %d -p %d", parent_pid, child_pid > 0 ? child_pid : parent_pid);
 	printf("# ps output:\n");
 	system(ps_cmd_buf);
 
@@ -258,10 +283,13 @@ static void report_memory_use(pid_t child_pid)
 	printf("# /proc/$pid/statm info:\n");
 	print_proc_statm_header();
 	print_proc_statm(parent_pid, "parent");
-	print_proc_statm(child_pid, "child");
+	if (child_pid > 0)
+		print_proc_statm(child_pid, "child");
 	putchar('\n');
+	printf("# /proc/$pid/smaps_rollup info:\n");
 	print_proc_smaps(parent_pid, "parent");
-	print_proc_smaps(child_pid, "child");
+	if (child_pid > 0)
+		print_proc_smaps(child_pid, "child");
 
 	/*
 	 * And system total memory
@@ -313,7 +341,7 @@ static void child_main(void)
 static void usage_die(const char * argv0, const char * msg)
 {
 	fprintf(stderr, "error: %s\n", msg);
-	fprintf(stderr, "usage: %s chunk_size_bytes\n", argv0);
+	fprintf(stderr, "usage: %s chunk_size_bytes [shm_chunk_size_bytes]\n", argv0);
 	exit(1);
 }
 
@@ -345,7 +373,7 @@ static int setup_shmem(size_t shm_total_size) {
 	 * Immediately unlink the shmem file. It'll remain accessible to this proc
 	 * and its children until they all exit.
 	 */
-	shm_unlink("/fork_cow_demo");
+	//.shm_unlink("/fork_cow_demo");
 
 	/* expand the tempfile to the desired size */
 	if (ftruncate(shm_fd, shm_total_size) < 0)
