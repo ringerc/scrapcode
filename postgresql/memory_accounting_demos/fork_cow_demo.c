@@ -24,9 +24,10 @@
  * multiple processes. Pass 0 to the 3rd argument \"fork_child\" to disable this
  * and use only the parent process.
  * 
- * If the 4th argument \"pageout\" is set to 1, posix_madvise(..., MADV_PAGEOUT)
+ * If the 4th argument \"pageout\" is set to 1, madvise(..., MADV_PAGEOUT)
  * will be called on all memory chunks after all have been written by all
- * processes that need to write to them.
+ * processes that need to write to them. Requires Linux 4.5 or newer and matching
+ * glibc.
  *
  * The same sort of thing could be done for global arrays in the executable's
  * data sections, but it's not really any different to regular malloc()'d
@@ -38,6 +39,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/prctl.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdint.h>
@@ -61,6 +63,7 @@ static void child_main() __attribute__((noreturn));
 static void report_memory_use(pid_t child);
 static void * shm_alloc(size_t sz, int shm_fd);
 static int setup_shmem(size_t shm_total_size);
+static void pageout_chunk(void *addr, size_t length);
 
 /*
  * Each chunk we allocate will be 10 MiB multiplied by a power of two.
@@ -78,14 +81,16 @@ static size_t shm_untouched_size, shm_parent_dirty_size, shm_cow_size;
 static pid_t parent_pid;
 static char *heap_cow_dirty_mem;
 static char *shm_cow_dirty_mem = 0;
+static int pageout = 0;
 
 int main(int argc, char * argv[])
 {
 	char *endpos;
 	int shm_fd = 0;
 	int fork_child = 1;
+	int wait_signal = 1;
 
-	if (argc < 2 || argc > 5)
+	if (argc < 2 || argc > 6)
 		usage_die(argv[0], "wrong argument count");
 
 	if (argc >= 2)
@@ -130,9 +135,25 @@ int main(int argc, char * argv[])
 
 	if (argc >= 4)
 	{
-		/* Can't be bothered */
+		/* Can't be bothered making this check errors */
 		fork_child = atoi(argv[3]);
 	}
+
+	if (argc >= 5)
+	{
+		/* Ditto */
+		pageout = atoi(argv[4]);
+	}
+
+	if (argc >= 6)
+	{
+		/* Ditto */
+		wait_signal = atoi(argv[5]);
+	}
+
+	fprintf(stderr, "Configuration: heap_chunk=%ld, shm_chunk=%ld, fork=%d, pageout=%d, wait_signal=%d\n",
+			chunk_size_bytes, shm_chunk_size_bytes, fork_child, pageout, wait_signal);
+
 
 	parent_pid = getpid();
 
@@ -201,19 +222,55 @@ int main(int argc, char * argv[])
 	{
 		child_pid = fork();
 		if (child_pid == 0) {
-			/* In child process */
+			/* In child process. Does not return. */
 			child_main();
+			assert(0);
+		} else {
+			/* parent process */
+			/*
+			 * Child receives same signals as parent process from shell, but
+			 * to make sure we don't leak it, tell the kernel to signal it on
+			 * our death anyway.
+			 */
 		}
 
 		/*
-		 * fork returned nonzero so we're still in the parent process.
-		 *
 		 * Child process will signal us when it has done its memory allocations.
 		 */
 		wait_for_sigusr1();
 	}
 
+	if (pageout) {
+#ifdef MADV_PAGEOUT
+		fprintf(stderr, "\nrequesting MADV_PAGEOUT: ");
+		fflush(stderr);
+		pageout_chunk(shm_untouched_mem, shm_untouched_size);
+		pageout_chunk(shm_parent_dirty_mem, shm_parent_dirty_size);
+		pageout_chunk(shm_cow_dirty_mem, shm_cow_size);
+		if (shm_fd > 0) {
+			pageout_chunk(shm_untouched_mem, shm_untouched_size);
+			pageout_chunk(shm_parent_dirty_mem, shm_parent_dirty_size);
+			pageout_chunk(shm_cow_dirty_mem, shm_cow_size);
+		}
+		fprintf(stderr, "done\n");
+#else
+		fprintf(stderr, "cannot MADV_PAGEOUT: missing libc support\n");
+		exit(1);
+#endif
+	}
+
 	report_memory_use(child_pid);
+
+	if (wait_signal)
+	{
+		while (1) {
+			sleep(60);
+		}
+		/*
+		 * SIGTERM handler will exit here and child will autodie, won't reach
+		 * the free()s or cleanup.
+		 */
+	}
 
 	if (child_pid)
 		kill(child_pid, SIGTERM);
@@ -226,6 +283,17 @@ int main(int argc, char * argv[])
 		munmap(shm_untouched_mem, shm_untouched_size);
 		munmap(shm_parent_dirty_mem, shm_parent_dirty_size);
 		munmap(shm_cow_dirty_mem, shm_cow_size);
+	}
+}
+
+/*
+ * Try to use madvise(.., .., MADV_PAGEOUT) if supported to page out memory.
+ */
+static void pageout_chunk(void *addr, size_t length)
+{
+	if (madvise(addr, length, MADV_PAGEOUT) != 0) {
+		perror("madvise(%p, %llu, MADV_PAGEOUT): ");
+		exit(1);
 	}
 }
 
@@ -345,12 +413,24 @@ static void child_main(void)
 	/* See how it's inherited the parent's state? */
 	assert(parent_pid == getppid());
 
+	/* Make sure we're signaled if the parent dies */
+	prctl(PR_SET_PDEATHSIG, SIGTERM);
+
 	/* Here we'll re-dirty the CoW memory chunk to show we'll get charged for it again */
 	memset(heap_cow_dirty_mem, '\x8f', heap_cow_size);
 
 	/* Same for the POSIX shmem segment if shmem was enabled */
 	if (shm_cow_dirty_mem)
 		memset(shm_cow_dirty_mem, '\x7f', shm_cow_size);
+
+	/* If pageout was requested, try to page out all segments we have touched */
+	if (pageout) {
+		pageout_chunk(shm_cow_dirty_mem, shm_cow_size);
+		if (shm_cow_dirty_mem) 
+		{
+			pageout_chunk(shm_cow_dirty_mem, shm_cow_size);
+		}
+	}
 
 	/* Tell parent proc we're ready to be measured */
 	kill(parent_pid, SIGUSR1);
