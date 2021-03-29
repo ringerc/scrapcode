@@ -354,6 +354,25 @@ static void print_proc_smaps(pid_t pid, const char * const label)
 	fclose(smaps_rollup);
 }
 
+/*
+ * /proc/$pid/status is intended as a more human readable alternative
+ * to statm and smaps_rollup.
+ *
+ * See proc(5)
+ */
+static void print_proc_status(pid_t pid, const char * const label)
+{
+	char proc_status_path[40];
+	snprintf(proc_status_path, sizeof(proc_status_path), "/proc/%u/status", pid);
+	FILE *proc_status = fopen(proc_status_path, "r");
+	char * line;
+	char linebuf[100];
+	while ((line = fgets(linebuf, sizeof(linebuf), proc_status)) != NULL)
+		printf("%10d %-10s %s", pid, label, line);
+	putchar('\n');
+	fclose(proc_status);
+}
+
 static void report_memory_use(pid_t child_pid)
 {
 	putchar('\n');
@@ -383,6 +402,10 @@ static void report_memory_use(pid_t child_pid)
 	print_proc_smaps(parent_pid, "parent");
 	if (child_pid > 0)
 		print_proc_smaps(child_pid, "child");
+	printf("# /proc/$pid/status info:\n");
+	print_proc_status(parent_pid, "parent");
+	if (child_pid > 0)
+		print_proc_status(child_pid, "child");
 
 	/*
 	 * And system total memory
