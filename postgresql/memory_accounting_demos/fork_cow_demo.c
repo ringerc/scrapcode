@@ -1,18 +1,36 @@
 /*
  * This demo program helps illustrate Linux memory accounting
  *
- * It allocates chunks of memory on the heap that are
+ * It allocates various chunks of memory in distinctive sizes, then remains
+ * running until killed by a signal. Its only job is to use memory so that tools
+ * that examine process and memor state can be tested.
+ * 
+ * If chunk_size_bytes is nonzero, allocates chunks of memory i sizes of powers
+ * of 2 on the heap that are variously:
  *
- * - unused ("heap_untouched"), 1 chunk
- * - written only on parent process ("heap_parent"), 2 chunks
- * - written by parent then child after fork ("heap_cow"), 4 chunks
+ * - unused (\"heap_untouched\"), 1 chunk
+ * - written only on parent process (\"heap_parent\"), 2 chunk
+ * - written by parent then child after fork (\"heap_cow\"), 4 chunk
+ * 
+ * If shm_chunk_size_bytes is nonzero, allocates chunks of POSIX shared memory
+ * using mmap(..., MAP_SHARED) from a named POSIX shmem segment:
  *
- * If the second argument shmem_size is nonzero, it also opens a POSIX shmem
- * segment and follows a similar pattern: leaves 1 chunk untouched, writes 2
- * chunks on parent only, writes 4 chunks on parent then child.
+ * - unused, 1 chunk
+ * - written only on parent process, 2 chunk
+ * - written by parent then by child after fork, 4 chunk
+ * 
+ * By default a child process is fork()ed without a following exec() and used to
+ * re-write some of the chunks in order to test accounting for memory touched by
+ * multiple processes. Pass 0 to the 3rd argument \"fork_child\" to disable this
+ * and use only the parent process.
+ * 
+ * If the 4th argument \"pageout\" is set to 1, posix_madvise(..., MADV_PAGEOUT)
+ * will be called on all memory chunks after all have been written by all
+ * processes that need to write to them.
  *
- * The same could be done for global arrays but it's not really
- * any different.
+ * The same sort of thing could be done for global arrays in the executable's
+ * data sections, but it's not really any different to regular malloc()'d
+ * chunks on the heap. Both are CoW memory.
  */
 
 
@@ -28,12 +46,19 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+static void usage_die(const char * argv0, const char * msg)
+{
+	fprintf(stderr, "error: %s\n", msg);
+	fprintf(stderr, "usage: %s chunk_size_bytes [shm_chunk_size_bytes] [fork_child=1|0] [pageout=1|0]\n", argv0);
+	fprintf(stderr, "  See program source header for details.\n");
+
+	exit(1);
+}
 
 static volatile int got_sigusr1;
 static void wait_for_sigusr1(void);
 static void child_main() __attribute__((noreturn));
 static void report_memory_use(pid_t child);
-static void usage_die(const char * argv0, const char *msg);
 static void * shm_alloc(size_t sz, int shm_fd);
 static int setup_shmem(size_t shm_total_size);
 
@@ -60,7 +85,7 @@ int main(int argc, char * argv[])
 	int shm_fd = 0;
 	int fork_child = 1;
 
-	if (argc < 2 || argc > 4)
+	if (argc < 2 || argc > 5)
 		usage_die(argv[0], "wrong argument count");
 
 	if (argc >= 2)
@@ -336,13 +361,6 @@ static void child_main(void)
 		sleep(1000);
 	}
 	__builtin_unreachable();
-}
-
-static void usage_die(const char * argv0, const char * msg)
-{
-	fprintf(stderr, "error: %s\n", msg);
-	fprintf(stderr, "usage: %s chunk_size_bytes [shm_chunk_size_bytes]\n", argv0);
-	exit(1);
 }
 
 static void * shm_alloc(size_t sz, int shm_fd)
