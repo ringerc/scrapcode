@@ -37,18 +37,26 @@
  * -----
  *
  * To force swapping if MADV_PAGEOUT isn't working, use systemd resource controls.
- * See systemd_run(1) and systemd.resource-control(5) for details. For example,
- * to run inside a user-owned "fork_cow_run.scope" cgroup with a memory limit of
- * run (cgroups v2):
+ * See systemd_run(1) and systemd.resource-control(5) for details. Use systemd-cgls(1) to
+ * see process control groups and systemd-cgtop(1) to see resource overviews.
+ *
+ * For example, to run inside a user-owned "fork_cow_run.scope" cgroup with a
+ * memory limit of run (cgroups v2):
  *
  *   systemd-run --no-ask-password --user --scope -u fork_cow_run \
- *     -p MemoryMax=$((1024*1024*256*4) \
+ *     -p MemoryAccounting=1 -p MemoryMax=$((1024*1024*256*4) \
  *     ./fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
  *
- * If you have the cgroups v1 legacy mode you'll have to use MemoryLimit
- * instead of MemoryMax, and you won't be able to run in --user mode; see
- * details in systemd resource limits docs. You'll have to remove --no-ask-password
- * too.
+ * View with
+ *
+ *   systemd-cgls --user-unit fork_cow_run
+ *   systemd-cgtop -m -b -1 --recursive=no user.slice/fork_cow_run.scope
+ *   ls /sys/fs/cgroup/unified/system.slice/fork_cow_run.scope/
+ *
+ * Interesting cgroup fields include memory.usage_in_bytes, memory.memsw.usage_in_bytes, memory.stat, memory.use_hierarchy
+ *
+ * CHECKING CGROUPS
+ * -----
  *
  * To check that memory limits are working, run with a very low MemoryMax /
  * MemoryLimit and make sure you see the output "Killed" when the test program
@@ -56,6 +64,24 @@
  *
  * 		Memory cgroup out of memory: Killed process 571588 (systemd-run) total-vm:20436kB, anon-rss:996kB, file-rss:8240kB, shmem-rss:0kB, UID:1000 pgtables:80kB oom_score_adj:0
  *		oom_reaper: reaped process 571588 (systemd-run), now anon-rss:0kB, file-rss:0kB, shmem-rss:0kB
+ *
+ * LEGACY (v1) CGROUPS
+ * ------
+ *
+ * If you have the cgroups v1 legacy mode you'll have to use MemoryLimit
+ * instead of MemoryMax, and you won't be able to run in --user mode; see
+ * details in systemd resource limits docs. You'll have to remove --no-ask-password
+ * too, and use "systemd-cgls -u 'fork_cow_run.scope'" to show the run.
+ * Similarly you'll need the group name "system.slice/fork_cow_run.scope" for
+ * systemd-cgtop. Info is in /sys/fs/cgroup/memory/system.slice/fork_cow_run.scope/.
+ *
+ * PROCESS CAPABILITIES
+ * -----
+ *
+ * You can set nondefault capabilities with systemd-run too. This only works
+ * with service mode, not scope mode (omit the --scope from systemd-run). Use
+ * the -p CapabilityBoundingSet= and -p AmbientCapabilities= options. The unit
+ * name will will be system.slice/fork_cow_run.service .
  */
 
 
@@ -82,6 +108,10 @@ static void usage_die(const char * argv0, const char * msg)
 }
 
 static volatile int got_sigusr1;
+static volatile int parent_waiting_for_user;
+static void parent_sigint_handler(int sig __attribute__((unused)));
+static volatile int parent_stats_update_requested;
+static void parent_sighup_handler(int sig __attribute__((unused)));
 static void wait_for_sigusr1(void);
 static void child_main() __attribute__((noreturn));
 static void report_memory_use(pid_t child);
@@ -266,6 +296,12 @@ int main(int argc, char * argv[])
 		wait_for_sigusr1();
 	}
 
+	/*
+	 * TODO madvise(..., MADV_PAGEOUT) seems to succeed without any results
+	 * when run as non-root, only swaps out when run as root. Linux
+	 * 5.12.0-0.rc0.20210222git31caf8b2a847.158.vanilla.1.fc33.x86_64
+	 * on Fedora 33.
+	 */
 	if (pageout) {
 #ifdef MADV_PAGEOUT
 		fprintf(stderr, "\nrequesting MADV_PAGEOUT: ");
@@ -289,13 +325,46 @@ int main(int argc, char * argv[])
 
 	if (wait_signal)
 	{
-		while (1) {
-			sleep(60);
+		if (isatty(STDIN_FILENO)) {
+			/* Handle control-C to break out of loop */
+			parent_waiting_for_user = 1;
+			signal(SIGINT, parent_sigint_handler);
+			while (parent_waiting_for_user) {
+				char c = getc(stdin);
+				switch (c) {
+					case '\r':
+					case '\n':
+					case ' ':
+						fprintf(stderr, "Updated memory info:\n");
+						report_memory_use(child_pid);
+						break;
+					case 'q':
+						fprintf(stderr, "Exiting\n");
+						parent_waiting_for_user = 0;
+						break;
+					default:
+						fprintf(stderr, "Unknown command char %c. Newline or space to refresh. q or CTRL-C to quit.\n", c);
+						break;
+				}
+			}
+			signal(SIGINT, SIG_DFL);
+		} else {
+			/*
+			 * Running as daemon, print info on SIGHUP
+			 *
+			 * e.g.
+			 * 		systemctl kill --signal=SIGHUP fork_cow_run.service
+			 */
+			signal(SIGHUP, parent_sighup_handler);
+			while (1) {
+				if (parent_stats_update_requested) {
+					report_memory_use(child_pid);
+					parent_stats_update_requested = 0;
+				}
+				sleep(3600);
+			}
+			signal(SIGHUP, SIG_DFL);
 		}
-		/*
-		 * SIGTERM handler will exit here and child will autodie, won't reach
-		 * the free()s or cleanup.
-		 */
 	}
 
 	if (child_pid)
@@ -439,6 +508,18 @@ static void report_memory_use(pid_t child_pid)
 	putchar('\n');
 	printf("free -k after fork() and CoW overwrite:\n");
 	system("free -k");
+}
+
+/* Break out of the parent wait_signal loop for user input */
+static void parent_sigint_handler(int sig __attribute__((unused)))
+{
+	parent_waiting_for_user = 0;
+}
+
+/* Also print stats on SIGHUP */
+static void parent_sighup_handler(int sig __attribute__((unused)))
+{
+	parent_stats_update_requested = 1;
 }
 
 static void sigusr1_handler(int sig __attribute__((unused)))

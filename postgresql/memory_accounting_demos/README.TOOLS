@@ -1,0 +1,23 @@
+systemd-cgls
+systemd-run
+systemd-cgtop
+pscap
+getpcap
+capsh
+
+/proc/self/cgroups
+/proc/self/statm
+/proc/self/status
+/proc/self/smaps_rollup
+
+sudo systemd-run   -u fork_cow_run -p MemoryLimit=$((1024*1024*1024)) -p CapabilityBoundingSet='' -p AmbientCapabilities=''  /fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+
+journalctl -u fork_cow_run.service
+
+sudo systemctl reset-failed fork_cow_run.service
+
+sudo systemctl stop fork_cow_run.service
+
+systemctl status fork_cow_run.service
+
+sudo systemctl kill --signal=SIGHUP fork_cow_run.service
