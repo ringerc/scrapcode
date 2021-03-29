@@ -75,6 +75,8 @@
  * Similarly you'll need the group name "system.slice/fork_cow_run.scope" for
  * systemd-cgtop. Info is in /sys/fs/cgroup/memory/system.slice/fork_cow_run.scope/.
  *
+ * /proc/$pid/cgroups lists cgroup memberships
+ *
  * PROCESS CAPABILITIES
  * -----
  *
@@ -556,8 +558,7 @@ static void child_main(void)
 	/* If pageout was requested, try to page out all segments we have touched */
 	if (pageout) {
 		pageout_chunk(shm_cow_dirty_mem, shm_cow_size);
-		if (shm_cow_dirty_mem) 
-		{
+		if (shm_cow_dirty_mem) {
 			pageout_chunk(shm_cow_dirty_mem, shm_cow_size);
 		}
 	}
