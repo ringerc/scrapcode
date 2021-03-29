@@ -265,6 +265,12 @@ int main(int argc, char * argv[])
 		printf("%20s: %lu\n", "shm_cow kb", shm_cow_size/1024);
 	}
 
+	long int dirty_private = heap_parent_dirty_size + heap_cow_size;
+	long int dirty_shared = shm_parent_dirty_size + shm_cow_size;
+
+	printf("# Parent dirtied %ld bytes (%ld private, %ld shared)\n",
+			dirty_private + dirty_shared, dirty_private, dirty_shared);
+
 	putchar('\n');
 	printf("free -k after parent allocations, before fork():\n");
 	system("free -k");
@@ -296,7 +302,19 @@ int main(int argc, char * argv[])
 		 * Child process will signal us when it has done its memory allocations.
 		 */
 		wait_for_sigusr1();
+
+		/* Child dirties another chunk of heap memory for the CoW chunks */
+		dirty_private += heap_cow_size;
+		dirty_shared += shm_cow_size;
+		printf("# child dirtied %ld bytes (%ld private, %ld shared)\n",
+				heap_cow_size + shm_cow_size, heap_cow_size, shm_cow_size);
 	}
+
+	printf("# Parent + child dirtied %ld bytes (%ld private, %ld shared)\n",
+			dirty_private + dirty_shared, dirty_private, dirty_shared);
+
+	fflush(stdout);
+	fflush(stderr);
 
 	/*
 	 * TODO madvise(..., MADV_PAGEOUT) seems to succeed without any results
@@ -472,6 +490,9 @@ static void print_proc_status(pid_t pid, const char * const label)
 
 static void report_memory_use(pid_t child_pid)
 {
+	fflush(stdout);
+	fflush(stderr);
+
 	putchar('\n');
 
 	/*
@@ -509,6 +530,10 @@ static void report_memory_use(pid_t child_pid)
 	 */
 	putchar('\n');
 	printf("free -k after fork() and CoW overwrite:\n");
+
+	fflush(stdout);
+	fflush(stderr);
+
 	system("free -k");
 }
 
