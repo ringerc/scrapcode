@@ -4,34 +4,58 @@
  * It allocates various chunks of memory in distinctive sizes, then remains
  * running until killed by a signal. Its only job is to use memory so that tools
  * that examine process and memor state can be tested.
- * 
+ *
  * If chunk_size_bytes is nonzero, allocates chunks of memory i sizes of powers
  * of 2 on the heap that are variously:
  *
  * - unused (\"heap_untouched\"), 1 chunk
  * - written only on parent process (\"heap_parent\"), 2 chunk
  * - written by parent then child after fork (\"heap_cow\"), 4 chunk
- * 
+ *
  * If shm_chunk_size_bytes is nonzero, allocates chunks of POSIX shared memory
  * using mmap(..., MAP_SHARED) from a named POSIX shmem segment:
  *
  * - unused, 1 chunk
  * - written only on parent process, 2 chunk
  * - written by parent then by child after fork, 4 chunk
- * 
+ *
  * By default a child process is fork()ed without a following exec() and used to
  * re-write some of the chunks in order to test accounting for memory touched by
  * multiple processes. Pass 0 to the 3rd argument \"fork_child\" to disable this
  * and use only the parent process.
- * 
+ *
  * If the 4th argument \"pageout\" is set to 1, madvise(..., MADV_PAGEOUT)
  * will be called on all memory chunks after all have been written by all
  * processes that need to write to them. Requires Linux 4.5 or newer and matching
  * glibc.
  *
- * The same sort of thing could be done for global arrays in the executable's
+ * (The same sort of thing could be done for global arrays in the executable's
  * data sections, but it's not really any different to regular malloc()'d
- * chunks on the heap. Both are CoW memory.
+ * chunks on the heap. Both are CoW memory.)
+ *
+ * USING CONTROL GROUPS TO LIMIT MEMORY
+ * -----
+ *
+ * To force swapping if MADV_PAGEOUT isn't working, use systemd resource controls.
+ * See systemd_run(1) and systemd.resource-control(5) for details. For example,
+ * to run inside a user-owned "fork_cow_run.scope" cgroup with a memory limit of
+ * run (cgroups v2):
+ *
+ *   systemd-run --no-ask-password --user --scope -u fork_cow_run \
+ *     -p MemoryMax=$((1024*1024*256*4) \
+ *     ./fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+ *
+ * If you have the cgroups v1 legacy mode you'll have to use MemoryLimit
+ * instead of MemoryMax, and you won't be able to run in --user mode; see
+ * details in systemd resource limits docs. You'll have to remove --no-ask-password
+ * too.
+ *
+ * To check that memory limits are working, run with a very low MemoryMax /
+ * MemoryLimit and make sure you see the output "Killed" when the test program
+ * tries to allocate memory. In dmesg you'll see something like
+ *
+ * 		Memory cgroup out of memory: Killed process 571588 (systemd-run) total-vm:20436kB, anon-rss:996kB, file-rss:8240kB, shmem-rss:0kB, UID:1000 pgtables:80kB oom_score_adj:0
+ *		oom_reaper: reaped process 571588 (systemd-run), now anon-rss:0kB, file-rss:0kB, shmem-rss:0kB
  */
 
 
@@ -64,6 +88,7 @@ static void report_memory_use(pid_t child);
 static void * shm_alloc(size_t sz, int shm_fd);
 static int setup_shmem(size_t shm_total_size);
 static void pageout_chunk(void *addr, size_t length);
+static void oom_adjust(pid_t pid);
 
 /*
  * Each chunk we allocate will be 10 MiB multiplied by a power of two.
@@ -154,12 +179,13 @@ int main(int argc, char * argv[])
 	fprintf(stderr, "Configuration: heap_chunk=%ld, shm_chunk=%ld, fork=%d, pageout=%d, wait_signal=%d\n",
 			chunk_size_bytes, shm_chunk_size_bytes, fork_child, pageout, wait_signal);
 
-
 	parent_pid = getpid();
 
 	printf("free -k before parent allocations:\n");
 	system("free -k");
 	putchar('\n');
+
+	oom_adjust(parent_pid);
 
 	/*
 	 * malloc() a big chunk of RAM in the parent process that we won't
@@ -366,7 +392,7 @@ static void print_proc_status(pid_t pid, const char * const label)
 	snprintf(proc_status_path, sizeof(proc_status_path), "/proc/%u/status", pid);
 	FILE *proc_status = fopen(proc_status_path, "r");
 	char * line;
-	char linebuf[100];
+	char linebuf[2048]; /* has long lines and can't be bothered splitting */
 	while ((line = fgets(linebuf, sizeof(linebuf), proc_status)) != NULL)
 		printf("%10d %-10s %s", pid, label, line);
 	putchar('\n');
@@ -504,6 +530,33 @@ static int setup_shmem(size_t shm_total_size) {
 	}
 
 	return shm_fd;
+}
+
+/*
+ * Adjust our oom_adj_score to make us attractive OOM killer victims. This
+ * protects the rest of the system a bit if the operator does something dumb
+ * without a suitable ulimit or cgroup protecting things.
+ *
+ * Only required on parent, inherited by child if any.
+ */
+static void oom_adjust(pid_t pid)
+{
+	char oom_score_adj_path[50];
+	snprintf(oom_score_adj_path, sizeof(oom_score_adj_path), "/proc/%u/oom_score_adj", pid);
+	FILE *adjfile = fopen(oom_score_adj_path, "w");
+	if (!adjfile) {
+		fprintf(stderr, "opening %s for write: %m\n", oom_score_adj_path);
+		exit(1);
+	}
+	const char * const score_adj_val = "800\n";
+	if (fwrite(score_adj_val, 1, sizeof(score_adj_val), adjfile) != sizeof(score_adj_val)) {
+		fprintf(stderr, "writing \"%s\" to %s: %m\n", score_adj_val, oom_score_adj_path);
+		exit(1);
+	}
+	if (fclose(adjfile) != 0) {
+		fprintf(stderr, "closing %s after write: %m\n", oom_score_adj_path);
+		exit(1);
+	}
 }
 
 /*
