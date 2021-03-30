@@ -1,0 +1,3 @@
+Seems to have selinux and cgroups issues
+
+maybe better to just move kaseya to fedora 33 container

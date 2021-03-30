@@ -1,0 +1,3 @@
+# Make manpages
+
+sepolicy manpage -a -p .

@@ -167,6 +167,13 @@ ADD install-kaseya.service /etc/systemd/system/
 # This works when systemd isn't running because it just makes symlinks
 RUN systemctl enable install-kaseya.service
 
+# See selinux/ dir
+# This won't work: semanage needs the real context store, and chcon
+# is not persistent. How to do? Write a policy that detects it?
+#RUN apt-get -y update && apt-get -y install selinux-basics
+#RUN semanage fcontext -m -t container_init_t /lib/systemd/systemd
+#RUN ls -lZ /lib/systemd/systemd
+
 #
 # Run systemd when this container is launched with "docker run"
 #
