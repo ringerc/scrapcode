@@ -358,4 +358,10 @@ function bdr() {
 PAGER="less -x 4"
 export PAGER
 
+export PGPORT=5433
+
+export EDITOR=vim
+
+export MOZ_DBUS_REMOTE = 1
+
 # vim: ts=4 sw=4 et ai
