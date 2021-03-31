@@ -1,3 +1,11 @@
+# https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html
+
+# https://blogs.gnome.org/benzea/2019/10/01/gnome-3-34-is-now-managed-using-systemd/
+# https://systemd.io/DESKTOP_ENVIRONMENTS/
+# wrote to benjamin@sipsolutions.net re gnome stuff
+# systemd-run --user --scope -u app-gnome-firefox.scope -E MOZ_DBUS_REMOTE=1 /usr/lib64/firefox/firefox
+#
+
 systemd-cgls
 systemd-run
 systemd-cgtop
@@ -10,7 +18,21 @@ capsh
 /proc/self/status
 /proc/self/smaps_rollup
 
-sudo systemd-run   -u fork_cow_run -p MemoryLimit=$((1024*1024*1024)) -p CapabilityBoundingSet='' -p AmbientCapabilities=''  /fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+
+# Based on child+parent dirtied "3019898880"
+# For no meaningful swap requirement use:
+sudo systemd-run  -u fork_cow_run -p MemoryMax=1418375168B -p CapabilityBoundingSet='' -p AmbientCapabilities='' /fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+
+# For forcing aggressive swapping the same process can fit in 10MB of RAM!
+sudo systemd-run  -u fork_cow_run -p MemoryMax=$((10*1024*1024))B  -p CapabilityBoundingSet='' -p AmbientCapabilities='' /fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+
+# Do we need sudo?
+systemd-run --user --scope -u fork_cow_run -p MemoryMax=$((10*1024*1024))B  -p CapabilityBoundingSet='' -p AmbientCapabilities='' fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+
+# Alternately, run unconfined and max out swappiness - except v2 doesn't have swappiness?
+#sudo systemd-run  -u fork_cow_run -p CapabilityBoundingSet='' -p AmbientCapabilities='' /fork_cow_demo $((1024*1024*32)) $((1024*1024*256)) 1 1
+
+
 
 journalctl -u fork_cow_run.service
 
@@ -21,3 +43,5 @@ sudo systemctl stop fork_cow_run.service
 systemctl status fork_cow_run.service
 
 sudo systemctl kill --signal=SIGHUP fork_cow_run.service
+
+systemd-cgtop system.slice/fork_cow_run.service
