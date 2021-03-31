@@ -573,6 +573,14 @@ static void child_main(void)
 	/* Make sure we're signaled if the parent dies */
 	prctl(PR_SET_PDEATHSIG, SIGTERM);
 
+	/*
+	 * If not running in tty, i.e we're a service, ignore the SIGHUP that
+	 * systemd will send to us when reloading the service.
+	 */
+	if (!isatty(STDIN_FILENO)) {
+		signal(SIGHUP, SIG_IGN);
+	}
+
 	/* Here we'll re-dirty the CoW memory chunk to show we'll get charged for it again */
 	memset(heap_cow_dirty_mem, '\x8f', heap_cow_size);
 
