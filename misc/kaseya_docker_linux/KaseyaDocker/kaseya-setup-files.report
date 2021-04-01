@@ -1,0 +1,17 @@
+
+File Summary Report
+===========================
+total  file
+===========================
+15  /opt/Kaseya/
+2  /opt/Kaseya/KcsSetup
+2  /lib/ld-linux.so.2
+2  /etc/ld.so.preload
+2  /etc/ld.so.cache
+2  /lib/libc.so.6
+2  /lib/libpthread.so.0
+2  /lib/libdl.so.2
+2  /lib/librt.so.1
+2  /lib/libm.so.6
+1  /opt/Kaseya
+1  /

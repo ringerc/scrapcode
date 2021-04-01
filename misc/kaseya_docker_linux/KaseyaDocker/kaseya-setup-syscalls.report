@@ -1,0 +1,17 @@
+
+Syscall Summary Report
+==========================
+total  syscall
+==========================
+52  mmap2
+16  sendto
+12  openat
+12  fstat64
+12  close
+10  read
+4  pread64
+2  execve
+2  brk
+2  arch_prctl
+2  access
+2  set_thread_area
