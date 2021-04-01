@@ -1,0 +1,56 @@
+
+Syscall Summary Report
+==========================
+total  syscall
+==========================
+1226  stat64
+1218  _newselect
+316  openat
+284  close
+267  fstat64
+241  mmap2
+217  read
+146  socketcall(recv)
+134  brk
+132  rt_sigprocmask
+112  rt_sigaction
+103  _llseek
+98  write
+81  futex
+70  getpid
+68  mprotect
+64  clone
+52  ioctl
+46  munmap
+45  wait4
+32  socketcall(socket)
+30  ugetrlimit
+27  uname
+24  sigreturn
+23  unlink
+23  access
+20  socketcall(connect)
+18  socketcall(getsockname)
+17  fcntl64
+16  sendto
+13  pipe2
+12  poll
+12  socketcall(setsockopt)
+11  socketcall(getsockopt)
+8  pread64
+8  umask
+8  socketcall(send)
+8  pipe
+5  exit_group
+4  execve
+4  arch_prctl
+4  set_thread_area
+4  set_tid_address
+4  set_robust_list
+4  getuid32
+4  sysinfo
+4  chmod
+4  socketcall(bind)
+4  socketcall(listen)
+4  inotify_init
+4  socketcall(recvfrom)

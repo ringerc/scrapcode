@@ -1,5 +1,3 @@
 kcs/
 KcsSetup.sh
 kaseya.service
-kaseya-files.report
-kaseya-syscalls.report
