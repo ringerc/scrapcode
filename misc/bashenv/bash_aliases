@@ -244,9 +244,13 @@ declare -a secret_env_vars=(TPA_2Q_SUBSCRIPTION_TOKEN SECONDQ_GITLAB_READ_ONLY_T
 for secret_env_var in "${secret_env_vars[@]}"; do
     read -r $secret_env_var < <(secret-tool lookup ENV_VAR $secret_env_var)
 done
+export TPA_2Q_SUBSCRIPTION_TOKEN
+export SECONDQ_GITLAB_READ_ONLY_TOKEN
 
 TPA_GIT_CREDENTIALS=${SECONDQ_GITLAB_READ_ONLY_TOKEN:-"unable to read SECONDQ_GITLAB_READ_ONLY_TOKEN"}
 export TPA_GIT_CREDENTIALS
+
+export EDB_REPO_CREDENTIALS_FILE=$HOME/.local/cred/edb-repo-credentials-file
 
 # Launch a psql against a running pg_regress instance
 # without messing around reading the logs.
