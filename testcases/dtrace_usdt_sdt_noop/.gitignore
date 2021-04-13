@@ -1,0 +1,5 @@
+.gdb_history
+sdt_noop
+sdt_noop.o
+sdt_noop_probes.h
+sdt_noop_probes.o
