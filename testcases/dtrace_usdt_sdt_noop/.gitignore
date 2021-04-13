@@ -1,5 +1,6 @@
 .gdb_history
-sdt_noop
-sdt_noop.o
-sdt_noop_probes.h
-sdt_noop_probes.o
+*.o
+sdt_noop_probes*.h
+std_noop_enabled
+std_noop_disabled
+std_noop_semaphores
