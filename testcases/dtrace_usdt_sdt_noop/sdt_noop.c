@@ -7,12 +7,14 @@
 #endif
 
 void no_args(void);
-void with_args(void);
-void with_global_arg(void);
-void with_volatile_arg(void);
+int with_args(void);
+int with_global_arg(void);
+int with_volatile_arg(void);
 void with_many_args(void);
 void with_computed_arg(void);
+void with_pointer_chasing(int**** arg);
 
+__attribute__((noinline))
 void
 no_args(void)
 {
@@ -22,7 +24,8 @@ no_args(void)
 		SDT_NOOP_NO_ARGS();
 }
 
-void
+__attribute__((noinline))
+int
 with_args(void)
 {
 	int arg1 = 0;
@@ -31,30 +34,40 @@ with_args(void)
 #ifdef USE_SDT_SEMAPHORES
 	if (SDT_NOOP_WITH_ARGS_ENABLED())
 #endif
-	SDT_NOOP_WITH_ARGS(arg1, arg2, arg3);
+		SDT_NOOP_WITH_ARGS(arg1, arg2, arg3);
+
+	return arg1 + arg2 + arg3;
 }
 
 int some_global;
 
-void
+__attribute__((noinline))
+int
 with_global_arg(void)
 {
 #ifdef USE_SDT_SEMAPHORES
 	if (SDT_NOOP_WITH_GLOBAL_ARG_ENABLED())
 #endif
 		SDT_NOOP_WITH_GLOBAL_ARG(some_global);
+
+	return some_global;
 }
 
-void
+__attribute__((noinline))
+int
 with_volatile_arg(void)
 {
 	volatile int arg1;
+	arg1 = 42;
 #ifdef USE_SDT_SEMAPHORES
 	if (SDT_NOOP_WITH_VOLATILE_ARG_ENABLED())
 #endif
 		SDT_NOOP_WITH_VOLATILE_ARG(arg1);
+
+	return arg1;
 }
 
+__attribute__((noinline))
 void
 with_many_args(void)
 {
@@ -64,13 +77,14 @@ with_many_args(void)
 		SDT_NOOP_WITH_MANY_ARGS(1,2,3,4,5,6,7,8);
 }
 
- __attribute__((noinline)) __attribute__((optimize("-O0")))
+__attribute__((noinline))
 static int
 compute_probe_argument(void)
 {
 	return 100;
 }
 
+__attribute__((noinline))
 void
 with_computed_arg(void)
 {
@@ -80,6 +94,15 @@ with_computed_arg(void)
 		SDT_NOOP_WITH_COMPUTED_ARG(compute_probe_argument());
 }
 
+__attribute__((noinline))
+void
+with_pointer_chasing(int**** arg)
+{
+#ifdef USE_SDT_SEMAPHORES
+	if (SDT_NOOP_WITH_POINTER_CHASING_ENABLED())
+#endif
+		SDT_NOOP_WITH_POINTER_CHASING(****arg);
+}
 
 int
 main(int argc, char * argv[] __attribute__((unused)) )
@@ -98,4 +121,12 @@ main(int argc, char * argv[] __attribute__((unused)) )
 	with_many_args();
 
 	with_computed_arg();
+
+	int *some_value = malloc(sizeof(int));
+	*some_value = 0x7f;
+	int **some_value_p = &some_value;
+	int ***some_value_pp = &some_value_p;
+	with_pointer_chasing(&some_value_pp);
+
+	free(some_value);
 }

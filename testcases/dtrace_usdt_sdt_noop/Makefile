@@ -49,7 +49,7 @@ define newline
 
 endef
 
-symbols=main no_args with_many_args with_global_arg with_volatile_arg with_computed_arg
+symbols=main no_args with_many_args with_global_arg with_volatile_arg with_computed_arg with_pointer_chasing
 disassembly: sdt_noop_$(variant)
 	$(foreach symbol,$(symbols),\
 	    objdump -j .text --disassemble="$(symbol)" --no-addresses --no-show-raw-insn sdt_noop_$(variant); $(newline) \
