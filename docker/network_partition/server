@@ -1,0 +1,4 @@
+#!/bin/bash
+while : ; do
+	socat -d -v tcp-listen:9999 stdout
+done

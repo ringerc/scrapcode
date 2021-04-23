@@ -1,0 +1,4 @@
+#!/bin/bash
+while : ; do
+	( while : ; do date -Isec; sleep 1; done ) | socat -d -v STDIN tcp:server:9999
+done
