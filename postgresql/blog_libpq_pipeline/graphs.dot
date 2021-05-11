@@ -1,0 +1,468 @@
+digraph "series_imperative" {
+	graph[layout=dot, newrank=true, rankdir=LR, center=true, margin=0, pad=0.1, nodesep=0.25, ranksep=0.3, compound=false, overlap=prism];
+	node[shape=circle, fontname="Courier-Bold", fontsize=10, width=0.4, height=0.4, fixedsize=true];
+	edge[arrowsize=0.6, arrowhead=vee];
+	splines=false;
+
+	{
+		rank=source;
+		node [style=invis,label="",width=0.001,height=0,nodesep=0,ranksep=0];
+		t_start;
+		c_start;
+		s_start;
+		ac_start;
+		as_start;
+		bc_start;
+		bs_start;
+		pc_start;
+		ps_start;
+		/*
+		tc_start;
+		ts_start;
+		*/
+		node [height=0.05];
+		cs_spacer;
+		acs_spacer;
+		bcs_spacer;
+		pcs_spacer;
+		node [height=0.4];
+		a_spacer;
+		b_spacer;
+		p_spacer;
+		edge [style=invis];
+		t_start -> c_start -> cs_spacer -> s_start -> a_spacer -> ac_start -> acs_spacer -> as_start -> b_spacer -> bc_start -> bcs_spacer -> bs_start -> p_spacer -> pc_start -> pcs_spacer -> ps_start;
+	};
+
+	node [style=""];
+	edge [style=""];
+
+	subgraph "cluster_time" {
+		graph [style=invis,ranksep=0,sortv=1];
+		first [label="start",penwidth=0];
+		last [label="end",penwidth=0];
+		first -> last [label="time"];
+	};
+
+	subgraph "sync" {
+
+		subgraph "cluster_client_sync" {
+			graph [style=filled,color=azure1,labelloc="t",sortv=2];
+			prep1 [label="prep1",color="orange"];
+			ctx1 [label="snd1", color="orange"];
+			crx1 [label="recv1", color="orange"];
+			t1 [label="use1", color="orange"];
+			prep2 [label="prep2",color="red"];
+			ctx2 [label="snd2", color="red"];
+			crx2 [label="recv2", color="red"];
+			t2 [label="use2", color="red"];
+			prep3 [label="prep3",color="green"];
+			ctx3 [label="snd3", color="green"];
+			crx3 [label="recv3", color="green"];
+			t3 [label="use3", color="green"];
+			prep4 [label="prep4", color="blue"];
+			ctx4 [label="snd4", color="blue"];
+			crx4 [label="recv4", color="blue"];
+			t4 [label="use4", color="blue"];
+			label="Synchronous client";
+
+			edge [style=dotted, arrowhead=none];
+			prep1 -> ctx1;
+			crx1-> t1 -> prep2 -> ctx2;
+			crx2-> t2 -> prep3 -> ctx3;
+			crx3 -> t3 -> prep4 -> ctx4;
+			crx4 -> t4;
+		};
+
+		subgraph "cluster_server_sync" {
+			graph [style=filled,color=azure2,labelloc="b", sortv=3];
+			srx1 [label="rx1",color="orange"];
+			sp1 [label="wrk1",color="orange"];
+			stx1 [label="tx1",color="orange"];
+			srx2 [label="rx2",color="red"];
+			sp2 [label="wrk2",color="red"];
+			stx2 [label="tx2",color="red"];
+			srx3 [label="rx3",color="green"];
+			sp3 [label="wrk3",color="green"];
+			stx3 [label="tx3",color="green"];
+			srx4 [label="rx4",color="blue"];
+			sp4 [label="wrk4",color="blue"];
+			stx4 [label="tx4",color="blue"];
+			label="Synchronous client's server";
+
+			srx1 -> sp1 -> stx1 [color=orange];
+			srx2 -> sp2 -> stx2 [color=red];
+			srx3 -> sp3 -> stx3 [color=green];
+			srx4 -> sp4 -> stx4 [color=blue];
+		};
+
+		{ edge [color="orange"]; ctx1 -> srx1; stx1 -> crx1; }
+		{ edge [color="red" ]; ctx2 -> srx2; stx2 -> crx2; }
+		{ edge [color="green"]; ctx3 -> srx3; stx3 -> crx3; }
+		{ edge [color="blue"]; ctx4 -> srx4; stx4 -> crx4; }
+	};
+
+	subgraph "async" {
+		graph[style=invis];
+
+		subgraph "cluster_client_async" {
+			graph [style=filled,color=antiquewhite1,labelloc="t", sortv=4];
+			aprep1 [label="prep", color="orange"];
+			actx1 [label="snd1", color="orange"];
+			acrx1 [label="recv1", color="orange"];
+			at1 [label="use1", color="orange"];
+			aprep2 [label="prep2", color="red"];
+			actx2 [label="snd2", color="red"];
+			acrx2 [label="recv2", color="red"];
+			at2 [label="use2", color="red"];
+			aprep3 [label="prep3", color="green"];
+			actx3 [label="snd3", color="green"];
+			acrx3 [label="recv3", color="green"];
+			at3 [label="use3", color="green"];
+			aprep4 [label="prep4", color="blue"];
+			actx4 [label="snd4", color="blue"];
+			acrx4 [label="recv4", color="blue"];
+			at4 [label="use4", color="blue"];
+			label="Aynchronous client";
+
+			edge [style=dotted,arrowhead=none];
+			aprep1 -> actx1;
+			aprep2 -> acrx1 -> actx2 -> at1;
+			aprep3 -> acrx2 -> actx3 -> at2;
+			aprep4 -> acrx3 -> actx4 -> at3;
+			acrx4 -> at4;
+		};
+
+		subgraph "cluster_server_async" {
+			graph [style=filled,color=antiquewhite2,labelloc="b", sortv=5];
+			asrx1 [label="rx1",color="orange"];
+			asp1 [label="wrk1",color="orange"];
+			astx1 [label="tx1",color="orange"];
+			asrx2 [label="rx2",color="red"];
+			asp2 [label="wrk2",color="red"];
+			astx2 [label="tx2",color="red"];
+			asrx3 [label="rx3",color="green"];
+			asp3 [label="wrk3",color="green"];
+			astx3 [label="tx3",color="green"];
+			asrx4 [label="rx4",color="blue"];
+			asp4 [label="wrk4",color="blue"];
+			astx4 [label="tx4",color="blue"];
+			label="Aynchronous client's server";
+
+			asrx1 -> asp1 -> astx1 [color="orange"];
+			asrx2 -> asp2 -> astx2 [color="red"];
+			asrx3 -> asp3 -> astx3 [color="green"];
+			asrx4 -> asp4 -> astx4 [color="blue"];
+		};
+
+		{ edge [color="orange"]; actx1 -> asrx1; astx1 -> acrx1; }
+		{ edge [color="red"]; actx2 -> asrx2; astx2 -> acrx2; }
+		{ edge [color="green"]; actx3 -> asrx3; astx3 -> acrx3; }
+		{ edge [color="blue"]; actx4 -> asrx4; astx4 -> acrx4; }
+	};
+
+	subgraph "batch" {
+		graph[style=invis];
+
+		subgraph "cluster_client_batch" {
+			graph [style=filled,color=slategray1,labelloc="t",sortv=6];
+			bprep1 [label="prep1", color="orange"];
+			bctx1 [label="snd1", color="orange"];
+			bcrx1 [label="recv1", color="orange"];
+			bt1 [label="use1", color="orange"];
+			bprep2 [label="prep2", color="red"];
+			bctx2 [label="snd2", color="red"];
+			bcrx2 [label="recv2", color="red"];
+			bt2 [label="use2", color="red"];
+			bprep3 [label="prep3", color="green"];
+			bctx3 [label="snd3", color="green"];
+			bcrx3 [label="recv3", color="green"];
+			bt3 [label="use3", color="green"];
+			bprep4 [label="prep4", color="blue"];
+			bctx4 [label="snd4", color="blue"];
+			bcrx4 [label="recv4", color="blue"];
+			bt4 [label="use4", color="blue"];
+			label="Batch client";
+
+			edge [style=dotted,arrowhead=none];
+			bprep1 -> bprep2 -> bprep3 -> bprep4 -> bctx1 -> bctx2 -> bctx3 -> bctx4;
+			bcrx1 -> bcrx2 -> bcrx3 -> bcrx4 -> bt1 -> bt2 -> bt3 -> bt4;
+		};
+
+		subgraph "cluster_server_batch" {
+			graph [style=filled,color=slategray2,labelloc="b",sortv=7];
+			bsrx1 [label="rx1",color="orange"];
+			bsp1 [label="wrk1",color="orange"];
+			bstx1 [label="tx1",color="orange"];
+			bsrx2 [label="rx2",color="red"];
+			bsp2 [label="wrk2",color="red"];
+			bstx2 [label="tx2",color="red"];
+			bsrx3 [label="rx3",color="green"];
+			bsp3 [label="wrk3",color="green"];
+			bstx3 [label="tx3",color="green"];
+			bsrx4 [label="rx4",color="blue"];
+			bsp4 [label="wrk4",color="blue"];
+			bstx4 [label="tx4",color="blue"];
+			label="Batch client's server";
+
+			edge[weight=2];
+
+			edge [color=orange];
+			bsrx1 -> bsp1 -> bstx1;
+			edge [color=red];
+			bsrx2 -> bsp2 -> bstx2;
+			edge [color=green];
+			bsrx3 -> bsp3 -> bstx3;
+			edge [color=blue];
+			bsrx4 -> bsp4 -> bstx4;
+
+			/* rx cannot happen before tx */
+			edge [style=invis, weight=0.0];
+			bstx1 -> bsrx2;
+			bstx2 -> bsrx3;
+			bstx3 -> bsrx4;
+		};
+
+		{ rank= same; bctx2; bsrx1; }
+		{ rank= same; bctx3; bsp1; }
+		{ rank= same; bctx4; bstx1; }
+		{ rank= same; bcrx1; bsrx2; }
+
+		edge [color=orange];
+		bctx1 -> bsrx1; bstx1 -> bcrx1;
+		edge [color=red];
+		bctx2 -> bsrx2; bstx2 -> bcrx2;
+		edge [color=green];
+		bctx3 -> bsrx3; bstx3 -> bcrx3;
+		edge [color=blue];
+		bctx4 -> bsrx4; bstx4 -> bcrx4;
+
+	};
+
+	subgraph "pipelined" {
+		graph[style=invis];
+
+		subgraph "cluster_client_pipelined" {
+			graph [style=filled,color=lightyellow1,labelloc="t",sortv=6];
+			pprep1 [label="prep1",color="orange"];
+			pctx1 [label="snd1", color="orange"];
+			pcrx1 [label="recv1", color="orange"];
+			pt1 [label="use1", color="orange"];
+			pprep2 [label="prep2",color="red"];
+			pctx2 [label="snd2", color="red"];
+			pcrx2 [label="recv2", color="red"];
+			pt2 [label="use2", color="red"];
+			pprep3 [label="prep3",color="green"];
+			pctx3 [label="snd3", color="green"];
+			pcrx3 [label="recv3", color="green"];
+			pt3 [label="use3", color="green"];
+			pprep4 [label="prep4", color="blue"];
+			pctx4 [label="snd4", color="blue"];
+			pcrx4 [label="recv4", color="blue"];
+			pt4 [label="use4", color="blue"];
+			label="Pipelined client";
+
+			edge [style=dotted,arrowhead=none];
+			pprep1 -> pctx1;
+			pprep2 -> pctx2;
+			pcrx1 -> pt1;
+			pcrx2 -> pprep4;
+			pcrx3 -> pt2;
+			pcrx4 -> pt4;
+			pctx1 -> pprep2;
+			pctx2 -> pprep3;
+
+			pt1 -> pctx3;
+			pctx3 -> pcrx2;
+			pprep3 -> pcrx1;
+			pprep4 -> pctx4;
+			pctx4 -> pcrx3;
+			pt2 -> pt3;
+			pt3 -> pcrx4;
+		};
+
+		subgraph "cluster_server_pipelined" {
+			graph [style=filled,color=lightyellow2,labelloc="b",sortv=7];
+			psrx1 [label="rx1",color="orange"];
+			psp1 [label="wrk1",color="orange"];
+			pstx1 [label="tx1",color="orange"];
+			psrx2 [label="rx2",color="red"];
+			psp2 [label="wrk2",color="red"];
+			pstx2 [label="tx2",color="red"];
+			psrx3 [label="rx3",color="green"];
+			psp3 [label="wrk3",color="green"];
+			pstx3 [label="tx3",color="green"];
+			psrx4 [label="rx4",color="blue"];
+			psp4 [label="wrk4",color="blue"];
+			pstx4 [label="tx4",color="blue"];
+			label="Pipelined client's server";
+
+			edge[weight=2];
+
+			edge [color=orange];
+			psrx1 -> psp1 -> pstx1;
+			edge [color=red];
+			psrx2 -> psp2 -> pstx2;
+			edge [color=green];
+			psrx3 -> psp3 -> pstx3;
+			edge [color=blue];
+			psrx4 -> psp4 -> pstx4;
+
+			/* server cannot recv one before sending last */
+			edge [style=invis, weight=0.0];
+			pstx1 -> psrx2;
+			pstx2 -> psrx3;
+			pstx3 -> psrx4;
+		};
+
+		edge [color=orange];
+		pctx1 -> psrx1; pstx1 -> pcrx1;
+		edge [color=red];
+		pctx2 -> psrx2; pstx2 -> pcrx2;
+		edge [color=green];
+		pctx3 -> psrx3; pstx3 -> pcrx3;
+		edge [color=blue];
+		pctx4 -> psrx4; pstx4 -> pcrx4;
+
+
+		{ rank=same; pprep2; psrx1; }
+		{ rank=same; pctx2; psp1; }
+		{ rank=same; pprep3; pstx1; }
+		{ rank=same; pcrx1; psrx2; }
+		{ rank=same; pt1; psp2; }
+		{ rank=same; pstx2; pctx3; }
+		{ rank=same; psp3; pprep4; }
+		{ rank=same; psrx4; pcrx3; }
+		{ rank=same; psp4; pt2; }
+		{ rank=same; pstx4; pt3; }
+
+	};
+
+	/*
+
+	subgraph "pipelined_threaded" {
+		graph[style=invis];
+
+		subgraph "cluster_client_pipelined_threaded" {
+			graph [style=filled,color=lightgrey,labelloc="t",sortv=6];
+			tprep1 [label="prep1",color="orange"];
+			tctx1 [label="snd1", color="orange"];
+			tcrx1 [label="recv1", color="orange"];
+			tt1 [label="use1", color="orange"];
+			tprep2 [label="prep2",color="red"];
+			tctx2 [label="snd2", color="red"];
+			tcrx2 [label="recv2", color="red"];
+			tt2 [label="use2", color="red"];
+			tprep3 [label="prep3",color="green"];
+			tctx3 [label="snd3", color="green"];
+			tcrx3 [label="recv3", color="green"];
+			tt3 [label="use3", color="green"];
+			tprep4 [label="prep4", color="blue"];
+			tctx4 [label="snd4", color="blue"];
+			tcrx4 [label="recv4", color="blue"];
+			tt4 [label="use4", color="blue"];
+			label="Threaded pipelined client";
+
+			edge [style=dotted,arrowhead=none];
+			tprep1 -> tctx1;
+			tprep2 -> tctx2;
+			tprep3 -> tctx3;
+			tprep4 -> tctx4;
+			tcrx1 -> tt1;
+			tcrx2 -> tt2;
+			tcrx3 -> tt3;
+			tcrx4 -> tt4;
+
+		};
+
+		subgraph "cluster_server_pipelined_threaded" {
+			graph [style=filled,color=lightgrey,labelloc="b",sortv=7];
+			tsrx1 [label="rx1",color="orange"];
+			tsp1 [label="wrk1",color="orange"];
+			tstx1 [label="tx1",color="orange"];
+			tsrx2 [label="rx2",color="red"];
+			tsp2 [label="wrk2",color="red"];
+			tstx2 [label="tx2",color="red"];
+			tsrx3 [label="rx3",color="green"];
+			tsp3 [label="wrk3",color="green"];
+			tstx3 [label="tx3",color="green"];
+			tsrx4 [label="rx4",color="blue"];
+			tsp4 [label="wrk4",color="blue"];
+			tstx4 [label="tx4",color="blue"];
+			label="Threaded pipelined client's server";
+
+			edge[weight=2];
+
+			edge [color=orange];
+			tsrx1 -> tsp1 -> tstx1;
+			edge [color=red];
+			tsrx2 -> tsp2 -> tstx2;
+			edge [color=green];
+			tsrx3 -> tsp3 -> tstx3;
+			edge [color=blue];
+			tsrx4 -> tsp4 -> tstx4;
+
+			edge [style=invis, weight=0.0];
+			tstx1 -> tsrx2;
+			tstx2 -> tsrx3;
+			tstx3 -> tsrx4;
+		};
+
+		edge [color=orange];
+		tctx1 -> tsrx1; tstx1 -> tcrx1;
+		edge [color=red];
+		tctx2 -> tsrx2; tstx2 -> tcrx2;
+		edge [color=green];
+		tctx3 -> tsrx3; tstx3 -> tcrx3;
+		edge [color=blue];
+		tctx4 -> tsrx4; tstx4 -> tcrx4;
+	};
+
+	*/
+
+	/* Create vertically ordered node stack to align subgraphs to */
+	subgraph dividers {
+		graph [style=invis,margin=0,pad=0,nodesep=0,ranksep=0];
+		node [style=invis,label="",height=0,width=0];
+		edge [style=dotted,color=gray,constraint=false,arrowhead=none];
+		subgraph cluster_aspacer {
+			a_divider;
+			a_divider_end;
+			a_divider -> a_divider_end;
+		};
+		subgraph cluster_bspacer {
+			b_divider;
+			b_divider_end;
+			b_divider -> b_divider_end;
+		};
+		subgraph cluster_pspacer {
+			p_divider;
+			p_divider_end;
+			p_divider -> p_divider_end;
+		};
+	};
+
+	{ rank=same; first; prep1; aprep1; bprep1; /* tprep1; */ };
+	{ rank=sink; t4; last; a_divider_end; b_divider_end; p_divider_end; };
+
+	/* Impose vertical ordering of subgraphs, should be last */
+	{
+		edge [style="invis", weight=100000];
+		t_start -> first;
+		c_start -> prep1;
+		s_start -> srx1;
+		a_spacer -> a_divider;
+		ac_start -> aprep1;
+		as_start -> asrx1;
+		b_spacer -> b_divider;
+		bc_start -> bprep1;
+		bs_start -> bsrx1;
+		p_spacer -> p_divider;
+		pc_start -> pprep1;
+		ps_start -> psrx1;
+		/*
+		tc_start -> tprep1;
+		ts_start -> tsrx1;
+		*/
+	};
+
+}
