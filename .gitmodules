@@ -58,3 +58,16 @@
 [submodule "misc/tmux/tpm"]
 	path = misc/tmux/tpm
 	url = https://github.com/tmux-plugins/tpm
+[submodule "bbc_microbit/robotbit/pxt-moduleplus"]
+	path = bbc_microbit/robotbit/pxt-moduleplus
+	url = https://github.com/KittenBothk/pxt-moduleplus
+[submodule "bbc_microbit/robotbit/pxt-neopixel"]
+	path = bbc_microbit/robotbit/pxt-neopixel
+	url = https://github.com/kittenbot/pxt-neopixel
+[submodule "bbc_microbit/robotbit/pxt-robotbit"]
+	path = bbc_microbit/robotbit/pxt-robotbit
+	url = https://github.com/KittenBot/pxt-robotbit
+[submodule "3dprinting/ADVi3pp"]
+	path = 3dprinting/ADVi3pp
+	url = https://github.com/andrivet/ADVi3pp.git
+	branch = advi3++
