@@ -1,0 +1,92 @@
+# https://esphome.io/guides/configuration-types#substitutions
+
+esphome:
+  name: humidity
+  project:
+    name: ringerc.humidity
+    version: "1.0.0"
+
+rp2040:
+  board: rpipicow
+  framework:
+    platform_version: https://github.com/maxgerhardt/platform-raspberrypi.git
+
+i2c:
+      
+sensor:
+  - platform: bme280
+    temperature:
+      name: "BME280 Temperature"
+      oversampling: 16x
+    pressure:
+      name: "BME280 Pressure"
+    humidity:
+      name: "BME280 Humidity"
+    # could be 0x76
+    address: 0x76
+    update_interval: 60s
+      
+  # rpi pico GPIO29 reads VSYS/3
+  - platform: adc
+    # The voltage is read from GPIO29
+    # https://esphome.io/api/adc__sensor_8cpp_source.html
+    # guards conflicts between it and the wifi by looking for PICO_VSYS_PIN (defined as 29)
+    # https://github.com/raspberrypi/pico-sdk/blob/6a7db34ff63345a7badec79ebea3aaef1712f374/src/boards/include/boards/pico.h#L92
+    pin: 29
+    name: "VSYS"
+    update_interval: 60s
+      
+#status_led:
+#    pin: GPIO25
+
+deep_sleep:
+  run_duration: 1min
+  sleep_duration: 1min
+
+binary_sensor:
+  - platform: status
+    name: "Humidity status"
+      
+# switch to this once home assistant installed
+#time:
+#  - platform: homeassistant
+#    id: homeassistant_time
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Pacific/Auckland
+
+# apparently not yet ported to pi pico?
+#mqtt:
+#  broker: raspberrypi.fritz.box
+#  username: esphome_humidity
+#  password: !secret mqtt_password
+#  reboot_timeout: 0s
+
+# rpi pico GPIO24 senses VBUS (high if VBUS present)
+# rpi pico GPIO23 OP Controls the on-board SMPS Power Save pin - pull high to disable
+# TODO should use "SLEEP" mode 
+
+# Enable logging
+# https://esphome.io/components/logger#log-levels
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption: 
+    key: !secret homeassistant_encryption
+  reboot_timeout: 0s
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+#captive_portal:
+
+preferences:
+  flash_write_interval: 5min

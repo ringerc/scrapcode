@@ -1,0 +1,17 @@
+version: '3'
+services:
+  esphome:
+    container_name: esphome
+    # https://github.com/esphome/esphome/pkgs/container/esphome/versions?filters%5Bversion_type%5D=tagged
+    # https://github.com/esphome/esphome/pkgs/container/esphome/133688491?tag=stable
+    image: ghcr.io/esphome/esphome:2023.9
+    volumes:
+      - /home/craig/apps/esphome/config:/config
+#     - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    network_mode: host
+    environment:
+      - TZ=Pacific/Auckland
+      - USERNAME=craig
+      - PASSWORD=rei1EeLapook
