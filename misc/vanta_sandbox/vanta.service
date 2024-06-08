@@ -1,0 +1,55 @@
+[Unit]
+Description=Vanta monitoring software
+After=network.service syslog.service
+
+[Service]
+TimeoutStartSec=0
+ExecStart=/usr/libexec/vanta/metalauncher
+Restart=on-failure
+KillMode=control-group
+KillSignal=SIGTERM
+# see systemd.exec(5), systemd.resource-control(5)
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+SecureBits=noroot noroot-locked
+NoNewPrivileges=yes
+AmbientCapabilities=
+CapabilityBoundingSet=
+ProtectHostname=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectHome=tmpfs
+DevicePolicy=closed
+DeviceAllow=/dev/log
+#ProtectSystem=strict
+ProtectSystem=full
+#ReadWritePaths=/opt/Kaseya
+#ReadWritePaths=/run
+#ReadWritePaths=/var/run
+#ReadWritePaths=/tmp
+# Required for PrivateTmp
+#ReadWritePaths=/var/tmp
+#ReadOnlyPaths=/etc
+#ReadOnlyPaths=/dev
+#ReadOnlyPaths=/proc
+#ReadOnlyPaths=/sys
+#ReadOnlyPaths=/lib
+#ReadOnlyPaths=/bin
+#ReadOnlyPaths=/sbin
+#ReadOnlyPaths=/usr/lib
+#ReadOnlyPaths=/usr/bin
+#ReadOnlyPaths=/usr/sbin
+#TemporaryFileSystem=/etc/profile.d
+PrivateTmp=true
+PrivateUsers=true
+# See systemd-analyse syscall-filter, and systemd.exec(5)
+#SystemCallFilter=@default @process @basic-io @chown @file-system @network-io @timer
+#SystemCallFilter=~@mount @module @privileged @reboot @debug @keyring @setuid
+#SystemCallFilter=@system-service
+SystemCallFilter=~@mount
+
+[Install]
+WantedBy=multi-user.target
+Alias=vanta.service
