@@ -1,153 +1,147 @@
-downloaded LCD_show
 
-read script LCD35-show
+https://gist.github.com/notro/63fc8f563b5f85010d30
 
-installed pkgs (some may be present)
+"gpio" command ! woah
 
-  sudo apt-get install xserver-xorg-input-evdev xinput-calibrator xserver-xorg-video-fbdev fbset
+SPEC https://www.waveshare.com/wiki/3.5inch_RPi_LCD_(A)
 
-copied device tree overlays from lcd-show
+https://elinux.org/Device_Tree_Source_Undocumented
 
-  sudo cp ./waveshare35a-overlay.dtb /boot/overlays/waveshare35a.dtbo
-  sudo cp ./waveshare35a-overlay.dtb /boot/overlays/
-
-added to cmdline.txt
-
-  fbcon=map:10 fbcon=font:ProFont6x11
-
-modified config.txt (unsure yet if all mods needed)
-
-    dtparam=i2c_arm=on
-    dtparam=spi=on
-    enable_uart=1
-
-    dtoverlay=waveshare35a
-    #dtoverlay=ads7846,cs=1,penirq=17,penirq_pull=2,speed=1000000,keep_vref_on=1,swapxy=1,pmax=255,xohms=60,xmin=200,xmax=3900,ymin=200,ymax=3900
-
-    hdmi_force_hotplug=1
-    hdmi_group=2
-    hdmi_mode=1
-    hdmi_mode=87
-    hdmi_cvt 480 320 60 6 0 0 0
-    hdmi_drive=2
-
-docs:
-
-on fbcon, fbcon=map option etc:
-* https://www.kernel.org/doc/Documentation/fb/fbcon.txt
-* control after with con2fbmap command
-
-aha, so the trick here is to fake the pi into thinking it has hdmi, output to hdmi, then clone fb0->fb1 in userspace with fbcp, ew. But it's useful to keep the hdmi options
-in config.txt because otherwise the lcd will sometimes be fb0, sometimes fb1.
-
-created /etc/X11/xorg.conf.d/
-
-created  /etc/X11/xorg.conf.d/99-fbdev-lcd.conf
-
-	Section "Device"  
-		Identifier "lcd35"
-		Driver "fbdev"
-		Option "fbdev" "/dev/fb1"
-	EndSection
+https://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git/tree/drivers/staging/fbtft/README?h=staging-testing
+https://github.com/notro/fbtft/wiki/Device-Tree
+https://github.com/notro/fbtft/wiki/FBTFT-RPI-overlay
 
 
-(may need to change)
+https://www.kernel.org/doc/Documentation/devicetree/bindings/spi/
+https://www.kernel.org/doc/Documentation/devicetree/bindings/spi/spi-controller.yaml
 
-/etc/init.d/lightdm restart
+controller is https://www.kernel.org/doc/Documentation/devicetree/bindings/pinctrl/brcm%2Cbcm2835-gpio.txt
 
-... with which the display blanks, but doesn't do anything else, damn.
-
-
-made it work with a more complex x config; may break after reboot hdmi 
-
-	# Note that this supplements the default config loaded from
-	# /etc/X11/xorg.conf.d/99-fbdev-lcd.conf and the other .conf files there.
-
-	Section "Device"  
-	    Identifier  "lcd35"
-	    Driver      "fbdev"
-	    Option      "fbdev" "/dev/fb1"
-	EndSection
-
-	Section "Monitor"
-	    Identifier  "hdmi"
-	EndSection
-
-	Section "Monitor"
-	    Identifier  "lcd35"
-	    VendorName  "Wavecomm-clone"
-	    ModelName   "Touch-35"
-	    # DisplaySize ...
-	    # Option "Rotate" ...
-	EndSection
-
-	Section "Screen"
-	    Identifier "lcd35"
-	    Device "lcd35"
-	    Monitor "lcd35"
-	EndSection
-
-	# The device is defined in /etc/X11/xorg.conf.d/99-fbdev-lcd.conf
-	Section "Screen"
-	    Identifier "hdmi"
-	    Device "Allwinner A10/A13 FBDEV"
-	    Monitor "hdmi"
-	EndSection
-
-	Section "ServerLayout"
-	    Identifier   "lcd35"
-	    Screen       "lcd35"
-	    Screen       "hdmi" RightOf "lcd35"
-	    #InputDevice "ADS7846 Touchscreen" "SendCoreEvents"
-	EndSection
-
-touchscreen rotated. Used 
-
-	sudo DISPLAY=:0 XAUTHORITY=/var/run/lightdm/root/:0 xinput list
+https://www.kernel.org/doc/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt
 
 
-pi@raspberrypi:~ $ sudo DISPLAY=:0 XAUTHORITY=/var/run/lightdm/root/:0 xinput list
-⎡ Virtual core pointer                    	id=2	[master pointer  (3)]
-⎜   ↳ Virtual core XTEST pointer              	id=4	[slave  pointer  (2)]
-⎜   ↳ ADS7846 Touchscreen                     	id=6	[slave  pointer  (2)]
-⎣ Virtual core keyboard                   	id=3	[master keyboard (2)]
-    ↳ Virtual core XTEST keyboard             	id=5	[slave  keyboard (3)]
+AHA! the documented pinout like https://www.waveshare.com/3.5inch-rpi-lcd-a.htm is the rPi physical pinout. The device-tree config uses the GPIO numbers like https://www.researchgate.net/figure/Schematic-zoom-of-the-Raspberry-Pi-3-B-pins-Adapted-from-14_fig2_351755761
+
+con2fbmap
+chvt
+
+driver = fb_ili9486 (fbtft based)
 
 
-then ran
+# lock cpu freq
+for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+  echo 'performance' | sudo tee -a $f;
+done
+for f in /sys/devices/system/cpu/cpu*/cpufreq/{scaling_min_freq,scaling_max_freq}; do
+  echo '500000' | sudo tee -a $f;
+done
 
-	sudo DISPLAY=:0 XAUTHORITY=/var/run/lightdm/root/:0 xinput_calibrator
+cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq
 
-to get
+cat /sys/kernel/debug/clk/clk_summary
 
-	Section "InputClass"
-		Identifier	"calibration"
-		MatchProduct	"ADS7846 Touchscreen"
-		Option	"MinX"	"20980"
-		Option	"MaxX"	"22437"
-		Option	"MinY"	"50226"
-		Option	"MaxY"	"52274"
-		Option	"SwapXY"	"1" # unless it was already set to 1
-		Option	"InvertX"	"0"  # unless it was already set
-		Option	"InvertY"	"0"  # unless it was already set
-	EndSection
-
-installed in config as simplified
+https://starfishmedical.com/blog/raspberry-pi-clock-conundrum/
 
 
-	Section "InputClass"
-		Identifier	"calibration"
-		MatchProduct	"ADS7846 Touchscreen"
-		Option	"SwapXY"	"1" # unless it was already set to 1
-		Option	"InvertX"	"0"  # unless it was already set
-		Option	"InvertY"	"0"  # unless it was already set
-	EndSection
+try dtparam uart1 on / off ?
 
-but didn't work because swapxy not working
+vcgencmd get_config  str
 
 
 
-If I want both displays to work I have to switch to using fbturbo for the driver on the little panel too,
-it doesn't like sharing with fbdev.
+# tis doesn't seem right
+#
+# I actually observe somewhat working with reset 0x19 (25), dc 0x18 (24), pendown 0x11 (17)
+# which is wtf. Data pin must be right if display can show stuff.
+#
+# but all refs agree https://www.waveshare.com/3.5inch-rpi-lcd-a.htm
+#
 
 
+    LCD panel: Ilitek ILI9486
+    Touch layer: ADS7846
+    Touch controller: XPT2046
+
+Pin     Symbol  Description
+1, 17   3.3V    + Power rail
+2, 4    5V      + Power rail
+3, 5, 7, 8, 10, 12, 13, 15, 16  NV      NC
+6, 9, 14, 20, 25        GND     Ground
+11      TP_IRQ  Touch panel interrupt, pulled low during touch
+18      LCD_RS  LCD instruction control, Instruction/Data register selection
+19      LCD_SI/TP_SI    SPI data input of both LCD & touch panel
+21      TP_S0   SPI data output of touch panel
+22      RST     Reset
+23      LCD_SCK/TP_SCK  SPI clock for both LCD & touch panel
+24      LCD_CS  LCD chip select (active low)
+26      TP_CS   Touch panel chip select (active low)
+
+
+/*
+ * Pin mapping
+ * PHY GPIO   NAME            INOUT    PULL   ACTIVE    DESC
+ * 11    17   TP_IRQ             IN      H?      LOW    Touch panel interrupt, pulled low during touch
+ * 18    24   LCD_RS            OUT                     LCD instruction control, Instruction/Data register selection
+ * 19    10   LCD_SI/TP_SI      OUT                     SPI data input of both LCD & touch panel
+ * 21     9   TP_S0              IN                     SPI data output of touch panel
+ * 22    25   RST               OUT      H?             Reset
+ * 23    11   LCD_SCK/TP_SCK    OUT                     SPI clock for both LCD & touch panel
+ * 24     8   LCD_CS            OUT      H?      LOW    LCD chip select (active low)
+ * 26     7   TP_CS             OUT      H?      LOW    Touch panel chip select (active low)
+ */
+
+/proc/device-tree/soc/gpio@7e200000/spi0_pins/brcm,pins
+0000000 0000 0900 0000 0a00 0000 0b00
+0000014
+
+/proc/device-tree/soc/gpio@7e200000/spi0_gpio7/brcm,pins
+0000000 0000 0700 0000 0800 0000 0900 0000 0a00
+0000020 0000 0b00
+0000024
+
+/proc/device-tree/soc/gpio@7e200000/alt0/brcm,pins
+0000000 0000 0400 0000 0500 0000 0700 0000 0800
+0000020 0000 0900 0000 0a00 0000 0b00
+0000034
+
+
+what about using spi0-2cs ?
+
+craig@raspberrypi:~ $ sudo dtoverlay -h spi0-2cs
+Name:   spi0-2cs
+
+Info:   Change the CS pins for SPI0
+
+Usage:  dtoverlay=spi0-2cs,<param>=<val>
+
+Params: cs0_pin                 GPIO pin for CS0 (default 8)
+        cs1_pin                 GPIO pin for CS1 (default 7)
+        no_miso                 Don't claim and use the MISO pin (9), freeing
+                                it for other uses.
+
+
+
+https://raspberrypi.stackexchange.com/questions/24279/disable-bcm2708-fb-the-hdmi-framebuffer-device
+
+
+Looks like it works if I disable the use of /dev/fb0 on /usr/share/X11/xorg.conf.d/99-fbturbo.conf
+
+
+
+
+touch is ads7846
+but no worky?
+[  788.783946] SPI driver ads7846 has no spi_device_id for ti,tsc2046
+[  788.783979] SPI driver ads7846 has no spi_device_id for ti,ads7843
+[  788.783992] SPI driver ads7846 has no spi_device_id for ti,ads7845
+[  788.784003] SPI driver ads7846 has no spi_device_id for ti,ads7873
+relevant? why no evdev?
+
+sudo dtoverlay ads7846 penirq=17 xohms=60 pmax=255
+sudo dtoverlay ads7846 cs=1 penirq=17 penirq_pull=2 speed=50000 swapxy=0 pmax=255 xohms=80 xmin=20
+
+
+someone else's:
+dtoverlay=ads7846,cs=1,penirq=25,penirq_pull=2,speed=50000,keep_vref_on=0,swapxy=0,pmax=255,xohms=150,xmin=200,xmax=3900,ymin=200,ymax=3900 
+
+https://www.kernel.org/doc/Documentation/devicetree/bindings/input/ads7846.txt

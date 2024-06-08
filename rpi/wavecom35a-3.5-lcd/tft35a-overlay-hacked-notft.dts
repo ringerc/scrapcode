@@ -1,0 +1,88 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835\0brcm,bcm2708\0brcm,bcm2709";
+
+	fragment@0 {
+		target = <&spi0>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+	
+	fragment@1 {
+		target = <&spidev0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@2 {
+		target = <&spidev1>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@3 {
+		// This is a wild guess at target
+		// but seems to match https://github.com/analogdevicesinc/linux/blob/rpi-5.10.y/arch/arm/boot/dts/overlays/adis16475-overlay.dts
+		target = <&gpio>;
+
+		__overlay__ {
+
+			tft35a_pins: tft35a_pins {
+				brcm,pins = <0x19 0x18>;
+				brcm,function = <0x00 0x00>;
+			};
+		};
+	};
+
+	fragment@4 {
+		target = <&spi0>;
+
+		__overlay__ {
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+
+			tft35a@0 {
+				compatible = "ilitek,ili9486";
+				reg = <0x00>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&tft35a_pins>;
+				spi-max-frequency = <0xf42400>;
+				txbuflen = <0x8000>;
+				rotate = <0x5a>;
+				bgr = <0x00>;
+				fps = <0x1e>;
+				buswidth = <0x08>;
+				regwidth = <0x10>;
+				reset-gpios = <&gpio 0x19 0x01>;
+				dc-gpios = <&gpio 0x18 0x00>;
+				debug = <0x00>;
+				init = <0x10000f1 0x36 0x04 0x00 0x3c 0x0f 0x8f 0x10000f2 0x18 0xa3 0x12 0x02 0xb2 0x12 0xff 0x10 0x00 0x10000f8 0x21 0x04 0x10000f9 0x00 0x08 0x1000036 0x08 0x10000b4 0x00 0x10000c1 0x41 0x10000c5 0x00 0x91 0x80 0x00 0x10000e0 0x0f 0x1f 0x1c 0x0c 0x0f 0x08 0x48 0x98 0x37 0x0a 0x13 0x04 0x11 0x0d 0x00 0x10000e1 0x0f 0x32 0x2e 0x0b 0x0d 0x05 0x47 0x75 0x37 0x06 0x10 0x03 0x24 0x20 0x00 0x100003a 0x55 0x1000011 0x1000036 0x28 0x20000ff 0x1000029>;
+			};
+
+/* Use instead:
+
+   sudo dtoverlay ads7846 cs=1 penirq=17 penirq_pull=2 speed=50000 swapxy=0 pmax=255 xohms=150 xmin=20
+
+*/
+/*
+			tft35a-ts@1 {
+				compatible = "ti,ads7846";
+				reg = <0x01>;
+				spi-max-frequency = <0x1e8480>;
+				interrupts = <0x11 0x02>;
+				// wild guess
+				interrupt-parent = <&gpio>;
+				pendown-gpio = <&gpio 0x11 0x00>;
+				ti,x-plate-ohms = [00 3c];
+				ti,pressure-max = [00 ff];
+			};
+*/
+		};
+	};
+};
