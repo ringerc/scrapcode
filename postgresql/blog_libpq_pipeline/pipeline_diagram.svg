@@ -1,0 +1,2803 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1463.2844pt"
+   height="727.61499pt"
+   viewBox="0 0 1463.6652 727.97079"
+   version="1.1"
+   id="svg1600"
+   sodipodi:docname="pipeline_diagram.svg"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)">
+  <metadata
+     id="metadata1606">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1604" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     id="namedview1602"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="0.71424205"
+     inkscape:cx="794.42926"
+     inkscape:cy="524.41023"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1600" />
+  <polygon
+     fill="#f0ffff"
+     stroke="#f0ffff"
+     points="1515,-763 1515,-710 52,-710 52,-763 "
+     id="polygon11"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="731.82422"
+     y="47.700012"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text13">Synchronous client</text>
+  <polygon
+     fill="#e0eeee"
+     stroke="#e0eeee"
+     points="1411,-664 1411,-611 156,-611 156,-664 "
+     id="polygon18"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="731.82422"
+     y="176.70001"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text20">Synchronous client's server</text>
+  <polygon
+     fill="#ffefdb"
+     stroke="#ffefdb"
+     points="1203,-585 1203,-532 52,-532 52,-585 "
+     id="polygon25"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="575.82422"
+     y="225.70001"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text27">Aynchronous client</text>
+  <polygon
+     fill="#eedfcc"
+     stroke="#eedfcc"
+     points="1099,-486 1099,-433 156,-433 156,-486 "
+     id="polygon32"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="575.82422"
+     y="354.70001"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text34">Aynchronous client's server</text>
+  <polygon
+     fill="#c6e2ff"
+     stroke="#c6e2ff"
+     points="1203,-407 1203,-354 52,-354 52,-407 "
+     id="polygon39"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="575.82422"
+     y="403.70001"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text41">Batch client</text>
+  <polygon
+     fill="#b9d3ee"
+     stroke="#b9d3ee"
+     points="943,-298 943,-245 312,-245 312,-298 "
+     id="polygon46"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="575.82422"
+     y="542.70001"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text48">Batch client's server</text>
+  <polygon
+     fill="#ffffe0"
+     stroke="#ffffe0"
+     points="891,-160 891,-107 52,-107 52,-160 "
+     id="polygon53"
+     transform="translate(-51.67579,735.4708)" />
+  <text
+     text-anchor="middle"
+     x="419.82422"
+     y="590.67072"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text55">Pipelined client</text>
+  <polygon
+     fill="#eeeed1"
+     stroke="#eeeed1"
+     points="757,-61 757,-8 156,-8 156,-61 "
+     id="polygon60"
+     transform="translate(-51.67579,735.4708)" />
+  <text
+     text-anchor="middle"
+     x="404.82422"
+     y="719.67072"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text62">Pipelined client's server</text>
+  <circle
+     fill="none"
+     stroke="#000000"
+     stroke-width="0"
+     cx="14.824207"
+     cy="15.500001"
+     id="ellipse76"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="14.824207"
+     y="18"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text78">start</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="14.824207"
+     cy="70.5"
+     id="ellipse83"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="14.824207"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text85">prep1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="118.8242"
+     cy="146.5"
+     id="ellipse90"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="118.8242"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text92">rx1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="14.824207"
+     cy="248.50002"
+     id="ellipse97"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="14.824207"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text99">prep</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="118.8242"
+     cy="324.5"
+     id="ellipse104"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="118.8242"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text106">rx1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="14.824207"
+     cy="426.5"
+     id="ellipse111"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="14.824207"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text113">prep1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="274.82422"
+     cy="512.5"
+     id="ellipse118"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="274.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text120">rx1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="14.824207"
+     cy="613.4707"
+     id="ellipse125"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="14.824207"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text127">prep1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="118.8242"
+     cy="689.4707"
+     id="ellipse132"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="118.8242"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text134">rx1</text>
+  <circle
+     fill="none"
+     stroke="#000000"
+     stroke-width="0"
+     cx="1448.8242"
+     cy="14.500001"
+     id="ellipse139"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1448.8242"
+     y="17"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text141">end</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     d="m 29.47421,15.48 c 100.74,-0.14 686.85,-0.98 686.85,-0.98 0,0 592.02999,0 711.59999,0"
+     id="path146" />
+  <polygon
+     fill="#000000"
+     stroke="#000000"
+     points="1482.87,-781 1479.87,-778.3 1485.87,-781 1479.87,-783.7 1482.87,-781 1479.87,-781 "
+     id="polygon148"
+     transform="translate(-51.67579,795.5)" />
+  <text
+     text-anchor="middle"
+     x="731.82422"
+     y="10.700013"
+     font-family="Times-Roman"
+     font-size="14px"
+     id="text150">time</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="66.824203"
+     cy="70.5"
+     id="ellipse155"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="66.824203"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text157">snd1</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 29.48421,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path162" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 75.63421,82.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path167" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="159.93,-663.55 156.02,-664.57 161.58,-661.04 160.54,-667.54 159.93,-663.55 158.28,-666.05 "
+     id="polygon169"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="274.82422"
+     cy="70.5"
+     id="ellipse174"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="274.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text176">recv1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="326.82422"
+     cy="70.5"
+     id="ellipse181"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="326.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text183">use1</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 289.48421,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path188" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="378.82422"
+     cy="70.5"
+     id="ellipse193"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text195">prep2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 341.48421,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path200" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="430.82422"
+     cy="70.5"
+     id="ellipse205"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="430.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text207">snd2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 393.48421,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path212" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="482.82422"
+     cy="146.5"
+     id="ellipse217"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="482.82422"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text219">rx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 439.63421,82.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path224" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="523.93,-663.55 520.02,-664.57 525.58,-661.04 524.54,-667.54 523.93,-663.55 522.28,-666.05 "
+     id="polygon226"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="638.82422"
+     cy="70.5"
+     id="ellipse231"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="638.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text233">recv2</text>
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="690.82422"
+     cy="70.5"
+     id="ellipse238"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="690.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text240">use2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 653.48421,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path245" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="772.82422"
+     cy="70.5"
+     id="ellipse250"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="772.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text252">prep3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 705.39421,70.5 c 14.71,0 38.06,0 52.79,0"
+     id="path257" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="824.82422"
+     cy="70.5"
+     id="ellipse262"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="824.82422"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text264">snd3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 787.48421,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path269" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="876.82422"
+     cy="146.5"
+     id="ellipse274"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="876.82422"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text276">rx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 833.63421,82.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path281" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="917.93,-663.55 914.02,-664.57 919.58,-661.04 918.54,-667.54 917.93,-663.55 916.28,-666.05 "
+     id="polygon283"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="1032.8242"
+     cy="70.5"
+     id="ellipse288"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1032.8242"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text290">recv3</text>
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="1084.8242"
+     cy="70.5"
+     id="ellipse295"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1084.8242"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text297">use3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1047.4842,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path302" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1136.8242"
+     cy="70.5"
+     id="ellipse307"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1136.8242"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text309">prep4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1099.4842,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path314" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1188.8242"
+     cy="70.5"
+     id="ellipse319"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1188.8242"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text321">snd4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1151.4842,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path326" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1240.8242"
+     cy="146.5"
+     id="ellipse331"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1240.8242"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text333">rx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 1197.6342,82.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path338" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1281.93,-663.55 1278.02,-664.57 1283.58,-661.04 1282.54,-667.54 1281.93,-663.55 1280.28,-666.05 "
+     id="polygon340"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1396.8242"
+     cy="70.5"
+     id="ellipse345"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1396.8242"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text347">recv4</text>
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1448.8242"
+     cy="70.5"
+     id="ellipse352"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1448.8242"
+     y="73"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text354">use4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1411.4842,70.5 c 7.06,0 15.64,0 22.69,0"
+     id="path359" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="170.8242"
+     cy="146.5"
+     id="ellipse364"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="170.8242"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text366">wrk1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 133.48421,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path371" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="204.85,-649 201.85,-646.3 207.85,-649 201.85,-651.7 204.85,-649 201.85,-649 "
+     id="polygon373"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="222.82422"
+     cy="146.5"
+     id="ellipse378"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="222.82422"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text380">tx1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 185.48421,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path385" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="256.85,-649 253.85,-646.3 259.85,-649 253.85,-651.7 256.85,-649 253.85,-649 "
+     id="polygon387"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 231.63421,134.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path392" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="315.93,-710.45 316.54,-706.46 317.58,-712.96 312.02,-709.43 315.93,-710.45 314.28,-707.95 "
+     id="polygon394"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="534.82422"
+     cy="146.5"
+     id="ellipse399"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="534.82422"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text401">wrk2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 497.48421,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path406" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="568.85,-649 565.85,-646.3 571.85,-649 565.85,-651.7 568.85,-649 565.85,-649 "
+     id="polygon408"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="586.82422"
+     cy="146.5"
+     id="ellipse413"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="586.82422"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text415">tx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 549.48421,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path420" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="620.85,-649 617.85,-646.3 623.85,-649 617.85,-651.7 620.85,-649 617.85,-649 "
+     id="polygon422"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 595.63421,134.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path427" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="679.93,-710.45 680.54,-706.46 681.58,-712.96 676.02,-709.43 679.93,-710.45 678.28,-707.95 "
+     id="polygon429"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="928.82422"
+     cy="146.5"
+     id="ellipse434"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="928.82422"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text436">wrk3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 891.48421,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path441" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="962.85,-649 959.85,-646.3 965.85,-649 959.85,-651.7 962.85,-649 959.85,-649 "
+     id="polygon443"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="980.82416"
+     cy="146.5"
+     id="ellipse448"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="980.82416"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text450">tx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 943.48421,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path455" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="1014.85,-649 1011.85,-646.3 1017.85,-649 1011.85,-651.7 1014.85,-649 1011.85,-649 "
+     id="polygon457"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 989.63421,134.62 c 8.25,-12.53 21.31999,-32.4 30.72999,-46.71"
+     id="path462" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="1073.93,-710.45 1074.54,-706.46 1075.58,-712.96 1070.02,-709.43 1073.93,-710.45 1072.28,-707.95 "
+     id="polygon464"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1292.8242"
+     cy="146.5"
+     id="ellipse469"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1292.8242"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text471">wrk4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 1255.4842,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path476" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1326.85,-649 1323.85,-646.3 1329.85,-649 1323.85,-651.7 1326.85,-649 1323.85,-649 "
+     id="polygon478"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1344.8242"
+     cy="146.5"
+     id="ellipse483"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1344.8242"
+     y="149"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text485">tx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 1307.4842,146.5 c 5.07,0 10.93,0 16.45,0"
+     id="path490" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1378.85,-649 1375.85,-646.3 1381.85,-649 1375.85,-651.7 1378.85,-649 1375.85,-649 "
+     id="polygon492"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 1353.6342,134.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path497" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1437.93,-710.45 1438.54,-706.46 1439.58,-712.96 1434.02,-709.43 1437.93,-710.45 1436.28,-707.95 "
+     id="polygon499"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="66.824203"
+     cy="248.50002"
+     id="ellipse504"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="66.824203"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text506">snd1</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 29.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path511" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 75.63421,260.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path516" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="159.93,-485.55 156.02,-486.57 161.58,-483.04 160.54,-489.54 159.93,-485.55 158.28,-488.05 "
+     id="polygon518"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="274.82422"
+     cy="248.50002"
+     id="ellipse523"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="274.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text525">recv1</text>
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="326.82422"
+     cy="248.50002"
+     id="ellipse530"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="326.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text532">snd2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 289.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path537" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="378.82422"
+     cy="248.50002"
+     id="ellipse542"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text544">use1</text>
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="222.82422"
+     cy="248.50002"
+     id="ellipse549"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="222.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text551">prep2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 237.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path556" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 341.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path561" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="378.82422"
+     cy="324.5"
+     id="ellipse566"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text568">rx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 335.63421,260.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path573" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="419.93,-485.55 416.02,-486.57 421.58,-483.04 420.54,-489.54 419.93,-485.55 418.28,-488.05 "
+     id="polygon575"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="534.82422"
+     cy="248.50002"
+     id="ellipse580"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="534.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text582">recv2</text>
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="586.82422"
+     cy="248.50002"
+     id="ellipse587"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="586.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text589">snd3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 549.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path594" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="638.82422"
+     cy="248.50002"
+     id="ellipse599"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="638.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text601">use2</text>
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="482.82422"
+     cy="248.50002"
+     id="ellipse606"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="482.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text608">prep3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 497.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path613" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 601.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path618" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="638.82422"
+     cy="324.5"
+     id="ellipse623"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="638.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text625">rx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 595.63421,260.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path630" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="679.93,-485.55 676.02,-486.57 681.58,-483.04 680.54,-489.54 679.93,-485.55 678.28,-488.05 "
+     id="polygon632"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="824.82422"
+     cy="248.50002"
+     id="ellipse637"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="824.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text639">recv3</text>
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="876.82422"
+     cy="248.50002"
+     id="ellipse644"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="876.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text646">snd4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 839.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path651" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="928.82422"
+     cy="248.50002"
+     id="ellipse656"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="928.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text658">use3</text>
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="772.82422"
+     cy="248.50002"
+     id="ellipse663"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="772.82422"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text665">prep4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 787.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path670" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 891.48421,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path675" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="928.82422"
+     cy="324.5"
+     id="ellipse680"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="928.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text682">rx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 885.63421,260.38 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path687" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="969.93,-485.55 966.02,-486.57 971.58,-483.04 970.54,-489.54 969.93,-485.55 968.28,-488.05 "
+     id="polygon689"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1084.8242"
+     cy="248.50002"
+     id="ellipse694"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1084.8242"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text696">recv4</text>
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1136.8242"
+     cy="248.50002"
+     id="ellipse701"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1136.8242"
+     y="251.00002"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text703">use4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1099.4842,248.5 c 7.06,0 15.64,0 22.69,0"
+     id="path708" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="170.8242"
+     cy="324.5"
+     id="ellipse713"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="170.8242"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text715">wrk1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 133.48421,324.5 c 5.07,0 10.93,0 16.45,0"
+     id="path720" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="204.85,-471 201.85,-468.3 207.85,-471 201.85,-473.7 204.85,-471 201.85,-471 "
+     id="polygon722"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="222.82422"
+     cy="324.5"
+     id="ellipse727"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="222.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text729">tx1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 185.48421,324.5 c 5.07,0 10.93,0 16.45,0"
+     id="path734" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="256.85,-471 253.85,-468.3 259.85,-471 253.85,-473.7 256.85,-471 253.85,-471 "
+     id="polygon736"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 231.63421,312.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path741" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="315.93,-532.45 316.54,-528.46 317.58,-534.96 312.02,-531.43 315.93,-532.45 314.28,-529.95 "
+     id="polygon743"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="430.82422"
+     cy="324.5"
+     id="ellipse748"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="430.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text750">wrk2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 393.48421,324.5 c 5.07,0 10.93,0 16.45,0"
+     id="path755" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="464.85,-471 461.85,-468.3 467.85,-471 461.85,-473.7 464.85,-471 461.85,-471 "
+     id="polygon757"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="482.82422"
+     cy="324.5"
+     id="ellipse762"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="482.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text764">tx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 445.48421,324.5 c 5.07,0 10.93,0 16.45,0"
+     id="path769" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="516.85,-471 513.85,-468.3 519.85,-471 513.85,-473.7 516.85,-471 513.85,-471 "
+     id="polygon771"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 491.63421,312.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path776" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="575.93,-532.45 576.54,-528.46 577.58,-534.96 572.02,-531.43 575.93,-532.45 574.28,-529.95 "
+     id="polygon778"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="690.82422"
+     cy="324.5"
+     id="ellipse783"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="690.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text785">wrk3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 653.48421,324.5 c 5.07,0 10.93,0 16.45,0"
+     id="path790" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="724.85,-471 721.85,-468.3 727.85,-471 721.85,-473.7 724.85,-471 721.85,-471 "
+     id="polygon792"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="772.82422"
+     cy="324.5"
+     id="ellipse797"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="772.82422"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text799">tx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 705.39421,324.5 c 12.76,0 32.01,0 46.51,0"
+     id="path804" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="806.86,-471 803.86,-468.3 809.86,-471 803.86,-473.7 806.86,-471 803.86,-471 "
+     id="polygon806"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 781.63421,312.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path811" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="865.93,-532.45 866.54,-528.46 867.58,-534.96 862.02,-531.43 865.93,-532.45 864.28,-529.95 "
+     id="polygon813"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="980.82416"
+     cy="324.5"
+     id="ellipse818"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="980.82416"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text820">wrk4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 943.48421,324.5 c 5.07,0 10.93,0 16.45,0"
+     id="path825" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1014.85,-471 1011.85,-468.3 1017.85,-471 1011.85,-473.7 1014.85,-471 1011.85,-471 "
+     id="polygon827"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1032.8242"
+     cy="324.5"
+     id="ellipse832"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1032.8242"
+     y="327"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text834">tx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 995.48421,324.5 c 5.06999,0 10.92999,0 16.44999,0"
+     id="path839" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1066.85,-471 1063.85,-468.3 1069.85,-471 1063.85,-473.7 1066.85,-471 1063.85,-471 "
+     id="polygon841"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 1041.6342,312.62 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path846" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="1125.93,-532.45 1126.54,-528.46 1127.58,-534.96 1122.02,-531.43 1125.93,-532.45 1124.28,-529.95 "
+     id="polygon848"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="66.824203"
+     cy="426.5"
+     id="ellipse853"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="66.824203"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text855">prep2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 29.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path860" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="222.82422"
+     cy="426.5"
+     id="ellipse865"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="222.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text867">snd1</text>
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="274.82422"
+     cy="426.5"
+     id="ellipse872"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="274.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text874">snd2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 237.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path879" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 230.98421,438.82 c 8.54,14.69 22.88,39.34 32.59,56.05"
+     id="path884" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="316.84,-297.89 313,-299.13 318.35,-295.3 317.67,-301.84 316.84,-297.89 315.33,-300.49 "
+     id="polygon886"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="430.82422"
+     cy="426.5"
+     id="ellipse891"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="430.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text893">recv1</text>
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="586.82422"
+     cy="426.5"
+     id="ellipse898"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="586.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text900">recv2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 445.50421,426.5 c 29.73,0 96.77,0 126.57,0"
+     id="path905" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="980.82416"
+     cy="426.5"
+     id="ellipse910"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="980.82416"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text912">use1</text>
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="1032.8242"
+     cy="426.5"
+     id="ellipse917"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1032.8242"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text919">use2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 995.48421,426.5 c 7.05999,0 15.63999,0 22.68999,0"
+     id="path924" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="118.8242"
+     cy="426.5"
+     id="ellipse929"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="118.8242"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text931">prep3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 81.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path936" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="326.82422"
+     cy="426.5"
+     id="ellipse941"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="326.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text943">snd3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 289.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path948" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="430.82422"
+     cy="512.5"
+     id="ellipse953"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="430.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text955">rx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 287.59421,433.54 c 27.53,15.18 92.62,51.06 124.7,68.74"
+     id="path960" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="466.93,-291.58 463,-290.67 469.56,-290.13 465.61,-295.4 466.93,-291.58 464.3,-293.03 "
+     id="polygon962"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="772.82422"
+     cy="426.5"
+     id="ellipse967"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="772.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text969">recv3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 601.42421,426.5 c 34.77,0 122.17,0 156.87,0"
+     id="path974" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="1084.8242"
+     cy="426.5"
+     id="ellipse979"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1084.8242"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text981">use3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1047.4842,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path986" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="170.8242"
+     cy="426.5"
+     id="ellipse991"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="170.8242"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text993">prep4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 133.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path998" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="378.82422"
+     cy="426.5"
+     id="ellipse1003"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1005">snd4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 341.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path1010" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="586.82422"
+     cy="512.5"
+     id="ellipse1015"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="586.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1017">rx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 340.80421,431.12 c 43.38,14.35 175.82,58.16 226.24,74.84"
+     id="path1022" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="621.6,-288.59 617.91,-286.97 624.45,-287.65 619.6,-292.09 621.6,-288.59 618.76,-289.53 "
+     id="polygon1024"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="928.82422"
+     cy="426.5"
+     id="ellipse1029"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="928.82422"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1031">recv4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 787.50421,426.5 c 29.73,0 96.77,0 126.57,0"
+     id="path1036" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="1136.8242"
+     cy="426.5"
+     id="ellipse1041"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="1136.8242"
+     y="429"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1043">use4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 1099.4842,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path1048" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 185.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path1053" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="772.82422"
+     cy="512.5"
+     id="ellipse1058"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="772.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1060">rx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 393.31421,429.66 c 59.98,13.1 288.99,63.08 359.03,78.37"
+     id="path1065" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="807.36,-286.74 803.86,-284.74 810.29,-286.1 805.01,-290.02 807.36,-286.74 804.43,-287.38 "
+     id="polygon1067"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 943.48421,426.5 c 7.06,0 15.64,0 22.69,0"
+     id="path1072" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="326.82422"
+     cy="512.5"
+     id="ellipse1077"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="326.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1079">wrk1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 289.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1084" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="360.85,-283 357.85,-280.3 363.85,-283 357.85,-285.7 360.85,-283 357.85,-283 "
+     id="polygon1086"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="378.82422"
+     cy="512.5"
+     id="ellipse1091"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1093">tx1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 341.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1098" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="412.85,-283 409.85,-280.3 415.85,-283 409.85,-285.7 412.85,-283 409.85,-283 "
+     id="polygon1100"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 386.98421,500.18 c 8.54,-14.69 22.88,-39.34 32.59,-56.05"
+     id="path1105" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="472.84,-354.11 473.67,-350.16 474.35,-356.7 469,-352.87 472.84,-354.11 471.33,-351.51 "
+     id="polygon1107"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="482.82422"
+     cy="512.5"
+     id="ellipse1112"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="482.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1114">wrk2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 445.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1119" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="516.85,-283 513.85,-280.3 519.85,-283 513.85,-285.7 516.85,-283 513.85,-283 "
+     id="polygon1121"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="534.82422"
+     cy="512.5"
+     id="ellipse1126"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="534.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1128">tx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 497.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1133" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="568.85,-283 565.85,-280.3 571.85,-283 565.85,-285.7 568.85,-283 565.85,-283 "
+     id="polygon1135"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 542.98421,500.18 c 8.54,-14.69 22.88,-39.34 32.59,-56.05"
+     id="path1140" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="628.84,-354.11 629.67,-350.16 630.35,-356.7 625,-352.87 628.84,-354.11 627.33,-351.51 "
+     id="polygon1142"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="638.82422"
+     cy="512.5"
+     id="ellipse1147"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="638.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1149">wrk3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 601.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1154" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="672.85,-283 669.85,-280.3 675.85,-283 669.85,-285.7 672.85,-283 669.85,-283 "
+     id="polygon1156"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="690.82422"
+     cy="512.5"
+     id="ellipse1161"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="690.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1163">tx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 653.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1168" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="724.85,-283 721.85,-280.3 727.85,-283 721.85,-285.7 724.85,-283 721.85,-283 "
+     id="polygon1170"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 701.31421,502.3 c 14.07,-15.13 40.55,-43.6 56.75,-61.01"
+     id="path1175" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="811.98,-356.61 811.91,-352.58 814.02,-358.81 807.96,-356.26 811.98,-356.61 809.93,-354.42 "
+     id="polygon1177"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="824.82422"
+     cy="512.5"
+     id="ellipse1182"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="824.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1184">wrk4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 787.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1189" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="858.85,-283 855.85,-280.3 861.85,-283 855.85,-285.7 858.85,-283 855.85,-283 "
+     id="polygon1191"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="876.82422"
+     cy="512.5"
+     id="ellipse1196"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="876.82422"
+     y="515"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1198">tx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 839.48421,512.5 c 5.07,0 10.93,0 16.45,0"
+     id="path1203" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="910.85,-283 907.85,-280.3 913.85,-283 907.85,-285.7 910.85,-283 907.85,-283 "
+     id="polygon1205"
+     transform="translate(-51.67579,795.5)" />
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 884.98421,500.18 c 8.54,-14.69 22.88,-39.34 32.59,-56.05"
+     id="path1210" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="970.84,-354.11 971.67,-350.16 972.35,-356.7 967,-352.87 970.84,-354.11 969.33,-351.51 "
+     id="polygon1212"
+     transform="translate(-51.67579,795.5)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="66.824203"
+     cy="613.4707"
+     id="ellipse1217"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="66.824203"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1219">snd1</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 29.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1224" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="118.8242"
+     cy="613.4707"
+     id="ellipse1229"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="118.8242"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1231">prep2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 81.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1236" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 75.63421,625.3508 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path1241" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="159.93,-60.55 158.28,-63.05 159.93,-60.55 156.02,-61.57 161.58,-58.04 160.54,-64.54 "
+     id="polygon1243"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="274.82422"
+     cy="613.4707"
+     id="ellipse1248"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="274.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1250">recv1</text>
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="326.82422"
+     cy="613.4707"
+     id="ellipse1255"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="326.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1257">use1</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 289.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1262" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="378.82422"
+     cy="613.4707"
+     id="ellipse1267"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1269">snd3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 341.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1274" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="170.8242"
+     cy="613.4707"
+     id="ellipse1279"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="170.8242"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1281">snd2</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 133.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1286" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="222.82422"
+     cy="613.4707"
+     id="ellipse1291"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="222.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1293">prep3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 185.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1298" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="274.82422"
+     cy="689.4707"
+     id="ellipse1303"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="274.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1305">rx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 182.75421,622.1908 c 18.49,13.51 54.15,39.57 75.25,54.99"
+     id="path1310" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="312.29,-56.39 309.86,-58.16 312.29,-56.39 308.27,-55.98 314.71,-54.62 311.46,-60.34 "
+     id="polygon1312"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="430.82422"
+     cy="613.4707"
+     id="ellipse1317"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="430.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1319">recv2</text>
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="482.82422"
+     cy="613.4707"
+     id="ellipse1324"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="482.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1326">prep4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 445.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1331" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="638.82422"
+     cy="613.4707"
+     id="ellipse1336"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="638.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1338">use2</text>
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="690.82422"
+     cy="613.4707"
+     id="ellipse1343"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="690.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1345">use3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 653.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1350" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 237.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1355" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 393.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1360" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="430.82422"
+     cy="689.4707"
+     id="ellipse1365"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="430.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1367">rx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 387.63421,625.3508 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path1372" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="471.93,-60.55 470.28,-63.05 471.93,-60.55 468.02,-61.57 473.58,-58.04 472.54,-64.54 "
+     id="polygon1374"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="586.82422"
+     cy="613.4707"
+     id="ellipse1379"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="586.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1381">recv3</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 601.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1386" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="772.82422"
+     cy="613.4707"
+     id="ellipse1391"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="772.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1393">recv4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 705.39421,613.4708 c 14.71,0 38.06,0 52.79,0"
+     id="path1398" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="534.82422"
+     cy="613.4707"
+     id="ellipse1403"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="534.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1405">snd4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 497.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1410" />
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 549.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1415" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="586.82422"
+     cy="689.4707"
+     id="ellipse1420"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="586.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1422">rx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 543.63421,625.3508 c 8.25,12.53 21.32,32.4 30.73,46.71"
+     id="path1427" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="627.93,-60.55 626.28,-63.05 627.93,-60.55 624.02,-61.57 629.58,-58.04 628.54,-64.54 "
+     id="polygon1429"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="824.82422"
+     cy="613.4707"
+     id="ellipse1434"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="824.82422"
+     y="615.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1436">use4</text>
+  <path
+     fill="none"
+     stroke="#000000"
+     stroke-dasharray="1, 5"
+     d="m 787.48421,613.4708 c 7.06,0 15.64,0 22.69,0"
+     id="path1441" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="170.8242"
+     cy="689.4707"
+     id="ellipse1446"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="170.8242"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1448">wrk1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 133.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1453" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="204.85,-46 201.85,-46 204.85,-46 201.85,-43.3 207.85,-46 201.85,-48.7 "
+     id="polygon1455"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#ffa500"
+     cx="222.82422"
+     cy="689.4707"
+     id="ellipse1460"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="222.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1462">tx1</text>
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 185.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1467" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="256.85,-46 253.85,-46 256.85,-46 253.85,-43.3 259.85,-46 253.85,-48.7 "
+     id="polygon1469"
+     transform="translate(-51.67579,735.4708)" />
+  <path
+     fill="none"
+     stroke="#ffa500"
+     d="m 231.63421,677.5908 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path1474" />
+  <polygon
+     fill="#ffa500"
+     stroke="#ffa500"
+     points="315.93,-107.45 314.28,-104.95 315.93,-107.45 316.54,-103.46 317.58,-109.96 312.02,-106.43 "
+     id="polygon1476"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="326.82422"
+     cy="689.4707"
+     id="ellipse1481"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="326.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1483">wrk2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 289.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1488" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="360.85,-46 357.85,-46 360.85,-46 357.85,-43.3 363.85,-46 357.85,-48.7 "
+     id="polygon1490"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#ff0000"
+     cx="378.82422"
+     cy="689.4707"
+     id="ellipse1495"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="378.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1497">tx2</text>
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 341.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1502" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="412.85,-46 409.85,-46 412.85,-46 409.85,-43.3 415.85,-46 409.85,-48.7 "
+     id="polygon1504"
+     transform="translate(-51.67579,735.4708)" />
+  <path
+     fill="none"
+     stroke="#ff0000"
+     d="m 387.63421,677.5908 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path1509" />
+  <polygon
+     fill="#ff0000"
+     stroke="#ff0000"
+     points="471.93,-107.45 470.28,-104.95 471.93,-107.45 472.54,-103.46 473.58,-109.96 468.02,-106.43 "
+     id="polygon1511"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="482.82422"
+     cy="689.4707"
+     id="ellipse1516"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="482.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1518">wrk3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 445.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1523" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="516.85,-46 513.85,-46 516.85,-46 513.85,-43.3 519.85,-46 513.85,-48.7 "
+     id="polygon1525"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#008000"
+     cx="534.82422"
+     cy="689.4707"
+     id="ellipse1530"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="534.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1532">tx3</text>
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 497.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1537" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="568.85,-46 565.85,-46 568.85,-46 565.85,-43.3 571.85,-46 565.85,-48.7 "
+     id="polygon1539"
+     transform="translate(-51.67579,735.4708)" />
+  <path
+     fill="none"
+     stroke="#008000"
+     d="m 543.63421,677.5908 c 8.25,-12.53 21.32,-32.4 30.73,-46.71"
+     id="path1544" />
+  <polygon
+     fill="#008000"
+     stroke="#008000"
+     points="627.93,-107.45 626.28,-104.95 627.93,-107.45 628.54,-103.46 629.58,-109.96 624.02,-106.43 "
+     id="polygon1546"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="638.82422"
+     cy="689.4707"
+     id="ellipse1551"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="638.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1553">wrk4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 601.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1558" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="672.85,-46 669.85,-46 672.85,-46 669.85,-43.3 675.85,-46 669.85,-48.7 "
+     id="polygon1560"
+     transform="translate(-51.67579,735.4708)" />
+  <circle
+     fill="none"
+     stroke="#0000ff"
+     cx="690.82422"
+     cy="689.4707"
+     id="ellipse1565"
+     r="14.5" />
+  <text
+     text-anchor="middle"
+     x="690.82422"
+     y="691.9707"
+     font-family="Courier-Bold"
+     font-size="10px"
+     id="text1567">tx4</text>
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 653.48421,689.4708 c 5.07,0 10.93,0 16.45,0"
+     id="path1572" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="724.85,-46 721.85,-46 724.85,-46 721.85,-43.3 727.85,-46 721.85,-48.7 "
+     id="polygon1574"
+     transform="translate(-51.67579,735.4708)" />
+  <path
+     fill="none"
+     stroke="#0000ff"
+     d="m 701.95421,679.8408 c 13.95,-13.24 39.15,-37.18 55.17,-52.4"
+     id="path1579" />
+  <polygon
+     fill="#0000ff"
+     stroke="#0000ff"
+     points="811.28,-110.39 809.1,-108.32 811.28,-110.39 810.96,-106.36 813.45,-112.45 807.24,-110.28 "
+     id="polygon1581"
+     transform="translate(-51.67579,735.4708)" />
+  <path
+     fill="none"
+     stroke="#808080"
+     stroke-dasharray="1, 5"
+     d="m 15.41421,197.5 c 32.44,0 1400.76999,0 1432.83999,0"
+     id="path1586" />
+  <path
+     fill="none"
+     stroke="#808080"
+     stroke-dasharray="1, 5"
+     d="m 15.41421,375.5 c 32.44,0 1400.76999,0 1432.83999,0"
+     id="path1591" />
+  <path
+     fill="none"
+     stroke="#808080"
+     stroke-dasharray="1, 5"
+     d="m 15.41421,562.4708 c 32.44,0 1400.76999,0 1432.83999,0"
+     id="path1596" />
+</svg>

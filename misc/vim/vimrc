@@ -15,8 +15,8 @@ packadd! nerdcommenter
 packadd! pgsql.vim
 packadd! syntastic
 packadd! vim-better-whitespace
-packadd! vim-easytags
-packadd! vim-fugitive
+"packadd! vim-easytags
+"packadd! vim-fugitive
 packadd! vim-json
 packadd! vim-sleuth
 packadd! vim-sneak

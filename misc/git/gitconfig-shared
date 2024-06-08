@@ -3,16 +3,42 @@
 	email = craig.ringer@2ndquadrant.com
 [credential]
 	helper = /usr/libexec/git-core/git-credential-libsecret
+[core]
+	excludesfile = ~/projects/scrapcode/misc/git/gitignore-global
+	editor = vim
 [push]
 	default = current
+[pull]
+	ff = only
 [merge]
-	tool = vimdiff
+	#tool = vimdiff
+	tool = meld
 	conflictstyle = diff3
+
+[mergetool "meld"]
+    # Choose one of these 2 lines (not both!) explained below.
+    #cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
+    cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
+
 [log]
 	abbrevCommit = true
 [rebase]
 	abbreviateCommands = true
 	stat = true
 	autoSquash = true
-[core]
-	excludesfile = ~/projects/scrapcode/misc/git/gitignore-global
+[diff]
+	renames = copies
+	algorithm = patience
+	tool = meld
+[difftool]
+	prompt = false
+[difftool "meld"]
+	cmd = meld "$LOCAL" "$REMOTE"
+[fetch]
+	writeCommitGraph = on
+[alias]
+	show = show --find-copies-harder
+	sh = show --find-copies-harder
+	st = status
+	lg = log --find-copies-harder --stat --notes
+# Add the following to your .gitconfig file.

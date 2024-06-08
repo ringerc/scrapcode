@@ -368,4 +368,31 @@ export EDITOR=vim
 
 export MOZ_DBUS_REMOTE=1
 
+export POWERSHELL_TELEMETRY_OPTOUT=1
+export POWERSHELL_UPDATECHECK=Off
+
+export WINEPREFIX=$HOME/.local/share/wineprefixes/Apps/
+# default to 32 bit for wine
+export WINEARCH=win32
+
+alias kind='KUBECONFIG=~/.kube/config/kind kind'
+
+export upm="$HOME/projects/EDB/UPM"
+export substrate="$HOME/projects/EDB/upm-substrate-notsubmodule"
+
+shopt -s direxpand
+shopt -s cdable_vars
+
+alias opsignin='if [ -z "$(op account list --format json | jq -r "(.[]|select(.shorthand==\"team_edb\")|.user_uuid|(\"OP_SESSION_\"+.)|env[.]) // \"\"")" ]; then eval $(op signin --account team_edb); else echo "already signed in to account team_edb"; fi'
+
+alias ghp='opsignin && eval $(opcred --format=eval "github api token ringerc") && GH_API_TOKEN="${credential}" && unset credential && echo "set non-exported variable GH_API_TOKEN" 1>&2 && echo "Use with GH_API_TOKEN=\"\${GH_API_TOKEN}\" mycommand" 1>&2'
+alias ghcred=ghp
+
+alias kc=kubectl
+
+if type -p direnv >&/dev/null
+then
+  eval "$(direnv hook bash)"
+fi
+
 # vim: ts=4 sw=4 et ai
