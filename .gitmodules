@@ -71,3 +71,10 @@
 	path = 3dprinting/ADVi3pp
 	url = https://github.com/andrivet/ADVi3pp.git
 	branch = advi3++
+[submodule "misc/vim/pack/plugins/all/copilot.vim"]
+	path = misc/vim/pack/plugins/all/copilot.vim
+	url = https://github.com/github/copilot.vim
+	branch = release
+[submodule "misc/vim/pack/plugins/all/vim-go"]
+	path = misc/vim/pack/plugins/all/vim-go
+	url = https://github.com/fatih/vim-go
