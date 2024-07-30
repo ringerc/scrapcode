@@ -19,17 +19,23 @@ type Config struct {
 }
 
 type target struct {
-	targetNumber  int
-	targetIndexes []int
-	targetLabels  prometheus.Labels
-	infoMetric    *prometheus.Gauge
-	gaugeMetrics  []prometheus.Gauge
+	targetNumber int
+}
+
+func (t target) targetIndexes(m metrics) []int {
+	indexes := make([]int, len(m.cfg.Targets))
+	remainder := t.targetNumber
+	for i := 0; i < len(m.cfg.Targets); i++ {
+		indexes[i] = remainder % m.cfg.Targets[i]
+		remainder = remainder / m.cfg.Targets[i]
+	}
+	return indexes
 }
 
 // string representation of the target labels
-func (t *target) indexesString() string {
+func (t *target) indexesString(m metrics) string {
 	s := ""
-	for i, v := range t.targetIndexes {
+	for i, v := range t.targetIndexes(m) {
 		if i > 0 {
 			s += ","
 		}
@@ -38,62 +44,38 @@ func (t *target) indexesString() string {
 	return s
 }
 
-func createTarget(cfg Config, targetNumber int, targetIndexes []int) target {
-	t := target{
-		targetNumber:  targetNumber,
-		targetIndexes: targetIndexes,
+func (t target) targetLabels(m metrics) []string {
+	indexes := t.targetIndexes(m)
+	labels := make([]string, len(indexes))
+	for i, v := range indexes {
+		labels[i] = strconv.Itoa(v)
 	}
-	t.targetLabels = prometheus.Labels{}
-	for i, v := range targetIndexes {
-		t.targetLabels["target_label_"+strconv.Itoa(i)] = strconv.Itoa(v)
-	}
-
-	log.Printf("Creating target %d with indexes %v, labels %v", targetNumber, targetIndexes, t.targetLabels)
-
-	indexesStr := t.indexesString()
-
-	if cfg.InfoMetricsLabels > 0 {
-		infoMetricLabels := prometheus.Labels{}
-		// copy the target labels to the info metric label set
-		for k, v := range t.targetLabels {
-			infoMetricLabels[k] = v
-		}
-		// add info labels. The names must be consistent for each
-		// target, and the values should differ since we presume the
-		// targets are unique. So the target indexes will be used for
-		// the info-metric values.
-		for i := 0; i < cfg.InfoMetricsLabels; i++ {
-			infoMetricLabels["info_label_"+strconv.Itoa(i)] = indexesStr
-		}
-		infoMetric := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:        "info_metric",
-			Help:        "Info metric",
-			ConstLabels: infoMetricLabels,
-		})
-		t.infoMetric = &infoMetric
-		//log.Printf("Created info-metric %s", (*t.infoMetric).Desc().String())
-	}
-
-	t.gaugeMetrics = make([]prometheus.Gauge, cfg.GaugeMetrics)
-	for i := 0; i < cfg.GaugeMetrics; i++ {
-		t.gaugeMetrics[i] = prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:        fmt.Sprintf("gauge_metric_%d", i),
-			Help:        fmt.Sprintf("Gauge metric %d", i),
-			ConstLabels: t.targetLabels,
-		})
-		//log.Printf("Created gauge metric %s", t.gaugeMetrics[i].Desc().String())
-	}
-
-	return t
+	return labels
 }
 
-func (t *target) register(reg *prometheus.Registry) {
-	if t.infoMetric != nil {
-		reg.MustRegister(*t.infoMetric)
+func (t target) setValues(m metrics, gaugeValue float64) {
+	if m.cfg.InfoMetricsLabels > 0 {
+		labels := t.infoLabels(m)
+		m.infoMetric.WithLabelValues(labels...).Set(1)
 	}
-	for _, m := range t.gaugeMetrics {
-		reg.MustRegister(m)
+	for i := 0; i < m.cfg.GaugeMetrics; i++ {
+		labels := t.targetLabels(m)
+		m.gaugeMetrics[i].WithLabelValues(labels...).Set(gaugeValue)
 	}
+}
+
+func (t target) infoLabels(m metrics) []string {
+	labels := t.targetLabels(m)
+	for i := 0; i < m.cfg.InfoMetricsLabels; i++ {
+		labels = append(labels, fmt.Sprintf("t_%d_i_%d", t.targetNumber, i))
+	}
+	return labels
+}
+
+type metrics struct {
+	cfg          Config
+	infoMetric   *prometheus.GaugeVec
+	gaugeMetrics []*prometheus.GaugeVec
 }
 
 func CreateRegistry(cfg Config) *prometheus.Registry {
@@ -113,15 +95,47 @@ func CreateRegistry(cfg Config) *prometheus.Registry {
 
 	reg := prometheus.NewRegistry()
 
-	for targetNumber := 0; targetNumber < totalTargets; targetNumber++ {
-		remainder := targetNumber
-		for i := 0; i < len(targetCounters); i++ {
-			targetCounters[i] = remainder % cfg.Targets[i]
-			remainder = remainder / cfg.Targets[i]
-		}
+	targetLabelNames := make([]string, len(cfg.Targets))
+	infoMetricLabelNames := make([]string, len(targetLabelNames)+cfg.InfoMetricsLabels)
+	for i, _ := range cfg.Targets {
+		targetLabelNames[i] = fmt.Sprintf("target_label_%d", i)
+		infoMetricLabelNames[i] = targetLabelNames[i]
+	}
+	for i := len(cfg.Targets); i < (cfg.InfoMetricsLabels + len(cfg.Targets)); i++ {
+		infoMetricLabelNames[i] = fmt.Sprintf("info_label_%d", i)
+	}
 
-		t := createTarget(cfg, targetNumber, targetCounters)
-		t.register(reg)
+	metrics := metrics{
+		cfg: cfg,
+		infoMetric: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "info_metric",
+			Help: "Info metric",
+		}, infoMetricLabelNames),
+		gaugeMetrics: make([]*prometheus.GaugeVec, cfg.GaugeMetrics),
+	}
+	for i := 0; i < cfg.GaugeMetrics; i++ {
+		metrics.gaugeMetrics[i] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: fmt.Sprintf("gauge_metric_%d", i),
+			Help: fmt.Sprintf("Gauge metric %d", i),
+		}, targetLabelNames)
+	}
+
+	targets := make([]target, totalTargets)
+	for targetNumber := 0; targetNumber < totalTargets; targetNumber++ {
+		// Yeah, this is pointless memory use for now to duplicate the
+		// array index as a field in each struct. But it'll make it
+		// easier when I want to give the targets some more brains
+		// later.
+		t := targets[targetNumber]
+		t.targetNumber = targetNumber
+		t.setValues(metrics, float64(t.targetNumber))
+	}
+
+	if cfg.InfoMetricsLabels > 0 {
+		reg.MustRegister(metrics.infoMetric)
+	}
+	for i := 0; i < cfg.GaugeMetrics; i++ {
+		reg.MustRegister(metrics.gaugeMetrics[i])
 	}
 
 	return reg
