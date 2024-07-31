@@ -38,6 +38,29 @@ spec:
   # args to pass to the prometheus container, see kubectl explain prometheus.spec.additionalArgs
   additionalArgs:
   - name: web.enable-admin-api
+  - name: web.enable-remote-write-receiver
+  # https://prometheus.io/docs/prometheus/latest/feature_flags/#memory-snapshot-on-shutdown
+  # pointless when we aren't using a PV, but should move to it
+  # for BA anyway
+  - name: enable-feature
+    value: memory-snapshot-on-shutdown
+  # https://prometheus.io/docs/prometheus/latest/feature_flags/#extra-scrape-metrics
+  - name: enable-feature
+    value: extra-scrape-metrics
+  # https://prometheus.io/docs/prometheus/latest/feature_flags/#per-step-stats
+  - name: enable-feature
+    value: promql-per-step-stats
+  # https://prometheus.io/docs/prometheus/latest/feature_flags/#auto-gomemlimit
+  - name: enable-feature
+    value: auto-gomemlimit
+  - name: auto-gomemlimit.ratio
+    value: "0.9"
+  # https://prometheus.io/docs/prometheus/latest/feature_flags/#auto-gomaxprocs
+  - name: enable-feature
+    value: auto-gomaxprocs
+  # https://prometheus.io/docs/prometheus/latest/feature_flags/#created-timestamps-zero-injection
+  - name: enable-feature
+    value: created-timestamp-zero-ingestion
   # this is strategically merged by the operator with the default spec, see kubectl explain prometheus.spec.containers
   containers:
     - name: config-reloader
@@ -60,15 +83,6 @@ spec:
         capabilities:
           drop:
             - ALL
-      env:
-        # Set the GOMEMLIMIT to a high proportion of the container's memory
-        # limit, but not equal to it, so there's room for other processes,
-        # runtime overhead, error margins in different usage computation
-        # methods etc. We can refine this over time. I'm starting with 95%
-        # of the pod RAM limit since we also have a config reloader container
-        # etc. See https://pkg.go.dev/runtime
-        - name: GOMEMLIMIT
-          value: 450MiB
   resources:
     limits:
       cpu: 1000m
