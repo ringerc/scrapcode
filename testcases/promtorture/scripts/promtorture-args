@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Print the args promtorture is running with
+#
+
+set -e -u -o pipefail
+source scripts/config
+
+"${kubectl[@]}" get -n default deployment/promtorture -o yaml | yq '.spec.template.spec.containers[]|select(.name=="promtorture").args'
+
+# vim: et ts=2 sw=2 sts=2 ft=bash ai

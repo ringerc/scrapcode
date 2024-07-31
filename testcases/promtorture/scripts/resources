@@ -5,4 +5,23 @@
 set -e -u -o pipefail
 source scripts/config
 
-"${kubectl_bin}" resource-capacity "${kubectl_context[@]}" -n monitoring --pods --pod-labels app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus
+"${kubectl[@]}" top -n monitoring pod prometheus-k8s-0
+echo
+
+if type -p kubectl-resource_capacity &>/dev/null; then
+	"${kubectl_bin}" resource-capacity "${kubectl_context[@]}" -n monitoring \
+		--pods --pods --containers --util \
+		--pod-labels app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus \
+	| awk 'NR==1 { print } $3=="prometheus" { print }'
+  echo
+else
+	echo 1>&2 "no kubectl resource-capacity; use kubectl krew install resource-capacity"
+	echo 1>&2 "skipping"
+  echo 1>&2
+fi
+
+./scripts/promcmd top -b -n 1 -d 0
+
+./scripts/promcmd cat /proc/1/status | awk '/^Name|^Vm|^Rss/ {print}'
+
+# vim: et ts=2 sw=2 sts=2 ft=bash ai

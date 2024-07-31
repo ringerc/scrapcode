@@ -12,10 +12,13 @@ prom_pod="$("${kubectl[@]}" get pod -n monitoring -l app.kubernetes.io/instance=
 #
 # handy commands include
 #
+#    promtool query instant http://localhost:9090 'up{job="monitoring/promtorture"}'
+#
 #    promtool check service-discovery /etc/prometheus/config_out/prometheus.env.yaml podMonitor/monitoring/promtorture/0 --timeout=5s
+#
 #    promtool query labels http://localhost:9090 'container'
+#
 #    promtool push metrics ...
-#    promtool debug --server http://localhost:9090 'tsdb' 'head' 'select * from container_cpu_usage_seconds_total limit 1'
 #
 # Alternately you can run it locally, using scripts/get-promtool, run scripts/socks5 for proxy then
 # run with http_proxy env-var and kube uri for prometheus e.g.:
@@ -33,6 +36,12 @@ prom_pod="$("${kubectl[@]}" get pod -n monitoring -l app.kubernetes.io/instance=
 #     snap_name=$(./scripts/promapi -m snapshot | tee /dev/stderr | yq .data.name)
 #     # that'll print the snaphot name, so
 #     ./scripts/promcmd du -ms /prometheus/snapshots/${snap_name}
+#
+# and the snapshot can be dumped with
+#
+#     ./scripts/promcmd /prometheus/replay mkdir /prometheus/snapshots/${snap_name}/wal
+#     ./scripts/promcmd promtool tsdb dump --sandbox-dir-root=/prometheus/replay /prometheus/snapshots/${snap_name}
+
 #
 
 

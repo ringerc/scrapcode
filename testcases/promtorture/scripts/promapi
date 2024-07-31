@@ -8,15 +8,22 @@ set -e -u -o pipefail
 
 function usage() {
   echo "Usage: meta -k target|targetmeta|tsdb|walreplay|config|flags|runtime|snapshot"
+  echo
+  echo "For tsdb:"
+  echo "  -l nnnn : number of entries in the top-n lists to return"
   exit 1
 }
 
 # what to fetch
 meta=
-while getopts "m:h" opt; do
+limit=
+while getopts "hm:l:" opt; do
   case ${opt} in
     m)
       meta=$OPTARG
+      ;;
+    l)
+      limit=$OPTARG
       ;;
     \?|h|: )
       usage
@@ -43,7 +50,11 @@ case "${meta}" in
     apiQuery "/api/v1/targets/metadata" -G --data 'match_target={job="monitoring/promtorture"}'
     ;;
   tsdb)
-    apiQuery "/api/v1/status/tsdb" -G
+    if [ -n "${limit}" ]; then
+      apiQuery "/api/v1/status/tsdb" -G --data "limit=${limit}"
+    else
+      apiQuery "/api/v1/status/tsdb" -G
+    fi
     ;;
   walreplay)
     apiQuery "/api/v1/status/walreplay" -G

@@ -19,19 +19,12 @@ yq '.|select(.kind == "CustomResourceDefinition")' .cache/kube-prometheus.yaml |
 
 "${kubectl[@]}" wait --for=condition=established --timeout=60s crd --all
 
-# this'll re-apply the CRDs but that's harmless
-#
-# ServiceMonitors are omitted deliberately because for this test we only want to see
-# metrics for explicitly named targets.
-#
 yq '
   .
   |select(
     (.kind != "CustomResourceDefinition")
-    and (.kind != "ServiceMonitor")
     and (.kind != "AlertManager")
-    and (.kind != "PodMonitor")
-  )' |  "${kubectl[@]}" apply --server-side -f -
+   )' |  "${kubectl[@]}" apply --server-side -f -
 "${kubectl[@]}" apply --server-side -f .cache/kube-prometheus.yaml
 
 # Scale down to 1 replica and don't deploy alertmanager
