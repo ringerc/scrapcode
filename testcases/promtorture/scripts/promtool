@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e -u -o pipefail
+
+source scripts/config
+
+prom_pod="$("${kubectl[@]}" get pod -n monitoring -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus -o name | head -1)"
+
+# hints:
+# prom config is in /etc/prometheus/config_out/prometheus.env.yaml
+# prom data is in /prometheus
+#
+# handy commands include
+#
+#    promtool check service-discovery /etc/prometheus/config_out/prometheus.env.yaml podMonitor/monitoring/promtorture/0 --timeout=5s
+#    promtool query labels http://localhost:9090 'container'
+#    promtool push metrics ...
+#    promtool debug --server http://localhost:9090 'tsdb' 'head' 'select * from container_cpu_usage_seconds_total limit 1'
+#
+# Alternately you can run it locally, using scripts/get-promtool, run scripts/socks5 for proxy then
+# run with http_proxy env-var and kube uri for prometheus e.g.:
+#
+#     http_proxy=socks5://localhost:1081 ./promtool query instant http://prometheus-k8s.monitoring.svc.cluster.local:9090 gauge_metric_0
+#
+# e.g. to dump all metrics:
+#
+#     http_proxy=socks5://localhost:1081 ./promtool debug metrics http://prometheus-k8s.monitoring.svc.cluster.local:9090
+#     tar xOf debug.tar.gz metrics.txt
+#
+
+
+
+exec "${kubectl[@]}" exec -it -n monitoring "${prom_pod}" -- promtool "$@"

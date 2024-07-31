@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# Grab promtool from the prometheus release bundle
+#
+# Can't be bothered getting latest with GH API
+
+set -e -u -o pipefail
+
+prom_version=2.53.1
+prom_target=linux-amd64
+
+curl -Lf1 --output-dir .cache -O https://github.com/prometheus/prometheus/releases/download/v${prom_version}/prometheus-${prom_version}.${prom_target}.tar.gz
+tar xf ./.cache/prometheus-${prom_version}.${prom_target}.tar.gz --strip-components=1 --wildcards '*/promtool'

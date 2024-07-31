@@ -1,6 +1,8 @@
 #!/bin/bash
+#
+set -e -u -o pipefail -x
 
-kind_cluster_name=promtorture
+source scripts/config
 
 targets=1
 info_metrics_labels=0
@@ -29,9 +31,8 @@ docker buildx build -t promtorture .
 
 kind load docker-image promtorture --name promtorture
 
-kubectl=("kubectl", "--context", "kind-${kind_cluster_name}")
 
-"${kubectl[@]}" apply -f /dev/stdin <<__END__
+"${kubectl[@]}" apply --server-side -f /dev/stdin <<__END__
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,23 +47,23 @@ spec:
   template:
     metadata:
       labels:
-	app: promtorture
+        app: promtorture
     spec:
       containers:
       - name: promtorture
-	image: promtorture
-  imagePullPolicy: Never
-	ports:
-	- containerPort: 8080
-    name: metrics
-	args:
-	- "--port=8080"
-  - "--targets=${targets}"
-  - "--info-metrics-labels=${info_metrics_labels}"
-  - "--gauge-metrics=${gauge_metrics}"
+        image: promtorture
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+          name: metrics
+        args:
+        - "--port=8080"
+        - "--targets=${targets}"
+        - "--info-metrics-labels=${info_metrics_labels}"
+        - "--gauge-metrics=${gauge_metrics}"
 __END__
 
-"${kubectl[@]}" apply -f /dev/stdin <<__END__
+"${kubectl[@]}" apply --server-side -f /dev/stdin <<__END__
 apiVersion: v1
 kind: Service
 metadata:
@@ -77,11 +78,12 @@ spec:
     name: metrics
 __END__
 
-"${kubectl[@]}" apply -f /dev/stdin <<__END__
+"${kubectl[@]}" apply --server-side -f /dev/stdin <<__END__
 kind: PodMonitor
 apiVersion: monitoring.coreos.com/v1
 metadata:
   name: promtorture
+  namespace: monitoring
   labels:
     app: promtorture
 spec:

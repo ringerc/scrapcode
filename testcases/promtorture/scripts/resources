@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Resource use dump for prom
+
+set -e -u -o pipefail
+source scripts/config
+
+"${kubectl_bin}" resource-capacity "${kubectl_context[@]}" -n monitoring --pods --pod-labels app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus

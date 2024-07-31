@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e -u -o pipefail
+
+source scripts/config
+
+exec "${kubectl_bin}" stern "${kubectl_context[@]}" -n monitoring -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus "$@"

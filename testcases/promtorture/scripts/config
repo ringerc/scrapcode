@@ -1,0 +1,5 @@
+#!/bin/bash
+kind_cluster_name=promtorture
+kubectl_context=("--context" "kind-${kind_cluster_name}")
+kubectl_bin="kubectl"
+kubectl=("${kubectl_bin}" "${kubectl_context[@]}")
