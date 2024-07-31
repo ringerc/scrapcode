@@ -27,7 +27,13 @@ prom_pod="$("${kubectl[@]}" get pod -n monitoring -l app.kubernetes.io/instance=
 #     http_proxy=socks5://localhost:1081 ./promtool debug metrics http://prometheus-k8s.monitoring.svc.cluster.local:9090
 #     tar xOf debug.tar.gz metrics.txt
 #
+#
+# To snapshot metrics then get disk usage of the snapshot:
+#
+#     snap_name=$(./scripts/promapi -m snapshot | tee /dev/stderr | yq .data.name)
+#     # that'll print the snaphot name, so
+#     ./scripts/promcmd du -ms /prometheus/snapshots/${snap_name}
+#
 
 
-
-exec "${kubectl[@]}" exec -it -n monitoring "${prom_pod}" -- promtool "$@"
+exec "${kubectl[@]}" exec -it -n monitoring "${prom_pod}" -- "$@"

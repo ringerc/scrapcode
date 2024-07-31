@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# This script requires a socks5 proxy
+# from scripts/socks5 to be running first
+#
+
+set -e -u -o pipefail
+
+function usage() {
+  echo "Usage: meta -k target|targetmeta|tsdb|walreplay|config|flags|runtime|snapshot"
+  exit 1
+}
+
+# what to fetch
+meta=
+while getopts "m:h" opt; do
+  case ${opt} in
+    m)
+      meta=$OPTARG
+      ;;
+    \?|h|: )
+      usage
+      ;;
+  esac
+done
+
+if [ -z "${meta}" ]; then
+  usage
+fi
+
+function apiQuery() {
+  local endpoint
+  endpoint=$1
+  shift
+  curl -sL --socks5-hostname localhost:1081 "${@}" 'http://prometheus-k8s.monitoring.svc.cluster.local:9090/'"${endpoint}"  | yq --prettyPrint .
+}
+
+case "${meta}" in
+  target)
+    apiQuery "/api/v1/targets" -G --data 'scrapePool=podMonitor/monitoring/promtorture/0'
+    ;;
+  targetmeta)
+    apiQuery "/api/v1/targets/metadata" -G --data 'match_target={job="monitoring/promtorture"}'
+    ;;
+  tsdb)
+    apiQuery "/api/v1/status/tsdb" -G
+    ;;
+  walreplay)
+    apiQuery "/api/v1/status/walreplay" -G
+    ;;
+  config)
+    apiQuery "/api/v1/status/config" -G
+    ;;
+  flags)
+    apiQuery "/api/v1/status/flags" -G
+    ;;
+  runtime)
+    apiQuery "/api/v1/status/runtimeinfo" -G
+    ;;
+  snapshot)
+    apiQuery "/api/v1/admin/tsdb/snapshot" -X POST --data 'skip_head=false'
+    ;;
+  *)
+    echo 1>&2 "Unrecognised option: ${meta}"
+    usage
+    ;;
+esac
+
+# vim: set ft=sh et ai sw=2 ts=2 sts=2:

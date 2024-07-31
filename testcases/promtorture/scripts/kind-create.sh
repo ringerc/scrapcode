@@ -24,7 +24,14 @@ yq '.|select(.kind == "CustomResourceDefinition")' .cache/kube-prometheus.yaml |
 # ServiceMonitors are omitted deliberately because for this test we only want to see
 # metrics for explicitly named targets.
 #
-yq '.|select((.kind != "CustomResourceDefinition") and (.kind != "ServiceMonitor"))' |  "${kubectl[@]}" apply --server-side -f -
+yq '
+  .
+  |select(
+    (.kind != "CustomResourceDefinition")
+    and (.kind != "ServiceMonitor")
+    and (.kind != "AlertManager")
+    and (.kind != "PodMonitor")
+  )' |  "${kubectl[@]}" apply --server-side -f -
 "${kubectl[@]}" apply --server-side -f .cache/kube-prometheus.yaml
 
 # Scale down to 1 replica and don't deploy alertmanager
@@ -35,7 +42,11 @@ spec:
   alerting:
     alertmanagers: []
   replicas: 1
-  containers: # this is strategically merged by the operator with the default spec, see kubectl explain prometheus.spec.containers
+  # args to pass to the prometheus container, see kubectl explain prometheus.spec.additionalArgs
+  additionalArgs:
+  - name: web.enable-admin-api
+  # this is strategically merged by the operator with the default spec, see kubectl explain prometheus.spec.containers
+  containers:
     - name: config-reloader
       securityContext:
         runAsNonRoot: true

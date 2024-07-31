@@ -8,12 +8,15 @@ set -e -u -o pipefail
 
 source scripts/config
 
-if ! "${kubectl[@]}" delete pod -n monitoring -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus --grace-period=5 --timeout=10s
+delete_timeout=30s
+ready_timeout=60s
+
+if ! "${kubectl[@]}" delete pod -n monitoring -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus --grace-period=5 --timeout=${delete_timeout}
 then
   "${kubectl[@]}" delete pod -n monitoring -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus --force
 fi
 sleep 1
 echo 1>&2 "waiting for statefulset"
-"${kubectl[@]}" wait --v 1 -n monitoring statefulset/prometheus-k8s --for=jsonpath='{.status.availableReplicas}=1' --timeout=30s
+"${kubectl[@]}" wait --v 1 -n monitoring statefulset/prometheus-k8s --for=jsonpath='{.status.availableReplicas}=1' --timeout=${ready_timeout}
 echo 1>&2 "waiting for pod ready"
-"${kubectl[@]}" wait --v 1 -n monitoring --for=condition=ready --timeout=300s pod -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus --timeout=30s
+"${kubectl[@]}" wait --v 1 -n monitoring --for=condition=ready --timeout=300s pod -l app.kubernetes.io/instance=k8s,app.kubernetes.io/name=prometheus --timeout=${ready_timeout}
