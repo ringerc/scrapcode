@@ -73,9 +73,10 @@ func (t target) infoLabels(m metrics) []string {
 }
 
 type metrics struct {
-	cfg          Config
-	infoMetric   *prometheus.GaugeVec
-	gaugeMetrics []*prometheus.GaugeVec
+	cfg           Config
+	tortureMetric *prometheus.GaugeVec
+	infoMetric    *prometheus.GaugeVec
+	gaugeMetrics  []*prometheus.GaugeVec
 }
 
 func CreateRegistry(cfg Config) *prometheus.Registry {
@@ -108,9 +109,13 @@ func CreateRegistry(cfg Config) *prometheus.Registry {
 	metrics := metrics{
 		cfg: cfg,
 		infoMetric: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "info_metric",
-			Help: "Info metric",
+			Name: "target_info",
+			Help: "info metric for each target, with wider label set",
 		}, infoMetricLabelNames),
+		tortureMetric: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "promtorture_info",
+			Help: "Info on promtorture's current configuration and arguments",
+		}, []string{"targets", "info_labels", "gauge_metrics"}),
 		gaugeMetrics: make([]*prometheus.GaugeVec, cfg.GaugeMetrics),
 	}
 	for i := 0; i < cfg.GaugeMetrics; i++ {
@@ -119,6 +124,11 @@ func CreateRegistry(cfg Config) *prometheus.Registry {
 			Help: fmt.Sprintf("Gauge metric %d", i),
 		}, targetLabelNames)
 	}
+	metrics.tortureMetric.WithLabelValues(
+		fmt.Sprintf("%v", cfg.Targets),
+		fmt.Sprintf("%d", cfg.InfoMetricsLabels),
+		fmt.Sprintf("%d", cfg.GaugeMetrics),
+	).Set(1)
 
 	targets := make([]target, totalTargets)
 	for targetNumber := 0; targetNumber < totalTargets; targetNumber++ {
@@ -131,6 +141,7 @@ func CreateRegistry(cfg Config) *prometheus.Registry {
 		t.setValues(metrics, float64(t.targetNumber))
 	}
 
+	reg.MustRegister(metrics.tortureMetric)
 	if cfg.InfoMetricsLabels > 0 {
 		reg.MustRegister(metrics.infoMetric)
 	}
