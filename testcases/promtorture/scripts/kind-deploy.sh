@@ -1,9 +1,11 @@
 #!/bin/bash
 #
-set -e -u -o pipefail -x
+set -e -u -o pipefail
 
 source scripts/config
 
+# this should just take promtorture args directly
+# as an array of ... to send it into the Deployment
 targets=1
 info_metrics_labels=0
 gauge_metrics=1
@@ -97,6 +99,7 @@ spec:
   - port: metrics
 __END__
 
+"${kubectl[@]}" delete pod -l app=promtorture
 "${kubectl[@]}" wait --for=condition=available --timeout=60s deployment/promtorture
 
 echo 1>&2 "Promtorture is running on service 'promtorture' on port 'metrics' (TCP/8080)"

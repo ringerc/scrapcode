@@ -11,7 +11,7 @@ Make prometheus feel really bad. For science.
 sleep 10
 
 ./scripts/resources
-./scripts/promapi -m tsdb | yq .data.headStats
+./scripts/promapi -m tsdb-head
 ./scripts/promapi -m tsdb -l 100
 
 ```
@@ -44,3 +44,37 @@ go build
 - [`get-promtool`](./scripts/get-promtool): download the `promtool` binary from a prometheus release,
   for if you want to run `promtool` over SOCKS5 or port-forward rather than in the prom container, e.g
   for `promtool debug` dump generation.
+
+## Handy tips
+
+### Use `k8s-insider` to talk to the services
+
+See https://github.com/TrueGoric/k8s-insider
+
+Assuming Ubuntu 24.04:
+
+```
+sudo apt install wireguard
+kubectl insider install --pod-cidr 10.244.0.18/16
+kubectl insider create network
+kubectl insider connect
+resolvectl domain insider0 cluster.local
+```
+
+This will give you the ability to directly query kube services like `prometheus-k8s.monitoring.svc.cluster.local` or visit http://grafana.monitoring.svc.cluster.local:3000 directly in a browser.
+
+### Grafana dashboard
+
+See [`resources`](./resources/grafana-dashboards/promtorture.json).
+
+There's no script to auto-load it yet, import it yourself.
+
+### Use `promtool` to run promql, inspect labels etc
+
+e.g.
+
+```
+scripts/promcmd promtool query instant http://localhost:9090 'up{job="monitoring/promtorture"}'
+```
+
+Other tips in `scripts/promcmd` comments.

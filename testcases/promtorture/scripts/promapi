@@ -7,7 +7,7 @@
 set -e -u -o pipefail
 
 function usage() {
-  echo "Usage: meta -k target|targetmeta|tsdb|walreplay|config|flags|runtime|snapshot"
+  echo "Usage: meta -k target|targetmeta|tsdb|tsdb-head|walreplay|config|flags|runtime|snapshot"
   echo
   echo "For tsdb:"
   echo "  -l nnnn : number of entries in the top-n lists to return"
@@ -55,6 +55,9 @@ case "${meta}" in
     else
       apiQuery "/api/v1/status/tsdb" -G
     fi
+    ;;
+  tsdb-head)
+    apiQuery "/api/v1/status/tsdb" -G | yq .data.headStats
     ;;
   walreplay)
     apiQuery "/api/v1/status/walreplay" -G

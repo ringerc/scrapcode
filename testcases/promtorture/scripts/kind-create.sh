@@ -54,7 +54,14 @@ spec:
   - name: enable-feature
     value: auto-gomemlimit
   - name: auto-gomemlimit.ratio
-    value: "0.9"
+    # an unusually low GOMEMLIMIT is set here deliberately. We're using
+    # Prometheus to monitor Prometheus and don't really want to have to have 2
+    # separate instances, so one can be allowed to OOM. Plus we get better data
+    # when we can still scrape it even if it's over-limits. So we're going to
+    # set a really aggressive GOMEMLIMIT that makes it GC hard when it exceeds
+    # 25% of its container limit, giving it tons of headroom to balloon into
+    # without OOMing.
+    value: "0.25"
   # https://prometheus.io/docs/prometheus/latest/feature_flags/#auto-gomaxprocs
   - name: enable-feature
     value: auto-gomaxprocs
@@ -86,10 +93,11 @@ spec:
   resources:
     limits:
       cpu: 1000m
-      memory: 500Mi
+      # See the GOMEMLIMIT
+      memory: 2000Mi
     requests:
-      cpu: 200m
-      memory: 500Mi
+      cpu: 500m
+      memory: 2000Mi
 __END__
 
 
