@@ -28,6 +28,8 @@ go build
 ## scripts
 
 - [`kind-create.sh`](./scripts/kind-create.sh): Create a kind cluster and deply kube-prometheus
+- [`clean-collect-promtorture`](./scripts/clean-collect-promtorture): Delete prometheus data, deploy promtorture with specified args, and collect various prom stats and metrics using `script/grab-metrics.sh`
+- [`scripts/grab-metrics.sh`](./scripts/grab-metrics.sh): Grab various data about prometheus's memory use, storage, the current promtorture workload scrapes, etc. Collects a tsdb snapshot.
 - [`kind-deploy.sh`](./scripts/kind-deploy.sh): Deploy promtorture, takes CLI options for target and label counts
 - [`promapi`](./scripts/promapi): A simple prometheus API client, see
   `./scripts/promapi -h`. Can get TSDB info, make snapshots, etc.

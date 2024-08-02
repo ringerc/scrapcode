@@ -1,13 +1,16 @@
 #!/bin/bash
 #
-# This script requires a socks5 proxy
-# from scripts/socks5 to be running first
+# This script requires that it be able to resolve the kube endpoints
+# directly. Either use
+#     http_proxy=socks5://localhost:1080 ./promapi [...]
+# with the proxy in ./scripts/socks5, or use a wireshark link like
+# that provided by `kubectl insider` to get direct DNS and connectivity.
 #
 
 set -e -u -o pipefail
 
 function usage() {
-  echo "Usage: meta -k target|targetmeta|tsdb|tsdb-head|walreplay|config|flags|runtime|snapshot"
+  echo "Usage: promapi -m target|targetmeta|tsdb|tsdb-head|walreplay|config|flags|runtime|snapshot [-l nnnn]"
   echo
   echo "For tsdb:"
   echo "  -l nnnn : number of entries in the top-n lists to return"
@@ -39,7 +42,7 @@ function apiQuery() {
   local endpoint
   endpoint=$1
   shift
-  curl -sL --socks5-hostname localhost:1081 "${@}" 'http://prometheus-k8s.monitoring.svc.cluster.local:9090/'"${endpoint}"  | yq --prettyPrint .
+  curl -sL "${@}" 'http://prometheus-k8s.monitoring.svc.cluster.local:9090/'"${endpoint}"  | yq --prettyPrint .
 }
 
 case "${meta}" in
