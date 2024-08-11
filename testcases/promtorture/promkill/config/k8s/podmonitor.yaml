@@ -1,0 +1,10 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: promkill
+spec:
+  selector:
+    matchLabels:
+      app: promkill
+  podMetricsEndpoints:
+  - port: metrics

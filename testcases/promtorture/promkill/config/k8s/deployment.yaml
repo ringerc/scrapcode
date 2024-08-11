@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promkill
+  namespace: default
+  labels:
+    app: promkill
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: promkill
+  template:
+    metadata:
+      labels:
+        app: promkill
+    spec:
+      containers:
+      - name: promkill
+        image: promkill:latest
+        ports:
+          - name: metrics
+            containerPort: 8080
+        imagePullPolicy: Never
