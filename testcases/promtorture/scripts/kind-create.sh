@@ -24,11 +24,14 @@ yq '
   |select(
     (.kind != "CustomResourceDefinition")
     and (.kind != "AlertManager")
-   )' |  "${kubectl[@]}" apply --server-side -f -
-"${kubectl[@]}" apply --server-side -f .cache/kube-prometheus.yaml
+   )' .cache/kube-prometheus.yaml |\
+"${kubectl[@]}" apply --server-side --force-conflicts -f -
 
-# Scale down to 1 replica and don't deploy alertmanager
-"${kubectl[@]}" patch -n monitoring prometheus k8s --type merge --patch-file /dev/stdin <<'__END__'
+# Scale down to 1 replica and don't deploy alertmanager, add resources,
+# enable some feature flags, and set a low GOMEMLIMIT
+"${kubectl[@]}" patch -n monitoring prometheus/k8s \
+    --type merge \
+    --patch-file /dev/stdin <<'__END__'
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 spec:
