@@ -3,6 +3,10 @@
 # Build a promtorture and deploy it. All arguments are passed verbatim to the
 # promtorture binary in the kube deployment.
 #
+# See:
+#     go build
+#     ./promtorture --help
+#
 set -e -u -o pipefail
 
 source scripts/config

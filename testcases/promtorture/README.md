@@ -5,6 +5,7 @@ Make prometheus feel really bad. For science.
 ## prerequisites
 
 * [`go`](https://golang.org/)
+* [`docker-ce`](https://docs.docker.com/engine/install/)
 * [`kind`](https://kind.sigs.k8s.io/)
 * [`kapp`](https://get-kapp.io/)
 * [`kustomize`](https://kustomize.io/)
