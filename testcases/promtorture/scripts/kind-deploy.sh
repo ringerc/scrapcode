@@ -10,7 +10,7 @@ source scripts/config
 echo 1>&2 "Deploying promtorture with arguments: $@"
 
 tmpdir="$(mktemp -d -t -p . promtorture-tmp-XXXXXX)"
-#trap 'rm -rf "$tmpdir"' EXIT
+trap 'rm -rf "$tmpdir"' EXIT
 
 docker buildx build -t promtorture .
 
