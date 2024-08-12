@@ -2,6 +2,16 @@
 
 Make prometheus feel really bad. For science.
 
+## prerequisites
+
+* [`go`](https://golang.org/)
+* [`kind`](https://kind.sigs.k8s.io/)
+* [`kapp`](https://get-kapp.io/)
+* [`kustomize`](https://kustomize.io/)
+* [`kubectl`](https://kubernetes.io/docs/tasks/tools/)
+* [`jq`](https://stedolan.github.io/jq/)
+* [`yq`](https://mikefarah.gitbook.io/yq/)
+
 ## quickstart
 
 ```

@@ -1,0 +1,86 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  annotations:
+    config.kubernetes.io/local-config: "true"
+resources:
+  # populated by scripts/kind-create.sh
+  - ../../.cache/kube-prometheus
+patches:
+  - target:
+      kind: Prometheus
+      name: k8s
+      namespace: monitoring
+    patch: |-
+      apiVersion: monitoring.coreos.com/v1
+      kind: Prometheus
+      metadata:
+        name: k8s
+        namespace: monitoring
+      spec:
+        alerting:
+          alertmanagers: []
+        replicas: 1
+        # args to pass to the prometheus container, see kubectl explain prometheus.spec.additionalArgs
+        additionalArgs:
+        - name: web.enable-admin-api
+        - name: web.enable-remote-write-receiver
+        # https://prometheus.io/docs/prometheus/latest/feature_flags/#memory-snapshot-on-shutdown
+        # pointless when we aren't using a PV, but should move to it
+        # for BA anyway
+        - name: enable-feature
+          value: memory-snapshot-on-shutdown
+        # https://prometheus.io/docs/prometheus/latest/feature_flags/#extra-scrape-metrics
+        - name: enable-feature
+          value: extra-scrape-metrics
+        # https://prometheus.io/docs/prometheus/latest/feature_flags/#per-step-stats
+        - name: enable-feature
+          value: promql-per-step-stats
+        # https://prometheus.io/docs/prometheus/latest/feature_flags/#auto-gomemlimit
+        - name: enable-feature
+          value: auto-gomemlimit
+        - name: auto-gomemlimit.ratio
+          # an unusually low GOMEMLIMIT is set here deliberately. We're using
+          # Prometheus to monitor Prometheus and don't really want to have to have 2
+          # separate instances, so one can be allowed to OOM. Plus we get better data
+          # when we can still scrape it even if it's over-limits. So we're going to
+          # set a really aggressive GOMEMLIMIT that makes it GC hard when it exceeds
+          # 25% of its container limit, giving it tons of headroom to balloon into
+          # without OOMing.
+          value: "0.25"
+        # https://prometheus.io/docs/prometheus/latest/feature_flags/#auto-gomaxprocs
+        - name: enable-feature
+          value: auto-gomaxprocs
+        # https://prometheus.io/docs/prometheus/latest/feature_flags/#created-timestamps-zero-injection
+        - name: enable-feature
+          value: created-timestamp-zero-ingestion
+        # this is strategically merged by the operator with the default spec, see kubectl explain prometheus.spec.containers
+        containers:
+          - name: config-reloader
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
+              allowPrivilegeEscalation: false
+              privileged: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+          - name: prometheus
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
+              allowPrivilegeEscalation: false
+              privileged: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+        resources:
+          limits:
+            cpu: 1000m
+            # See the GOMEMLIMIT
+            memory: 2000Mi
+          requests:
+            cpu: 500m
+            memory: 2000Mi

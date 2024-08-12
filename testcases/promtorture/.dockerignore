@@ -1,6 +1,13 @@
 scripts
+resources
 promtorture
 LICENSE
+README.md
 Dockerfile
 .cache
 promtool
+kubernetes/
+notes.md
+promtorture-tmp-*
+promtorture-metrics-*
+.gitignore

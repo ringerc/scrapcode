@@ -11,6 +11,7 @@ set -e -u -o pipefail -x
 source scripts/config
 
 tmpdir="promtorture-metrics-$(date -Isec)"
+mkdir "$tmpdir"
 
 echo 1>&2 "Dumping metrics to $tmpdir"
 
@@ -25,7 +26,9 @@ socks5_pid=$!
 # Becuse socks5-proxy is written in bash this kills the script but not the
 # underlying kubectl port-forward process. We should fix this in the
 # socks5-proxy script. For now we'll find the child proc and kill it.
-trap 'kill $(pgrep -P ${socks5_pid}); kill ${socks5_pid}' EXIT
+# It should also wait with timeout for the wrapper to exit, but bash's wait
+# lacks a timeout option...
+trap 'kill $(pgrep -P ${socks5_pid}); sleep 10; kill ${socks5_pid}' EXIT
 export http_proxy="socks5://${socks5_host}:${socks5_port}"
 while : ; do
   # wait for proxy to be ready by checking prometheus is reachable

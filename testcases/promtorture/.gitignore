@@ -3,3 +3,4 @@ promtool
 .cache
 notes.md
 promtorture-metrics-*
+promtorture-tmp-*
