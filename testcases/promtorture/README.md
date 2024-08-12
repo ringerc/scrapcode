@@ -102,3 +102,14 @@ scripts/promcmd promtool query instant http://localhost:9090 'up{job="monitoring
 ```
 
 Other tips in `scripts/promcmd` comments.
+
+# Notes
+
+The apparent inability to force Prometheus to eagerly checkpoint its HEAD or to
+force a compaction is a bit of a pain; we can't easily analyse behaviour with
+querying data back from TSDB without waiting a couple of hours. We can force a
+snapshot, but that doesn't actually flush the HEAD.
+
+# See also
+
+* [prometheus docs on storage](https://github.com/juliusv/prometheus-docs/blob/master/content/docs/operating/storage.md)

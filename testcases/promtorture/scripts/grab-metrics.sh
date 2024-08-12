@@ -12,8 +12,8 @@ set -e -u -o pipefail -x
 
 source scripts/config
 
-tmpdir="promtorture-metrics-$(date -Isec)"
-mkdir "$tmpdir"
+tmpdir="metrics/promtorture-metrics-$(date -Isec)"
+mkdir -p "$tmpdir"
 
 echo 1>&2 "Dumping metrics to $tmpdir"
 

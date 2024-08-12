@@ -11,3 +11,4 @@ notes.md
 promtorture-tmp-*
 promtorture-metrics-*
 .gitignore
+metrics/
