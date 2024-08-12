@@ -70,11 +70,13 @@ Assuming Ubuntu 24.04:
 
 ```
 sudo apt install wireguard
-kubectl insider install --pod-cidr 10.244.0.18/16
+kubectl insider install --pod-cidr 10.244.0.0/16
 kubectl insider create network
 kubectl insider connect
 resolvectl domain insider0 cluster.local
 ```
+
+[kind docs on pod subnet addressing](https://kind.sigs.k8s.io/docs/user/configuration/#pod-subnet)
 
 This will give you the ability to directly query kube services like `prometheus-k8s.monitoring.svc.cluster.local` or visit http://grafana.monitoring.svc.cluster.local:3000 directly in a browser.
 
