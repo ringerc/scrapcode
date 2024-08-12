@@ -5,6 +5,8 @@
 #
 # This should be in a real language not bash, but meh.
 #
+# Set env-var TSDB_DUMP=true to save a full TSDB dump locally if desired.
+#
 
 set -e -u -o pipefail -x
 
@@ -19,6 +21,13 @@ echo 1>&2 "Dumping metrics to $tmpdir"
 # convenient way to record the promtorture invocation
 echo "$@" > "$tmpdir/args"
 
+promtorture_pod="$("${kubectl[@]}" get pod -n default -l app=promtorture -o jsonpath='{.items[0].metadata.name}')"
+
+mkdir -p "${tmpdir}/manifests"
+"${kubectl[@]}" get -n default deployment/promtorture -o yaml > "$tmpdir/manifests/promtorture-deployment.yaml"
+"${kubectl[@]}" get -n default pod/"${promtorture_pod}" -o yaml > "$tmpdir/manifests/promtorture-pod.yaml"
+"${kubectl[@]}" get -n monitoring podmonitor/promtorture -o yaml > "$tmpdir/manifests/promtorture-podmonitor.yaml"
+
 socks5_port=31121
 socks5_host=localhost
 kubectl socks5-proxy -N socks5-proxy -p 31121 &
@@ -28,17 +37,22 @@ socks5_pid=$!
 # socks5-proxy script. For now we'll find the child proc and kill it.
 # It should also wait with timeout for the wrapper to exit, but bash's wait
 # lacks a timeout option...
-trap 'kill $(pgrep -P ${socks5_pid}); sleep 10; kill ${socks5_pid}' EXIT
+trap 'kill $(pgrep -P ${socks5_pid}); sleep 10; kill ${socks5_pid} >&/dev/null' EXIT
 export http_proxy="socks5://${socks5_host}:${socks5_port}"
 while : ; do
   # wait for proxy to be ready by checking prometheus is reachable
-  if curl -sL http://prometheus-k8s.monitoring.svc.cluster.local:9090 > /dev/null; then
+  if curl -sSL http://prometheus-k8s.monitoring.svc.cluster.local:9090 > /dev/null; then
     break
   fi
   sleep 1
 done
 
-promtorture_pod="$("${kubectl[@]}" get pod -n default -l app=promtorture -o jsonpath='{.items[0].metadata.name}')"
+# Also grab the args from Prometheus, so we see what's really running.
+# This will only be reliable if there's only one recent instance of
+# promtorture running.
+curl -sSL -G --data-urlencode 'query=scrape_duration_seconds{container="promtorture",job="monitoring/promtorture",arguments=~".+"}' \
+  "http://prometheus-k8s.monitoring.svc.cluster.local:9090/api/v1/query" \
+| yq --prettyPrint '.data.result[0].metric.arguments' > "$tmpdir/promtorture-args"
 
 # metrics queries
 mkdir "$tmpdir/metrics"
@@ -50,7 +64,7 @@ function instant_query_promtool() {
 
 function instant_query_curl() {
   echo '# query: ' "$1" > "$tmpdir/$2"
-  curl -sL -G --data-urlencode "query=$1" "http://prometheus-k8s.monitoring.svc.cluster.local:9090/api/v1/query" | yq --prettyPrint .data >> "$tmpdir/$2"
+  curl -sSL -G --data-urlencode "query=$1" "http://prometheus-k8s.monitoring.svc.cluster.local:9090/api/v1/query" | yq --prettyPrint .data >> "$tmpdir/$2"
 }
 
 function instant_query() {
@@ -112,10 +126,19 @@ snap_name="$(./scripts/promapi -m snapshot | yq .data.name)"
 echo 1>&2 "Created tsdb snapshot ${snap_name}"
 ./scripts/promcmd du -ks "/prometheus/snapshots/${snap_name}" > "$tmpdir/tsdb-snapshot/size-kb"
 mkdir "$tmpdir/tsdb-snapshot/raw"
-"${kubectl[@]}" cp "monitoring/prometheus-k8s-0:/prometheus/snapshots/${snap_name}/" "${tmpdir}/tsdb-snapshot/raw/"
+# work around https://github.com/kubernetes/kubernetes/pull/78622
+# and https://github.com/kubernetes/kubernetes/issues/77310 by cd'ing into the dir
+# containing colons in the pathname, avoiding the error
+#     error: one of src or dest must be a local file specification
+# when kubectl cp misinterprets the path as a remote spec.
+(cd "${tmpdir}" && "${kubectl[@]}" cp "monitoring/prometheus-k8s-0:/prometheus/snapshots/${snap_name}/" "tsdb-snapshot/raw/")
+
+# promtool has some tsdb analytics that should tell us a lot
+./scripts/promcmd promtool tsdb analyze "/prometheus/snapshots/${snap_name}" --limit=100 > "$tmpdir/tsdb-snapshot/analyze-all"
+./scripts/promcmd promtool tsdb analyze "/prometheus/snapshots/${snap_name}" --limit=100 --match='{job="monitoring/promtorture"}' > "$tmpdir/tsdb-snapshot/analyze-job-promtorture"
 
 # metrics dump
-if [[ "${TSDB_DUMP}" == "true" ]]; then
+if [[ "${TSDB_DUMP:-}" == "true" ]]; then
   # we're dumping the tsdb snapshot here so we don't have to deal with running promtool's own
   # dump and grabbing the file from the container FS.
   #
@@ -129,5 +152,7 @@ if [[ "${TSDB_DUMP}" == "true" ]]; then
   fi
   ./scripts/promcmd promtool tsdb dump --sandbox-dir-root="/prometheus/replay" "/prometheus/snapshots/${snap_name}" | ${compress} -c > "$tmpdir/tsdb-snapshot/tsdb-dump"."${compress}"
 fi
+
+echo 1>&2 "Results written to ${tmpdir}"
 
 # vim: set ts=2 sw=2 et ai :

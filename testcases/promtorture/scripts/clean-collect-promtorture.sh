@@ -3,6 +3,10 @@
 # Deploy a promtorture with the supplied arguments, let it run, and grab some
 # prometheus metrics + a tsdb snapshot and a metrics dump from it.
 #
+# Args are passed through to promtorture directly. See:
+#    go build
+#    ./promtorture --help
+# for available options.
 
 set -e -u -o pipefail
 
@@ -19,6 +23,7 @@ fi
 ./scripts/kind-deploy.sh "$@"
 
 # Wait for some scrapes
+# (should really hit the prom api for this)
 sleep 60
 
 # Grab metrics, snapshot etc

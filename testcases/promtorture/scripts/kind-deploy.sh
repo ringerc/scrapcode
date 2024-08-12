@@ -43,20 +43,32 @@ __END__
 
 # Templating the args in is a bit ugly
 ARGS_JSON="$(jq -c --null-input '$ARGS.positional' --args -- "$@")"
-ARGS_JSON="${ARGS_JSON}" yq --prettyPrint '.spec.template.spec.containers[0].args=env(ARGS_JSON)' > "${tmpdir}/patch-promtorture-deployment.yaml" <<__END__
+ARGS_JSON="${ARGS_JSON}" ARGS="$*" yq --prettyPrint '
+  .spec.template.spec.containers[0].args=env(ARGS_JSON)
+  | .metadata.annotations["promtorture/arguments"]=strenv(ARGS)
+  | .spec.template.metadata.annotations["promtorture/arguments"]=strenv(ARGS)
+  ' \
+  > "${tmpdir}/patch-promtorture-deployment.yaml" \
+  <<__END__
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: promtorture
   namespace: default
+  annotations:
+    promtorture/arguments: ""
 spec:
   template:
     spec:
+      metadata:
+        annotations:
+          promtorture/arguments: ""
       containers:
         - name: promtorture
 __END__
 
 kustomize build "${tmpdir}" \
+  | tee /dev/stderr \
   | kapp deploy -a promtorture -f - -y \
       --default-label-scoping-rules=false \
       --apply-default-update-strategy=fallback-on-replace \
