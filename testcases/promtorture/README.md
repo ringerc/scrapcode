@@ -61,6 +61,8 @@ go build
 
 ### Use `k8s-insider` to talk to the services
 
+(No OSX support at time of writing)
+
 See https://github.com/TrueGoric/k8s-insider
 
 Assuming Ubuntu 24.04:
@@ -74,6 +76,15 @@ resolvectl domain insider0 cluster.local
 ```
 
 This will give you the ability to directly query kube services like `prometheus-k8s.monitoring.svc.cluster.local` or visit http://grafana.monitoring.svc.cluster.local:3000 directly in a browser.
+
+### Use `socks5` to talk to the services
+
+```
+./scripts/socks5
+```
+
+Then set your `http_proxy` to `socks5://localhost:1081` and you can use `curl`
+etc to talk to the services.
 
 ### Grafana dashboard
 

@@ -19,6 +19,12 @@ if [ -f .cache/kube-prometheus/kustomization.yaml ]; then
 fi
 (cd .cache/kube-prometheus && kustomize create && kustomize edit add resource kube-prometheus.yaml)
 
-kustomize build kubernetes/kube-prometheus | kapp deploy -a kube-prometheus -f - -y
+# Deploy it, and stop kapp adding its app labels to work around
+# https://github.com/carvel-dev/kapp/issues/381
+kustomize build kubernetes/kube-prometheus \
+  | kapp deploy -a kube-prometheus -y \
+      --default-label-scoping-rules=false \
+      --apply-default-update-strategy=fallback-on-replace \
+      -f -
 
 # vim: et ts=2 sw=2 sts=2 ft=bash ai

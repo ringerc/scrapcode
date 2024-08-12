@@ -42,7 +42,7 @@ function apiQuery() {
   local endpoint
   endpoint=$1
   shift
-  curl -sL "${@}" 'http://prometheus-k8s.monitoring.svc.cluster.local:9090/'"${endpoint}"  | yq --prettyPrint .
+  curl -sSLf "${@}" 'http://prometheus-k8s.monitoring.svc.cluster.local:9090/'"${endpoint}"  | yq --prettyPrint .
 }
 
 case "${meta}" in

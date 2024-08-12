@@ -5,5 +5,7 @@ set -e -u -o pipefail -x
 source scripts/config
 
 echo "use \"curl --socks5-hostname localhost:1081\" to make requests"
+echo "or set:"
+echo "    http_proxy=socks5://localhost:1081 https_proxy=socks5://localhost:1081"
 
 exec kubectl socks5-proxy -p 1081

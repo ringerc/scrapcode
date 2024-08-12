@@ -53,7 +53,10 @@ spec:
 __END__
 
 kustomize build "${tmpdir}" \
-  | kapp deploy -a promtorture -f - -y --diff-changes
+  | kapp deploy -a promtorture -f - -y \
+      --default-label-scoping-rules=false \
+      --apply-default-update-strategy=fallback-on-replace \
+      --diff-changes
 
 echo 1>&2 "Promtorture is running on service 'promtorture' on port 'metrics' (TCP/8080)"
 
