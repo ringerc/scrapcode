@@ -34,7 +34,7 @@ bytea_to_uuid(PG_FUNCTION_ARGS)
 	pg_uuid_t  *uuid;
 
 	inbytea = PG_DETOAST_DATUM(PG_GETARG_BYTEA_P(0));
-	if (VARSIZE_ANY_EXHDR(inbytea) != 16)
+	if (VARSIZE_ANY_EXHDR(inbytea) != UUID_LEN)
 	{
 		ereport(ERROR,
 				(errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
@@ -51,8 +51,8 @@ bytea_to_uuid(PG_FUNCTION_ARGS)
 	 *
 	 * If you use this in production, I'll hurt you.
 	 */
-	uuid = (pg_uuid_t*)palloc(16);
-	memcpy(uuid, VARDATA_ANY(inbytea), 16);
+	uuid = (pg_uuid_t*)palloc(UUID_LEN);
+	memcpy(uuid, VARDATA_ANY(inbytea), UUID_LEN);
 	
 	PG_RETURN_UUID_P(uuid);
 }
