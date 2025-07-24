@@ -1,0 +1,27 @@
+tracepoint:raw_syscalls:sys_enter /pid==$1/ {
+	$t_start = elapsed;
+	@starttimes[args.id] = elapsed;
+}
+tracepoint:raw_syscalls:sys_exit /pid==$1/ {
+	$t_stop = elapsed;
+	if (@starttimes[args.id] != 0) {
+		@count[args.id] ++;
+		@times_ns[args.id] += ($t_stop - @starttimes[args.id]);
+		@starttimes[args.id] = 0;
+	} else {
+		@missed[args.id] ++
+	}
+}
+END {
+	clear(@starttimes);
+}
+/* requires bpftrace 0.22 */
+/*
+END {
+	print("ID\tTIME_S\tPERCALL_US\tCOUNT\n");
+	for ($kv : @count) {
+		let $percalltime = @times_ns[$kv.0] / @count[$kv.0];
+		printf("%d\t%f\t%f\t%d\n", $kv.0, @times_ns[$kv.0]/1000000, $percalltime, @counts[$kv.0]);
+	}
+}
+*/
