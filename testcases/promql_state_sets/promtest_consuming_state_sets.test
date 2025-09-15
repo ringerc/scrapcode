@@ -1,0 +1,392 @@
+# How to query a state-set that may or may not have zero-value placeholders
+# or reliable placeholders for inactive states, when the scrape interval is not
+# necessarily reliably known or highly temporally consistent.
+#
+# See https://github.com/prometheus/prometheus/issues/17129
+#
+# Also shows how to obtain both the series with the most recent sample across
+# a set of related series, returning all labels of interest for that series
+# (including those not grouped by) _and_ the value of the most recent sample.
+#
+# Shows a variety of approaches that do not work, and why.
+#
+# To run this test case, copy to promql/promqltest/testdata/promtest_consuming_state_sets.test
+# in a Prometheus source tree then run:
+#
+#    go test -v -run 'TestEvaluations/testdata/promtest_consuming_state_sets.test' --count=1 ./promql
+#
+# The only real caveats to the working general-purpose approach shown here are that:
+#
+#    * a single query cannot consume metrics that may mix both approaches
+#      to representing states if the sets without 0-markers might use
+#      the 0 value as a valid data payload; and
+#    * this is horribly verbose and probably inefficient
+
+
+# ----------------------------------
+# Setup
+# ----------------------------------
+
+# This one metric combines series with all these different cases:
+#
+#    rsrc="stalemarkers" only sends the active series. Series for inactive
+#    sttes are omitted entirely. It is presumed to be being scraped by
+#    something that detects when series ends and adds stale markers, like
+#    Prometheus pull scraping does when the prior scrape was for the same (job,
+#    instance) or when consuming from pushgateway. This series carries a
+#    data-value too, in this case the state (1=starting, 2=running,
+#    3=terminating) but emitters might (and unfortunately do) combine a varying
+#    label and a meaningful value in endless creative ways.
+#
+#    rsrc="activeonly" just sends the active state, and the old states
+#    are just abandoned series with no stale tombstones. They will be matched
+#    by instant vectors until they leave the lookback delta. It carries the
+#    state as an int-enumerated value too, like the stalemarkers series. This
+#    can occur when receiving an OTLP push series from a workload that doesn't
+#    track state and inject stale markers. Or after a restart of a monitored
+#    workload causes an identity change, since prom won't add stale markers
+#    when a whole (job,instance) goes away.
+#
+#    rsrc="missedscrapes" is like activeonly, but has some gaps where some scrapes
+#    are presumed to have failed, a push was late, or the series is queried on 1/2
+#    the scrape frequency the others are.
+#
+#    rsrc="continuous" is much the same, but never changes state over the
+#    course of the test. This is the only one that differs in the actual state
+#    timeline it represents.
+#
+#    rsrc="stateset" represents the same series of states as stalemarkers and
+#    activeonly do, but in a traditional prometheus-style state-set where each
+#    scrape has 0-value samples for the inactive states, and 1-value samples for
+#    the active state. Unlike the others, it cannot carry a meaningful value too,
+#    the only data it carries is in a label.
+#
+#
+# Be warned: there's an off-by-one (or confusing behavior anyway) in the
+# repetition operators. 1x1 doesn't mean 1, it means "1 1". And 1x2 doesn't
+# mean "1 1" it means "1 1 1". This can be very confusing. A bare "1" is
+# actually the same as 1x0.
+#
+load 1m
+	rsrc_state{rsrc="stalemarkers", state="terminating"}   _x50   3x10   _x5 stale
+	rsrc_state{rsrc="stalemarkers", state="running"}        _ _   2x48 stale
+	rsrc_state{rsrc="stalemarkers", state="starting"}       1 1  stale
+	rsrc_state{rsrc="activeonly", state="starting"}         1 1
+	rsrc_state{rsrc="activeonly", state="running"}          _ _   2x48  _x50
+	rsrc_state{rsrc="activeonly", state="terminating"}     _x50   3x10
+	rsrc_state{rsrc="missedscrapes", state="starting"}     1 _
+	rsrc_state{rsrc="missedscrapes", state="running"}      _ _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _ 2 _
+	rsrc_state{rsrc="missedscrapes", state="terminating"}  _x50 3 _ 3 _ 3 _ 3 _ 3 _
+	rsrc_state{rsrc="continuous", state="running"}         2x79
+	rsrc_state{rsrc="stateset", state="starting"}           1 1   0x97
+	rsrc_state{rsrc="stateset", state="running"}            0 0   1x47  049
+	rsrc_state{rsrc="stateset", state="terminating"}       0x49   1x9
+
+
+# ----------------------------------
+# Confirming expected data
+# ----------------------------------
+
+# To help visualise this across the state transition at 2m, given the confusing notation
+# of the above, here's a range query showing the vector visible to an instant query at
+# each timestamp. Note that the 5m default lookback duration is in effect here, so later
+# queries will see non-stale samples from series that have no newer samples.
+eval range from 5s to 4m5s step 1m rsrc_state{}
+    {__name__="rsrc_state", rsrc="activeonly", state="starting"}    1 1 1 1 1
+    {__name__="rsrc_state", rsrc="activeonly", state="running"}     _ _ 2 2 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"}     2 2 2 2 2
+    {__name__="rsrc_state", rsrc="stateset", state="starting"}      1 1 0 0 0
+    {__name__="rsrc_state", rsrc="stateset", state="running"}       0 0 1 1 1
+    {__name__="rsrc_state", rsrc="stateset", state="terminating"}   0 0 0 0 0
+    {__name__="rsrc_state", rsrc="missedscrapes", state="starting"} 1 1 1 1 1
+    {__name__="rsrc_state", rsrc="missedscrapes", state="running"}  _ _ 2 2 2
+    {__name__="rsrc_state", rsrc="stalemarkers", state="starting"}  1 1 _ _ _
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"}   _ _ 2 2 2
+
+# Now the same with last_over_time(...[1m]) to scope only to recently scraped
+# samples. Note the omitted samples for missedscrape.
+eval range from 5s to 4m5s step 1m last_over_time(rsrc_state{}[1m])
+    {__name__="rsrc_state", rsrc="activeonly", state="starting"}    1 1 _ _ _
+    {__name__="rsrc_state", rsrc="activeonly", state="running"}     _ _ 2 2 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"}     2 2 2 2 2
+    {__name__="rsrc_state", rsrc="stateset", state="starting"}      1 1 0 0 0
+    {__name__="rsrc_state", rsrc="stateset", state="running"}       0 0 1 1 1
+    {__name__="rsrc_state", rsrc="stateset", state="terminating"}   0 0 0 0 0
+    {__name__="rsrc_state", rsrc="missedscrapes", state="starting"} 1 _ _ _ _
+    {__name__="rsrc_state", rsrc="missedscrapes", state="running"}  _ _ 2 _ 2
+    {__name__="rsrc_state", rsrc="stalemarkers", state="starting"}  1 1 _ _ _
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"}   _ _ 2 2 2
+
+# ----------------------------------
+# Approaches that don't work for all cases
+# ----------------------------------
+#
+# These tests first show several approaches that do NOT work and why, for some
+# series rsrc_state{rsrc="identity", state="statevalue"} that may have any of
+# the above characteristics:
+#
+#    rsrc_state{} == 1
+#      Sees superposed values due to lookback delta unless staleness markers
+#      are 100 reliable even over workload restarts etc.
+#
+#    last_over_time(rsrc_state{}[$scrape_interval])
+#      Misses series completely if there was a missed scrape. Can also see
+#      superposed states if there is jitter causing two samples to fall within
+#      the expected interval.
+#
+#    last_over_time(rsrc_state{}[$scrape_interval*2])
+#      Sees superposed states within 1 scrape interval of a state change.
+#      Breaks series with working staleness markers, because last_over_time
+#      ignores staleness.
+#
+#    topk(1, timestamp(rsrc_state{})) by (rsrc)
+#      Will report random states for series that have 0-value placeholders
+#      for inactive states like traditional prometheus state-sets.
+#
+#    topk(1, timestamp(rsrc_state{} == 1)) by (rsrc)
+#      Will report random states for series that do NOT have 0-value placeholders
+#      when a state transition was within the lookback interval because the timestamps
+#      are discarded by the == 1 binop.
+
+
+# Since these series don't have 0-value placeholders, it is not possible to simply
+# filter for rsrc_state{} == 1 (or in this case rsrc_state > 0), since the old states are
+# visible in the lookback delta, so we see unwanted starting states for missedscrapes
+# and activeonly series. The stalemarkers series omits this due to the stale marker
+# tombstoning the starting series.
+#
+# Here, unwanted series are present for activeonly/starting and missedscrapes/starting.
+#
+eval instant at 4m5s rsrc_state{} > 0
+    {__name__="rsrc_state", rsrc="activeonly", state="starting"} 1
+    {__name__="rsrc_state", rsrc="activeonly", state="running"} 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"} 2
+    {__name__="rsrc_state", rsrc="stateset", state="running"} 1
+    {__name__="rsrc_state", rsrc="missedscrapes", state="starting"} 1
+    {__name__="rsrc_state", rsrc="missedscrapes", state="running"} 2
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"} 2
+
+# This can be worked around by using latest_over_time() to narrowly bracket the
+# scrape interval for the series of interest, thus skipping non-stale
+# timestamps still visible in the lookback delta. But this won't work if the
+# series doesn't have a perfectly reliable scrape interval, and any jitter
+# could still land two scrapes in one window, causing a many to many label
+# matching error in joins or the appearance of superposed states.
+#
+# Here we target the state transition at the 3m mark, and the 1m scrape
+# interval. This will seem OK, but is fragile as will be shown in subsequent
+# tests.
+#
+eval instant at 2m5s last_over_time(rsrc_state{}[1m]) > 0
+    {__name__="rsrc_state", rsrc="activeonly", state="running"} 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"} 2
+    {__name__="rsrc_state", rsrc="stateset", state="running"} 1
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"} 2
+    {__name__="rsrc_state", rsrc="missedscrapes", state="running"} 2
+
+# What happens next step, when missedscrapes has no sample? Its state vanishes.
+# So we have no way to reliably find "the most recent state known within some
+# reasonable period like the lookback delta" without also having problems
+# with jitter and missed scrapes.
+eval instant at 3m5s last_over_time(rsrc_state{}[1m]) > 0
+    {__name__="rsrc_state", rsrc="activeonly", state="running"} 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"} 2
+    {__name__="rsrc_state", rsrc="stateset", state="running"} 1
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"} 2
+
+# One might try to work around this with a longer interval to cover 2 scrapes in case
+# one is missed, and this seems to work...
+eval instant at 3m5s last_over_time(rsrc_state{}[2m]) > 0
+    {__name__="rsrc_state", rsrc="activeonly", state="running"} 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"} 2
+    {__name__="rsrc_state", rsrc="stateset", state="running"} 1
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"} 2
+    {__name__="rsrc_state", rsrc="missedscrapes", state="running"} 2
+
+# ... but will see a superposed state within 1 scrape of the state transition
+# again for the activeonly series that doesn't have missed scrapes. If the
+# most recent starting scrape was not missed, missedscrapes would appear here
+# too.
+#
+# Somewhat surprisingly, this ALSO shows a superposed state for
+# stalemarkers. An explict last_over_time() appears to ignore the series
+# stale marker, where an instant-vector selector does not. The docs are
+# remarkably silent on this point. This means that using last_over_time(...)
+# defeats the use of series that use staleness markers to tombstone ended
+# states.
+#
+# Thus, we cannot use last_over_time.
+#
+eval instant at 2m5s last_over_time(rsrc_state{}[2m]) > 0
+    {__name__="rsrc_state", rsrc="activeonly", state="starting"} 1
+    {__name__="rsrc_state", rsrc="activeonly", state="running"} 2
+    {__name__="rsrc_state", rsrc="continuous", state="running"} 2
+    {__name__="rsrc_state", rsrc="stateset", state="running"} 1
+    {__name__="rsrc_state", rsrc="stalemarkers", state="starting"} 1
+    {__name__="rsrc_state", rsrc="stalemarkers", state="running"} 2
+    {__name__="rsrc_state", rsrc="missedscrapes", state="running"} 2
+
+# One might try to work around this by using topk(1, timestamp(rsrc_state{} > 0)
+# but it won't work how you might expect.
+#
+# timestamp() over another expression, even a simple binary operation with a
+# scalar, discards the original sample timestamps and replaces them with the
+# evaluation timestamp. So the above query would be sorting by equal
+# timestamps, and produce indeterminate/unstable results.
+#
+# A test illustrating this with the topk(1, ...) is not included because the test
+# suite has no way to express "either this or this outcome are both possible".
+#
+# Note here that the series timestamps are the evaluation timestamp (2m5s), not
+# the sample timestamp (2m).
+#
+eval instant at 2m5s timestamp(rsrc_state{} > 0)
+    {rsrc="activeonly", state="starting"} 125
+    {rsrc="activeonly", state="running"} 125
+    {rsrc="stateset", state="running"} 125
+    {rsrc="missedscrapes", state="starting"} 125
+    {rsrc="missedscrapes", state="running"} 125
+    {rsrc="continuous", state="running"} 125
+    {rsrc="stalemarkers", state="running"} 125
+
+# The {rsrc="activeonly", state="starting"} state should still be visible in the lookback window
+# at t=2m5s, but should be filtered out by latestk() since its timestamp ends at 1m,
+# and the state="running" series timestamp has a sample at 2m  If the starting state
+# appears here, something went wrong.
+#
+# The timestamp(rsrc_state{...}) may NOT contain any binary operators or functions (other than
+# last_over_time()?) otherwise the Prometheus executor will discard the timestamps of the matrix
+# before passing it to timestamp() and all the timestamps will be the execution step timestamp instead,
+# giving nonsensical results.
+#
+# No test is included here for
+#
+#    topk(1, timestamp(rsrc_state{})) by (rsrc)
+#
+# including the stateset, because the result is unstable and the test suite has no way to represent
+# "this query could have either of these 2 different results".
+#
+eval instant at 2m5s group by (rsrc, state) (topk(1, timestamp(rsrc_state{rsrc!="stateset"})) by (rsrc))
+     {rsrc="activeonly", state="running"} 1
+     {rsrc="continuous", state="running"} 1
+     {rsrc="stalemarkers", state="running"} 1
+     {rsrc="missedscrapes", state="running"} 1
+
+
+# ----------------------------------
+# Reliable approaches
+# ----------------------------------
+
+# First, lets handle just the case of series that don't use 0-value placeholders, but ensure that we actually filter
+# out series that use them so we won't deliver wrong or unstable results. To do this, filter-out any series that have
+# 0-values in any of their subsets.
+#
+# This only works, of course, so long as 0 is not a valid value for an active series.
+
+eval instant at 2m5s group by (rsrc, state) (topk(1, timestamp(rsrc_state{rsrc!="stateset"})) by (rsrc))
+     {rsrc="activeonly", state="running"} 1
+     {rsrc="continuous", state="running"} 1
+     {rsrc="stalemarkers", state="running"} 1
+     {rsrc="missedscrapes", state="running"} 1
+
+# So what if we don't actually know if the metric has a state-set 0-padded
+# representation or not? Or it might be filtered differently from different
+# origins, or different software versions? So we can handle the rsrc=stateset
+# case too?
+#
+# First, find out if the any of the samples in the series-set have zero values:
+
+eval instant at 2m5s clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1)
+    {rsrc="activeonly"} 1
+    {rsrc="continuous"} 1
+    {rsrc="stalemarkers"} 1
+    {rsrc="missedscrapes"} 1
+    {rsrc="stateset"} 0
+
+# ... and thus construct a branching query that uses timestamp-based
+# most-recent selection where there are no 0-value placeholders, and uses
+# traditional state-set == 1 matching where such placeholders do exist.
+
+# find only series that have no 0-value placeholders; the stateset series
+# should be omitted from the result, since it has placeholders.
+eval instant at 2m5s clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 1
+     {rsrc="activeonly"} 1
+     {rsrc="continuous"} 1
+     {rsrc="stalemarkers"} 1
+     {rsrc="missedscrapes"} 1
+
+# Use the topk(1,timestamp(...)) approach on series where it works.
+#
+# This filters out the stateset rsrc using the min values, returning only most recent states
+# for series that lack zero-markers. Note the omission of a filter for rsrc!=stateset here.
+# We get the correct states, but not yet the values.
+eval instant at 2m5s group by (rsrc, state) (topk(1, timestamp(rsrc_state{})) by (rsrc) and on (rsrc) (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 1))
+     {rsrc="activeonly", state="running"} 1
+     {rsrc="continuous", state="running"} 1
+     {rsrc="stalemarkers", state="running"} 1
+     {rsrc="missedscrapes", state="running"} 1
+
+# Now the inverse: return only series with 0-value placeholders, the stateset ones.
+eval instant at 2m5s (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 0)
+     {rsrc="stateset"} 0
+
+# self-join to add the state. The value is not interesting for these, as statesets only ever
+# use 0 or 1.
+#
+# This query can be used to consume a stateset (with more than one possible
+# state) reliably, as it will ignore series-sets where no zero-value
+# placeholders exist.
+#
+eval instant at 2m5s group by (rsrc, state) (rsrc_state{} == 1) and on (rsrc) (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 0)
+     {rsrc="stateset", state="running"} 1
+
+# We can now combine these two, to create a horror query of doom that will work
+# for both stateset and non-stateset style series, with and without stale
+# markers, returning the correct state either way.
+eval instant at 2m5s group by (rsrc, state) (topk(1, timestamp(rsrc_state{})) by (rsrc) and on (rsrc) (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 1)) or on (rsrc) group by (rsrc, state) (rsrc_state{} == 1) and on (rsrc) (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 0)
+     {rsrc="activeonly", state="running"} 1
+     {rsrc="continuous", state="running"} 1
+     {rsrc="stalemarkers", state="running"} 1
+     {rsrc="missedscrapes", state="running"} 1
+     {rsrc="stateset", state="running"} 1
+
+# ----------------------------------
+# Getting both label and value
+# ----------------------------------
+
+# By self-joining on the un-aggregated series, we can get the values too. This works like we would expect
+#
+# and wish that
+#
+#     topk(1, timestamp(rsrc_state{rsrc!="stateset"} > 0)) by (rsrc)
+#
+# should work, but as discussed above, does not. Except that the query author
+# must ensure that the series isn't a state-set that may have 0-value
+# placeholders, or the result will be random instead.
+#
+eval instant at 2m5s group by (rsrc, state) (topk(1, timestamp(rsrc_state{rsrc!="stateset"})) by (rsrc)) * on (rsrc, state) max by (rsrc, state) (rsrc_state{})
+     {rsrc="activeonly", state="running"} 2
+     {rsrc="continuous", state="running"} 2
+     {rsrc="stalemarkers", state="running"} 2
+     {rsrc="missedscrapes", state="running"} 2
+
+# ----------------------------------
+# Handling all series types, and keeping values
+# ----------------------------------
+
+# Combining this with the above approach for handling state-sets, we can also
+# get the numeric value _and_ the label for the latest series in the set for
+# non-statesets. There's no point for stateset metrics, since they are always 1
+# for the active series.
+#
+# Here we find the most recent sample of rsrc_state{} by (rsrc), ignoring
+# "state" for grouping purposes. We retain the state label for the matched
+# series _and_ the sample value. Unless it's a stateset, in which case
+# the active state is returned with a value 1.
+#
+eval instant at 2m5s  group by (rsrc, state) (topk(1, timestamp(rsrc_state{})) by (rsrc) and on (rsrc) (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 1)) * on (rsrc, state) max by (rsrc, state) (rsrc_state{}) or on (rsrc) group by (rsrc, state) (rsrc_state{} == 1) and on (rsrc) (clamp(min by (rsrc) (min_over_time(rsrc_state{}[5m])), 0, 1) == 0)
+     {rsrc="activeonly", state="running"} 2
+     {rsrc="continuous", state="running"} 2
+     {rsrc="stalemarkers", state="running"} 2
+     {rsrc="missedscrapes", state="running"} 2
+     {rsrc="stateset", state="running"} 1
