@@ -1,0 +1,148 @@
+-- PostgreSQL-flavoured SQL
+
+CREATE TABLE metrics(labels jsonb, value float8);
+
+INSERT INTO metrics(labels, value)
+VALUES
+('{"__name__": "requests_total", "instance": "foo", "endpoint": "/api/v1/status"}', 1000),
+('{"__name__": "requests_total", "instance": "foo", "endpoint": "/api/v1/query"}', 2000),
+('{"__name__": "requests_total", "instance": "bar", "endpoint": "/api/v1/status"}', 2500),
+('{"__name__": "requests_total", "instance": "ownermissing", "endpoint": "/api/v1/status"}', 3000);
+
+INSERT INTO metrics(labels, value)
+VALUES
+('{"__name__": "component_price_multiplier", "instance": "foo", "owner": "internaluser1"}', 1),
+('{"__name__": "component_price_multiplier", "instance": "bar", "owner": "ushealthcare"}', 20),
+('{"__name__": "component_price_multiplier", "instance":"baz", "owner":"idleandunused"}', 0);
+
+-- For convenient reference to specific metric series
+CREATE VIEW requests_total AS
+SELECT * FROM metrics WHERE labels ->> '__name__' = 'requests_total';
+
+CREATE VIEW component_price_multiplier AS
+SELECT * FROM metrics WHERE labels ->> '__name__' = 'component_price_multiplier';
+
+-- Like:
+--
+--    requests_total{}
+--    * on (instance)
+--      group_left(owner)
+--      component_price_multiplier{}
+
+SELECT
+  jsonb_insert(
+    -- take all LHS labels
+    requests_total.labels,
+    -- add owner label from RHS
+    ARRAY['owner'], component_price_multiplier.labels -> 'owner'
+  ) AS labels,
+  -- apply arithmetic on value
+  requests_total.value * component_price_multiplier.value AS value
+FROM requests_total
+-- keep rows for which a LHS and RHS match exists
+INNER JOIN component_price_multiplier ON (
+  requests_total.labels ->> 'instance' = component_price_multiplier.labels ->> 'instance'
+);
+
+-- Result:
+--                                                labels                                                          | value
+--     -----------------------------------------------------------------------------------------------------------+-------
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "foo"} |  1000
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/query", "instance": "foo"}  |  2000
+--      {"owner": "ushealthcare", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "bar"}  | 50000
+--     (3 rows)
+
+
+
+-- Now as a left join so we keep the unmatched LHS. Note the coalesce(...) for the value, because
+-- lhs.value * rhs.value is null if the rhs is null in a left join.
+SELECT
+  coalesce(
+    -- if RHS matched, we can return a result with the owner label
+    jsonb_insert(
+      -- take all LHS labels
+      requests_total.labels,
+      -- add owner label from RHS
+      ARRAY['owner'], component_price_multiplier.labels -> 'owner'
+    ),
+    -- otherwise, we return the LHS labels unchanged
+    requests_total.labels
+  ) AS labels,
+  coalesce(
+    -- if lhs and rhs did not match the rhs here is null, so
+    requests_total.value * component_price_multiplier.value,
+    -- pick the lhs if so
+    requests_total.value
+  ) AS value
+FROM requests_total
+-- keep all LHS rows, add RHS fields only where LHS and RHS match, otherwise
+-- RHS fields will be null
+LEFT JOIN component_price_multiplier ON (
+  requests_total.labels ->> 'instance' = component_price_multiplier.labels ->> 'instance'
+);
+
+-- Result:
+--
+--                                                      labels                                                   | value
+--    -----------------------------------------------------------------------------------------------------------+-------
+--     {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "foo"} |  1000
+--     {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/query", "instance": "foo"}  |  2000
+--     {"owner": "ushealthcare", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "bar"}  | 50000
+--     {"__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "ownermissing"}                  |  3000
+--    (4 rows)
+
+
+-- Add the extra component_price_multiplier{instance="foo"} row with extra subcategory="discount" label
+INSERT INTO metrics(labels, value)
+VALUES
+('{"__name__": "component_price_multiplier", "instance": "foo", "subcategory": "discount", "owner": "internaluser1"}', 0.9);
+
+
+-- and repeat the first query
+
+SELECT
+  -- take all LHS labels, add 'owner' label from RHS
+  jsonb_insert(requests_total.labels, ARRAY['owner'], component_price_multiplier.labels -> 'owner') AS labels,
+  -- apply arithmetic on value
+  requests_total.value * component_price_multiplier.value AS value
+FROM requests_total
+-- keep rows for which a LHS and RHS match exists
+INNER JOIN component_price_multiplier ON (
+  requests_total.labels ->> 'instance' = component_price_multiplier.labels ->> 'instance'
+);
+
+-- result: duplicate series (which would not be allowed in PromQL, resulting in an error)
+--
+--                                                       labels                                                   | value
+--     -----------------------------------------------------------------------------------------------------------+-------
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "foo"} |   900
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "foo"} |  1000
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/query", "instance": "foo"}  |  1800
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/query", "instance": "foo"}  |  2000
+--      {"owner": "ushealthcare", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "bar"}  | 50000
+--     (5 rows)
+
+-- We can correct this by adding subcategory to the join conditions
+SELECT
+  -- take all LHS labels, add 'owner' label from RHS
+  jsonb_insert(requests_total.labels, ARRAY['owner'], component_price_multiplier.labels -> 'owner') AS labels,
+  -- apply arithmetic on value
+  requests_total.value * component_price_multiplier.value AS value
+FROM requests_total
+-- keep rows for which a LHS and RHS match exists
+INNER JOIN component_price_multiplier ON (
+  requests_total.labels ->> 'instance' = component_price_multiplier.labels ->> 'instance'
+  AND
+  -- Here we need to treat NULL = 'non-null' as false, not null, hence IS DISTINCT FROM instead of =
+  requests_total.labels ->> 'subcategory' IS NOT DISTINCT FROM component_price_multiplier.labels ->> 'subcategory'
+);
+
+-- result:
+--                                                       labels                                                   | value
+--     -----------------------------------------------------------------------------------------------------------+-------
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "foo"} |  1000
+--      {"owner": "internaluser1", "__name__": "requests_total", "endpoint": "/api/v1/query", "instance": "foo"}  |  2000
+--      {"owner": "ushealthcare", "__name__": "requests_total", "endpoint": "/api/v1/status", "instance": "bar"}  | 50000
+--     (3 rows)
+
+

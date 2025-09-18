@@ -1,0 +1,74 @@
+# Run this with:
+#
+#     git clone https://github.com/prometheus/prometheus
+#     cd prometheus
+#
+# then copy it into ./promql/promqltest/testdata/blog_example_1.test
+#
+# and run:
+#
+#     go test -v -run 'TestEvaluations/testdata/blog_example_1.test' --count=1 ./promql
+
+
+load 1m
+	requests_total{instance="foo", endpoint="/api/v1/status"} 1000x5
+	requests_total{instance="foo", endpoint="/api/v1/query"} 2000x5
+	requests_total{instance="bar", endpoint="/api/v1/status"} 2500x5
+	requests_total{instance="ownermissing", endpoint="/api/v1/status"} 3000x5
+	component_price_multiplier{instance="foo", owner="internaluser1"} 1x5
+	component_price_multiplier{instance="bar", owner="ushealthcare"} 20x5
+	component_price_multiplier{instance="baz", owner="idleandunused"} 0x5
+
+# 1:1 label matching; fails because requests_total{instance="foo"} has 2 matching series on LHS
+eval instant at 1m requests_total{} * on (instance) (component_price_multiplier)
+	expect fail msg:multiple matches for labels: many-to-one matching must be explicit (group_left/group_right)
+
+# 1:m matching; fails because requests_total{instance="foo"} has 2 matching series on LHS
+#
+# Fails with
+#
+#     found duplicate series for the match group {instance="foo"} on the left hand-side of the operation: [{__name__="requests_total", endpoint="/api/v1/query", instance="foo"}, {__name__="requests_total", endpoint="/api/v1/status", instance="foo"}];many-to-many matching not allowed: matching labels must be unique on one side
+#
+eval instant at 1m requests_total{} * on (instance) group_right(owner) (component_price_multiplier)
+	expect fail regex:found duplicate series for the match group \{instance="foo"\} on the left hand-side of the operation: \[.*\];many-to-many matching not allowed: matching labels must be unique on one side
+
+# n:1 matching
+#
+# Works; acts like an inner join, dropping the unmatched requests_total{instance="ownermissing"} series
+#
+eval instant at 1m requests_total{} * on (instance) group_left(owner) (component_price_multiplier)
+	{endpoint="/api/v1/status", instance="foo", owner="internaluser1"} 1000
+	{endpoint="/api/v1/query", instance="foo", owner="internaluser1"} 2000
+	{endpoint="/api/v1/status", instance="bar", owner="ushealthcare"} 50000
+
+# n:1 matching with unmatched values kept (emulated LEFT JOIN)
+#
+# Works. The * 1 is just there to drop the __name__ label.
+#
+eval instant at 1m requests_total{} * on (instance) group_left(owner) (component_price_multiplier) or on (instance) (requests_total{} * 1)
+	{endpoint="/api/v1/status", instance="foo", owner="internaluser1"} 1000
+	{endpoint="/api/v1/query", instance="foo", owner="internaluser1"} 2000
+	{endpoint="/api/v1/status", instance="bar", owner="ushealthcare"} 50000
+	{endpoint="/api/v1/status", instance="ownermissing"} 3000
+
+# -------------------
+# Some extras
+# -------------------
+
+# Now what if we introduce duplication into the RHS? Now there are two different
+# series matching component_price_multiplier{instance="foo"}, one with a subcategory set
+load 1m
+	component_price_multiplier{instance="foo", subcategory="discount", owner="internaluser1"} 0.9x5
+
+# Fails with an error because the RHS is non-unique on (instance) now
+#     found duplicate series for the match group {instance="foo"} on the right hand-side of the operation: [{__name__="component_price_multiplier", instance="foo", owner="internaluser1", subcategory="discount"}, {__name__="component_price_multiplier", instance="foo", owner="internaluser1"}];many-to-many matching not allowed: matching labels must be unique on one side
+#
+eval instant at 1m requests_total{} * on (instance) group_left(owner) (component_price_multiplier)
+	expect fail regex:found duplicate series for the match group \{instance="foo"\} on the right hand-side of the operation: \[.*\];many-to-many matching not allowed: matching labels must be unique on one side
+
+# Adding subcategory to the join condition worked; a missing label is treated as "" so
+# the RHS with subcategory didn't match any LHS rows and was filtered out.
+eval instant at 1m requests_total{} * on (instance, subcategory) group_left(owner) (component_price_multiplier)
+	{endpoint="/api/v1/status", instance="foo", owner="internaluser1"} 1000
+	{endpoint="/api/v1/query", instance="foo", owner="internaluser1"} 2000
+	{endpoint="/api/v1/status", instance="bar", owner="ushealthcare"} 50000
