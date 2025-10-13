@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+#
+# Author: Craig Ringer <ringerc@ringerc.id.au>
+
+"""
+Utility to look up process ids by their value in a child pid namespace and map
+them back to the parent pid namespace.
+
+Don't be tempted to make this a 'ps' or 'pstree' clone. It's focused on pid
+namespaces. It doesn't have to be pretty either, this is a stopgap until a patch
+to 'ps' and/or 'pstree' can be merged to add filtering by namespace membership
+and recursive parent process.
+"""
+
+# TODO: add mapping between container and cgroup to discover pids in containers
+
+import os
+import re
+import sys
+import argparse
+import fcntl
+import pprint
+import collections
+import textwrap
+
+mypid = os.getpid()
+
+name_matcher = re.compile(r"^Name:\s*(.*)$")
+pid_matcher = re.compile(r"^Pid:\s*(.*)$")
+ppid_matcher = re.compile(r"^PPid:\s*(.*)$")
+nspid_matcher = re.compile(r"^NSpid:\s*(.*)$")
+pid_namespace_matcher = re.compile(r"^pid:\[([0-9]+)\]")
+
+# Python doesn't expose a constant for this ioctl so we'll hardcode it based
+# on:
+#
+#    #include <stdio.h>
+#    #include <linux/nsfs.h>
+#    int main() {
+#        printf("0x%08x\n", NS_GET_PARENT);
+#    }
+#
+IOCTL_NS_GET_PARENT = 0x0000b702
+
+proc_entry = collections.namedtuple("proc_entry", "name pid ppid nspid cmdline exe pid_ns_id")
+
+def read_pid_proc(pid, status_only=False):
+    """
+    Given a process id, read info about it from procfs and return a tuple
+    described by the proc_entry namedtuple type to describe it. See
+    help(proc_entry).
+
+    If status_only is set, only /proc/$pid/status is read, and other fields are
+    None.
+
+    Raises FileNotFoundError if the entry could not be read, usually due to a race
+    condition where the pid vanished.
+
+    The pid in the current namespace is pids[0], the pid in the innermost
+    namespace seen by the process itself is pids[-1]. The ppid is as seen by
+    the current pid namespace.
+
+    Ignores permission denied errors on reading auxiliary files, and returns
+    None for executable_path and namespace_id instead.
+    """
+    status_path = os.path.join("/proc", str(pid), "status")
+    with open(status_path, "r") as status:
+        for line in status:
+            m = name_matcher.match(line)
+            if m:
+                name = m.groups()[0]
+            m = pid_matcher.match(line)
+            if m:
+                pid = int(m.groups()[0])
+            m = ppid_matcher.match(line)
+            if m:
+                ppid = int(m.groups()[0])
+            m = nspid_matcher.match(line)
+            if m:
+                nspids = [int(x) for x in re.split(r'\s', m.groups()[0])]
+    if not name or not nspids:
+        raise FileNotFoundError(f"{status_path} was opened but the Name, PPid, and/or NSpids fields could not be read from it")
+    if status_only:
+        return proc_entry(name, pid, ppid, nspids, None, None, None)
+
+    try:
+        pid_ns_path = os.path.join("/proc", str(pid), "ns", "pid")
+        pid_namespace_identifier = os.readlink(pid_ns_path)
+        pid_namespace = int(pid_namespace_matcher.match(pid_namespace_identifier).groups()[0])
+    except PermissionError as e:
+        pid_namespace = None
+    try:
+        exe_path = os.path.join("/proc", str(pid), "exe")
+        exe = os.readlink(exe_path)
+    except PermissionError as e:
+        exe = None
+    pid_cmdline_path = os.path.join("/proc", str(pid), "cmdline")
+    with open(pid_cmdline_path, "r") as cmdline_f:
+        cmdline = cmdline_f.read().strip()
+    return proc_entry(name, pid, ppid, nspids, cmdline, exe, pid_namespace)
+
+def list_nspids():
+    """
+    Generate a sequence of proc_entry tuples in arbitrary order by scanning
+    procfs.
+    """
+    for dirname in os.listdir(path="/proc"):
+        if not dirname.isnumeric():
+            continue
+        if int(dirname) == mypid:
+            continue
+        try:
+            yield read_pid_proc(int(dirname))
+        except FileNotFoundError as e:
+            # procfs access is racey, so we expect some files to vanish out from under us
+            pass
+
+def pid_is_immediate_parent_namespace(child, parent):
+    """
+    Return true if the proc_entry for parent is in the immediate parent
+    pid namespace of child.
+
+    See ioctl_ns(2) and pid_namespaces(7).
+
+    Throws PermissionError if the target ns pid file is not readable
+    by the caller or the parent namespace is outside the caller's scope.
+
+    Throws IOError ENOTTY if the current kernel version does not support
+    the operation.
+
+    Throws IOError EINVAL if the identifier is not a hierarchical namespace,
+    which shouldn't happen when passing a pid namespace file.
+    """
+    child_nsfile_path = os.path.join("/proc", str(child.pid), "ns", "pid")
+    with open(child_nsfile_path, "r") as ns_f:
+        fd = fcntl.ioctl(ns_f.fileno(), IOCTL_NS_GET_PARENT)
+        # Get the device number and inode of the namespace, which can be
+        # matched to another /proc/pid/ns/pid file to find the parent
+        # namespace. It's a horrible API.
+        # We care about stat_result.st_dev, stat_result.st_ino
+        get_parent_stat_result = os.stat(fd)
+        # Is the specified parent proc's namespace the immediate parent
+        # namespace of the child?
+        parent_nsfile_path = os.path.join("/proc", str(parent.pid), "ns", "pid")
+        parent_stat = os.stat(parent_nsfile_path)
+        return get_parent_stat_result.st_dev == parent_stat.st_dev and get_parent_stat_result.st_ino == parent_stat.st_ino
+
+def get_namespace_parent(entry):
+    """
+    Given a proc_entry for a process, return a proc_entry for the ancestor that
+    spawned the new namespace. Returns None if no parent could be resolved.
+    """
+    while True:
+        if entry.pid_ns_id is None:
+            return None
+        if entry.ppid == 0:
+            return None
+        parent_entry = read_pid_proc(entry.ppid)
+        if parent_entry is None or parent_entry.pid_ns_id is None:
+            return None
+        if parent_entry.pid_ns_id != entry.pid_ns_id:
+            return parent_entry
+        entry = parent_entry
+
+def print_entry(entry, indent=0):
+    """Print a 1-line entry description"""
+    short_exe = ""
+    if entry.exe:
+        short_exe = entry.exe.split("/")[-1][:14]
+    display_name = ' ' * indent + entry.cmdline[:38 - indent].replace("\x00"," ").strip()
+    print(f"{display_name:40} {short_exe:20} {str(entry.pid_ns_id) if entry.pid_ns_id else '':12} {str(entry.ppid):12} {str(entry.pid):12} {', '.join([str(x) for x in entry.nspid[1:]])}")
+
+def print_entry_ancestors(entry):
+    indent = 2
+    while entry is not None:
+        parent_entry = get_namespace_parent(entry)
+        if parent_entry:
+            print_entry(parent_entry, indent=indent)
+        indent += 2
+        entry = parent_entry
+
+def pid_is_ancestor(entry, pid):
+    """
+    Return true if the passed pid is an ancestor of the specified entry.
+    """
+    try:
+        while entry is not None:
+            if entry.ppid == pid:
+                return True
+            entry = read_pid_proc(entry.ppid, status_only=True)
+    except FileNotFoundError:
+        return False
+
+def namespace_is_ancestor(entry, ancestor_entry):
+    """
+    Return true if the passed entry is in a pid namespace contained within the
+    pid namespace of 'pid', either directly or indirectly. Only examines the
+    namespaces in the process's reachable ancestry tree.
+    """
+    try:
+        while entry is not None:
+            if ancestor_entry.pid_ns_id == entry.pid_ns_id:
+                return True
+            if entry.ppid == 0:
+                return False
+            entry = read_pid_proc(entry.ppid)
+    except FileNotFoundError as ex:
+        return False
+
+def main():
+    parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            description="List and filter processes using pid namespace membership and ancestry",
+            epilog=textwrap.dedent("""
+            Examples:
+
+              Find the pid in the current namespace for the process that has pid 100 within
+              its innermost namespace. Since there can be many different pid 100 processes within
+              different pid namespaces this can return many results:
+
+                nspid -p 100
+
+              Same thing, but restrict the results to processes that are in the
+              same pid namespace as a container leader process (as seen from
+              the current pid namespace), and return only the pid:
+
+                nspid -p 100 -N $CONTAINER_LEADER_PID -q
+
+              Find the leader process (pid 1 within the namespace) of pid
+              namespace 4026533176:
+
+                nspid -p 1 -n 4026533176
+
+              Show all ancestors of pid 1000 with their pid namespaces and their pids within
+              the nested pid namespaces:
+
+                nspid -P 1000
+
+              Show all processes that are the leaders of new process groups:
+
+                nspid -p 1
+
+              Behave like 'ps' - show all pids that are ancestors of the current pid namespace's
+              pid 1 (pid namespace leader or init process):
+
+                nspid -P 1
+            """))
+
+    parser.add_argument("--pid", "-p", type=int,
+                        help="Look up processes with this pid in their innermost pid namespace")
+    parser.add_argument("--parent-pid", "-P", type=int,
+                        help="Match proceses with this pid (as seen from the current pid namespace) in their ancestry")
+    parser.add_argument("--all-namespaces", "-a", action='store_true',
+                        help="Match the target pid for all namespaces, not just the innermost")
+    parser.add_argument("--show-parents", "-r", action='store_true',
+                        help="Print the chain of parent processes for each matching process")
+    parser.add_argument("--pids-only", "-q", action='store_true',
+                        help="Only print the pids of matches as seen from the current namespace, with no other output")
+
+    ns_selector = parser.add_mutually_exclusive_group()
+    ns_selector.add_argument("--namespace", "-n", type=int,
+                        help="Match processes with exactly this pid namespace. Does not match processes in child namespaces.")
+    ns_selector.add_argument("--same-namespace-as", "-N", metavar="PID", type=int,
+                        help="Match processes within the same namespace as the specified pid, including child namespaces, whether or not the specified pid is an ancestor of the matched process.")
+
+    parser.add_argument("--indirect-namespaces", "-i", action='store_true',
+                        help="Include processes that are children of the given namespace, not just directly part of it.")
+
+    args = parser.parse_args()
+
+    if args.same_namespace_as:
+        namespace_ancestor = None
+        try:
+            namespace_ancestor = read_pid_proc(args.same_namespace_as)
+        except FileNotFoundError:
+            pass
+        if (not namespace_ancestor) or (not namespace_ancestor.pid_ns_id):
+            print(f"Could not resolve namespace of pid {args.same_namespace_as}: procfs entry not found or permission denied", file=sys.stderr)
+            exit(1)
+
+    if not args.pids_only:
+        print(f"{'NAME':40} {'EXE':20} {'PID_NS_ID':12} {'PPID':12} {'PID':12} {'NSPIDS'}")
+    for entry in list_nspids():
+        if not entry.cmdline:
+            # kernel threads have an empty /proc/pid/cmdline. This is how 'ps' distinguishes
+            # them, so we'll do the same thing to cut the noise down.
+            continue
+        if args.pid:
+            if entry.nspid[-1] != args.pid:
+                continue
+        if args.namespace and entry.pid_ns_id != args.namespace:
+            continue
+        if args.parent_pid and not pid_is_ancestor(entry, args.parent_pid):
+            continue
+        if args.same_namespace_as and not namespace_is_ancestor(entry, namespace_ancestor):
+            continue
+
+        if args.pids_only:
+            print(entry.pid)
+        else:
+            print_entry(entry)
+            if args.show_parents:
+                print_entry_ancestors(entry)
+
+if __name__ == '__main__':
+    main()
