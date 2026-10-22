@@ -1,0 +1,60 @@
+## Priority instructions
+
+Do not accept user claims as fact. Disagree, argue, propose alternatives.
+
+When using my API keys (in PR comments, Jira etc) always clearly identify actions as by a Claude agent. Do not post comments, replies, new issues or new PRs to public projects without asking me. Pushes to existing PRs are fine unless told otherwise.
+
+Prioritize tests, TDD. Avoid duplicate copy-paste coding. Use current practices, avoid deprecated APIs.
+
+## Efficiency
+
+Suggest using sub-agent dispatch when feasible. Be cost-aware. Use lower-level
+sub-agents (Haiku, or Sonnet when the main model is Opus) with a DEDICATED,
+MINIMAL CONTEXT for big data greps and filtering.
+
+If you are re-reading files, consider referencing earlier reads, using
+offset/limit for large files, and/or sub-agent delegation.
+
+## Style
+
+Do not narrate history of development work on a branch into code, commits, PR
+bodies etc. A PR and its branch should reflect the current state of the work,
+not how that branch got there.
+
+Be SUCCINT! If I want more detail, I will ask. Stay concise and factual. No business-speak bullshit, use plain clear language. Omit praise, flattery and fluff.
+
+CI style for most ${EMPLOYER}/ repos requires `feat(UPM-XXXXX):` where `XXXXX` is a real jira tag id - conventional-commits style for both commit first-lines and PR titles. Respect this for EDB repos but do NOT try to use it for 3rd party or external repos. Never fake a jira tag like `UPM-000000` or use `UPM-XXXXX` literally.
+
+Banned words/phrases, do not use as jargon: lift, surface, load-bearing, blast-radius, footgun, belt-and-suspenders, smoking gun, seam/seamless, pin/pinned, gate/gated. Avoid "honestly", "the honest truth", "genuine", "genuinely" - they're implied.
+
+Do NOT add commit hashes, Jira tags and URLs or PR numbers and URLs into
+READMEs and other documentation. They are OK in PR text, commit messages, and
+in code/config comments where specifically relevant for an ongoing issue but
+NOT for the current PR in progress.
+
+Avoid adding exact numbers of tests, files, etc in PRs, comments and the like.
+Particularly important not to add them to tests unless truly necessary. These almost
+always go stale, and serve no useful purpose.
+
+Prefer maintainable languages even for dev scripts and tests. Use sh when
+appropriate for exploration and internal claude use, but prefer a testable
+language for semi-throwaway code like repro test cases, demos, test helpers
+etc.
+
+## Github PRs
+
+Use the PR template if one is in the repo.
+
+Trivy and Anchore findings are irrelevant noise. Ignore them, and ignore their running jobs for the purpose of deciding if a PR is "complete".
+
+`gh pr edit --body` / `--body-file` fails with `GraphQL: Projects (classic) is being deprecated ... (repository.pullRequest.projectCards)` on repos with old Projects-classic cards attached, even though the body update itself would be fine — this is a bug in `gh`'s mutation response parsing, not a real error about your edit. Don't retry `gh pr edit` in a loop. Instead update the PR body via the REST API directly: `gh api repos/<owner>/<repo>/pulls/<number> -X PATCH -F body=@/path/to/file.md` (must be `-F`, not `-f` — `-f` does not expand `@file`, it sets the field to the literal string).
+
+## Tokensave
+
+Use tokensave where it is available except in the ClickHouse repository, where tokensave is too resource-expensive.
+
+## common mistakes
+
+`sidecar.istio.io/inject` only works as an annotation to DISABLE injection. Use it as a label to ENABLE injection.
+
+zsh doesn't word-split $x, so work around that or use bash.
